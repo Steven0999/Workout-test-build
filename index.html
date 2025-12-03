@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Builder (Firestore)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase Imports -->
+    <script type="module">
+        console.log("Step 1: Firebase Module Imports Started.");
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, getDocs, deleteDoc, writeBatch, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        console.log("Step 1: Firebase Modules Imported.");
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        if (!firebaseConfig) {
+            console.error("Firebase config is missing. Application cannot run.");
+            return;
+        }
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Mandatory Firestore logging for debugging
+        setLogLevel('Debug');
+        console.log("Step 1: Firebase Services Initialized.");
+
+        // Export globals for access in the main script
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firebaseAuth = auth;
+        window.appId = appId;
+        window.initialAuthToken = initialAuthToken;
+        window.fs = {
+            addDoc, collection, onSnapshot, query, orderBy, getDocs, deleteDoc, writeBatch, doc,
+            // Export Auth functions needed for sign-in process
+            signInAnonymously, signInWithCustomToken 
+        };
+    </script>
+    
+    <style>
+        /* Custom styles for appearance */
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .card { background-color: #1e293b; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+        .tab-btn { transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .tab-btn.active { border-color: #6366f1; color: #a5b4fc; }
+        .view { display: none; }
+        .view.active { display: block; }
+        input[type="text"], input[type="number"], select, textarea, dialog {
+            background-color: #334155;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: border-color 0.2s;
+        }
+        input:focus:not([disabled]), select:focus:not([disabled]) { border-color: #6366f1; outline: none; }
+        input[disabled], select[disabled], button[disabled] { opacity: 0.6; cursor: not-allowed; }
+        .sets-pairs input { width: 48%; display: inline-block; margin-right: 2%; margin-bottom: 4px; }
+        .sets-pairs .pair { display: flex; gap: 4px; margin-bottom: 4px; }
+        table thead th { background-color: #374151; padding: 0.75rem 1rem; }
+        table tbody tr:hover { background-color: #334155; }
+        /* Dialog styling */
+        dialog { background-color: #1e293b; color: #e2e8f0; border: none; padding: 1.5rem; border-radius: 12px; max-width: 90%; margin: auto; }
+        dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-extrabold text-white mb-6 text-center">🏋️‍♂️ Workout Tracker (Firestore)</h1>
+        
+        <!-- Auth Status and Progress Indicator -->
+        <div id="authStatus" class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm text-gray-400">
+            <div class="flex items-center mb-2 sm:mb-0 w-full sm:w-auto">
+                <span id="loadingMessage" class="text-yellow-400 font-semibold flex items-center w-full">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Initializing Services...
+                </span>
+            </div>
+            <span id="userIdDisplay" class="truncate hidden sm:ml-4">User ID: <code class="bg-slate-700 p-1 rounded"></code></span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="loadingProgressContainer" class="w-full bg-slate-700 rounded-full h-2 mb-4">
+            <div id="loadingProgressBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-500 ease-in-out" style="width: 0%"></div>
+        </div>
+        
+        <!-- Fallback Message -->
+        <div id="fallbackMessage" class="hidden p-3 mb-4 rounded-lg bg-red-800/50 text-red-300 font-medium">
+            ⚠️ **Connection Timed Out:** Data saving is disabled. You can still use the builder, but history will not be saved. Please check your network.
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions flex justify-end items-center mb-6 p-4 card">
+            <button data-jump="#history" class="btn bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-semibold">
+                View History
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-slate-600 mb-6">
+            <button class="tab-btn tab px-4 py-3 text-sm font-medium active" data-target="#setup" aria-selected="true">1. Setup</button>
+            <button class="tab-btn tab px-4 py-3 text-sm font-medium" data-target="#builder" aria-selected="false">2. Builder</button>
+            <button class="tab-btn tab px-4 py-3 text-sm font-medium" data-target="#history" aria-selected="false">3. History</button>
+        </div>
+
+        <!-- Views -->
+        <div class="views-container">
+
+            <!-- View 1: Setup -->
+            <div id="setup" class="view active card p-6">
+                <h2 class="text-xl font-semibold mb-4">Workout Session Setup</h2>
+                <form id="setupForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Location -->
+                    <div>
+                        <label for="location" class="block text-sm font-medium mb-1">Where are you training?</label>
+                        <select id="location" required class="w-full">
+                            <option value="">Select Location</option>
+                            <option value="Home Gym">Home Gym</option>
+                            <option value="Commercial Gym">Commercial Gym</option>
+                            <option value="Outdoors">Outdoors</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- When -->
+                    <div>
+                        <label class="block text-sm font-medium mb-1">When is this session?</label>
+                        <div class="flex gap-4 mb-2" id="whenGroup">
+                            <label><input type="radio" name="when" value="now" checked> Today (Now)</label>
+                            <label><input type="radio" name="when" value="date"> Specific Date</label>
+                        </div>
+                        <input type="date" id="sessionDate" disabled class="w-full">
+                    </div>
+
+                    <!-- Focus Tags (NOW A SINGLE SELECT) -->
+                    <div class="md:col-span-2">
+                        <label for="workoutFocus" class="block text-sm font-medium mb-1">Workout Focus (Select one primary goal)</label>
+                        <select id="workoutFocus" class="w-full">
+                            <option value="">Select Primary Focus</option>
+                            <option value="full body">Full Body</option>
+                            <option value="upper">Upper Body</option>
+                            <option value="lower">Lower Body</option>
+                            <option value="push">Push (Chest, Shoulders, Triceps)</option>
+                            <option value="pull">Pull (Back, Biceps)</option>
+                            <option value="squat">Squat</option>
+                            <option value="hinge">Hinge</option>
+                            <option value="core">Core</option>
+                            <option value="specific muscle">Specific Muscle</option>
+                        </select>
+                        <!-- START: Conditional Specific Focus Input (Modified for smooth transition) -->
+                        <div id="specificFocusContainer" class="mt-2 w-full transition-all duration-300 ease-in-out overflow-hidden" style="max-height: 0px; opacity: 0;">
+                            <input type="text" id="specificFocusTxt" placeholder="e.g., Biceps, Glutes (Optional Detail for notes)" disabled class="w-full">
+                        </div>
+                        <!-- END: Conditional Specific Focus Input -->
+                    </div>
+
+                    <!-- Equipment (UPDATED) -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">Available Equipment</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm" id="equipGroup">
+                            <label><input type="checkbox" value="Barbell"> Barbell</label>
+                            <label><input type="checkbox" value="Dumbbells"> Dumbbells</label>
+                            <label><input type="checkbox" value="Kettlebell"> Kettlebell</label>
+                            <label><input type="checkbox" value="Cable Machine"> Cable Machine</label>
+                            <label><input type="checkbox" value="Plate-Loaded Machine"> Plate-Loaded Machine</label>
+                            <label><input type="checkbox" value="Selectorized/Pin Machine"> Selectorized/Pin Machine</label>
+                            <label><input type="checkbox" value="Bodyweight"> Bodyweight</label>
+                            <label><input type="checkbox" value="Bands"> Bands</label>
+                            <label><input type="checkbox" value="Other" id="otherEquipChk"> Other/Specify</label>
+                        </div>
+                        <input type="text" id="otherEquipTxt" placeholder="e.g., Sandbag, TRX" class="mt-2 w-full" disabled>
+                    </div>
+
+                    <div class="md:col-span-2 flex justify-end gap-4 mt-4">
+                        <button type="button" data-jump="#history" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-600 hover:bg-slate-700">
+                            Go to History
+                        </button>
+                        <button type="submit" id="nextToBuilder" class="px-6 py-2 text-base font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600" disabled>
+                            Next → Builder
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- View 2: Builder -->
+            <div id="builder" class="view card p-6">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-600 pb-3">
+                    <h2 class="text-xl font-semibold">Current Workout</h2>
+                    <p id="sessionSummary" class="text-sm text-gray-400"></p>
+                </div>
+
+                <div class="overflow-x-auto mb-6">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left uppercase text-xs">
+                                <th class="p-2 w-1/4">Exercise</th>
+                                <th class="p-2">Sets</th>
+                                <th class="p-2 w-1/2">Reps / Weight (kg/lbs)</th>
+                                <th class="p-2 hidden sm:table-cell">Notes</th>
+                                <th class="p-2 w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="workoutBody">
+                            <!-- Exercise rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+                    <button id="addExercise" class="flex items-center gap-2 text-sm font-semibold rounded-lg text-indigo-400 hover:text-indigo-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        Add Exercise
+                    </button>
+                    <button id="computeTotals" class="text-sm text-gray-400 hover:text-gray-200">
+                        Recalculate Totals
+                    </button>
+                </div>
+
+                <!-- Totals Summary -->
+                <div class="flex justify-around bg-slate-700 p-4 rounded-lg mb-6 text-center text-sm font-bold">
+                    <div>
+                        <p class="text-gray-400">Total Sets</p>
+                        <p id="totalSets" class="text-lg text-green-400">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Total Reps</p>
+                        <p id="totalReps" class="text-lg text-green-400">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Total Volume</p>
+                        <p id="totalVolume" class="text-lg text-green-400">0</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between gap-4">
+                    <button id="backToSetup" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-600 hover:bg-slate-700">
+                        ← Back to Setup
+                    </button>
+                    <button id="finishSave" class="px-6 py-2 text-base font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600" disabled>
+                        Finish & Save Workout
+                    </button>
+                </div>
+            </div>
+
+            <!-- View 3: History -->
+            <div id="history" class="view card p-6">
+                <h2 class="text-xl font-semibold mb-4">Workout History & Progress</h2>
+
+                <!-- Chart Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="historyExercise" class="block text-sm font-medium mb-1">Select Exercise:</label>
+                        <select id="historyExercise" class="w-full">
+                            <option value="__ALL__">All exercises (Total Volume)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="historyMetric" class="block text-sm font-medium mb-1">Select Metric:</label>
+                        <select id="historyMetric" class="w-full">
+                            <option value="volume">Total Volume</option>
+                            <option value="best">Best Weight (1-Rep Max Proxy)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="h-64 mb-6">
+                    <canvas id="progressChart"></canvas>
+                </div>
+
+                <!-- History Table -->
+                <h3 class="text-lg font-semibold mb-3 border-t border-slate-600 pt-4">Workout Log</h3>
+                <div class="overflow-x-auto mb-4">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left uppercase text-xs">
+                                <th class="p-2">Date</th>
+                                <th class="p-2">Location</th>
+                                <th class="p-2">Exercise</th>
+                                <th class="p-2">Sets</th>
+                                <th class="p-2">Reps</th>
+                                <th class="p-2">Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable tbody">
+                            <tr><td colspan="6" class="text-center p-4 text-gray-500">Loading history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button id="clearHistory" class="text-red-400 hover:text-red-300 text-sm mt-2" disabled>Clear All History</button>
+            </div>
+        </div>
+
+    <!-- Workout Summary Modal -->
+    <dialog id="summaryDialog" class="w-full sm:max-w-xl">
+        <div class="flex justify-between items-start mb-4">
+            <h3 class="text-2xl font-bold text-emerald-400">Workout Saved!</h3>
+            <form method="dialog">
+                <button class="text-gray-400 hover:text-gray-200">✖</button>
+            </form>
+        </div>
+        <p id="summaryMeta" class="text-sm text-gray-400 mb-4"></p>
+        <table class="w-full text-sm mb-4">
+            <thead>
+                <tr class="text-left uppercase text-xs">
+                    <th class="p-2">Exercise</th>
+                    <th class="p-2">Sets</th>
+                    <th class="p-2">Reps</th>
+                    <th class="p-2">Volume</th>
+                </tr>
+            </thead>
+            <tbody id="summaryTable tbody">
+                <!-- Summary Rows -->
+            </tbody>
+        </table>
+        <div class="flex justify-between font-bold text-base border-t border-slate-600 pt-3">
+            <span>Total:</span>
+            <span><span id="sumSets"></span> sets</span>
+            <span><span id="sumReps"></span> reps</span>
+            <span><span><span id="sumVolume"></span> vol</span>
+        </div>
+        <form method="dialog" class="mt-6 flex justify-end">
+            <button class="px-6 py-2 text-base font-semibold rounded-lg bg-indigo-500 hover:bg-indigo-600">Close</button>
+        </form>
+    </dialog>
+
+<script type="module">
+    // Deconstruct Firebase exports from the window object for easy access
+    const { firestoreDb, firebaseAuth, appId, initialAuthToken, fs } = window;
+    const { addDoc, collection, onSnapshot, query, getDocs, deleteDoc, writeBatch, doc, signInAnonymously, signInWithCustomToken } = fs;
+
+    const $ = (s, el = document) => el.querySelector(s);
+    const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+
+    // ---- STATE ----
+    let sessionConfig = null;
+    let filteredExerciseOptionsHtml = "";
+    let chart = null;
+    let loggedWorkouts = []; // Local cache of Firestore data
+    let userId = null; // User ID from Firebase Auth
+    let isAuthReady = false; // Flag for successful Firebase initialization/auth
+
+    // ---- DOM Elements ----
+    const tabs = $$(".tab");
+    const views = $$("div.view");
+    const setupForm = $("#setupForm");
+    const sessionDate = $("#sessionDate");
+    const workoutFocusSel = $("#workoutFocus");
+    const specificFocusContainer = $("#specificFocusContainer");
+    const specificFocusTxt = $("#specificFocusTxt");
+    const otherEquipChk = $("#otherEquipChk");
+    const otherEquipTxt = $("#otherEquipTxt");
+    const sessionSummary = $("#sessionSummary");
+    const workoutBody = $("#workoutBody");
+    const totalSetsEl = $("#totalSets");
+    const totalRepsEl = $("#totalReps");
+    const totalVolumeEl = $("#totalVolume");
+    const summaryDialog = $("#summaryDialog");
+    const historyExerciseSel = $("#historyExercise");
+    const historyMetricSel = $("#historyMetric");
+    const historyTableBody = $("#historyTable tbody");
+    const clearHistoryBtn = $("#clearHistory");
+    const chartCanvas = $("#progressChart");
+    const whenRadios = $$('input[name="when"]', setupForm);
+    const loadingMessage = $("#loadingMessage");
+    const userIdDisplay = $("#userIdDisplay");
+    const nextToBuilderBtn = $("#nextToBuilder");
+    const finishSaveBtn = $("#finishSave");
+    const loadingProgressBar = $("#loadingProgressBar");
+    const loadingProgressContainer = $("#loadingProgressContainer");
+    const fallbackMessage = $("#fallbackMessage");
+    
+    // ---- TIMEOUT/FALLBACK CONSTANT ----
+    const FALLBACK_TIMEOUT_MS = 15000; 
+
+    // ---- EXERCISE LIBRARY (UNCHANGED) ----
+    const EXERCISE_LIBRARY = [
+        { n: "Barbell Bench Press (Flat)", f: ["push","upper"], e: ["Barbell"] },
+        { n: "Dumbbell Bench Press (Incline)", f: ["push","upper"], e: ["Dumbbells"] },
+        { n: "Overhead Press (Barbell)", f: ["push","upper"], e: ["Barbell"] },
+        { n: "Dumbbell Shoulder Press (Seated)", f:["push","upper"], e:["Dumbbells"] },
+        { n: "Cable Chest Fly", f:["push","specific muscle"], e:["Cable Machine"] },
+        { n: "Cable Lateral Raise", f:["push","specific muscle"], e:["Cable Machine"] },
+        { n: "Triceps Pushdown (Cable)", f:["push","specific muscle"], e:["Cable Machine"] },
+        { n: "Push-Up", f:["push","upper","full body"], e:["Bodyweight"] },
+        { n: "Dips (Triceps/Chest)", f:["push","upper"], e:["Bodyweight"] },
+        { n: "Pull-Up / Chin-Up", f:["pull","upper"], e:["Bodyweight"] },
+        { n: "Barbell Row (Bent Over)", f:["pull","upper","hinge"], e:["Barbell"] },
+        { n: "Dumbbell Row (Single Arm)", f:["pull","upper"], e:["Dumbbells"] },
+        { n: "Biceps Curl (Dumbbell)", f:["pull","upper","specific muscle"], e:["Dumbbells"] },
+        { n: "Deadlift (Conventional)", f:["hinge","lower","full body"], e: ["Barbell"] },
+        { n: "Romanian Deadlift (Barbell)", f:["hinge","lower"], e:["Barbell"] },
+        { n: "Back Squat", f:["squat","lower","full body"], e:["Barbell"] },
+        { n: "Front Squat", f:["squat","lower"], e:["Barbell"] },
+        { n: "Plank", f:["core","full body"], e:["Bodyweight"] },
+        { n: "Hanging Leg Raise", f:["core"], e:["Bodyweight"] },
+        { n: "Cable Crunch", f:["core","specific muscle"], e:["Cable Machine"] },
+    ];
+
+
+    // ---- LOADING STATUS UTILS ----
+    
+    /**
+     * Updates the status message and the progress bar visually.
+     * @param {string} stage - 'init', 'auth', 'data', 'complete', 'fallback'
+     */
+    function updateLoadingStatus(stage) {
+        let message = "Initializing Services...";
+        let width = 0;
+        const spinner = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        if (stage === 'init') {
+            message = "Initializing Services..."; width = 10;
+        } else if (stage === 'auth') {
+            message = "Authenticating User (Network Request)..."; width = 40;
+        } else if (stage === 'data') {
+            message = "Fetching Workout Data (Real-time Connection)..."; width = 80;
+        } else if (stage === 'complete') {
+            message = "Database Loaded! Ready to go."; width = 100;
+            loadingMessage.innerHTML = message;
+            loadingMessage.classList.remove('text-yellow-400');
+            loadingMessage.classList.add('text-green-400');
+            loadingProgressBar.style.backgroundColor = '#10b981'; // green-500
+            setTimeout(() => {
+                loadingProgressContainer.classList.add('hidden');
+                loadingMessage.classList.add('hidden');
+            }, 500);
+        } else if (stage === 'fallback') {
+            message = "Connection Failed. Running in Local Mode."; width = 100;
+            loadingMessage.innerHTML = message;
+            loadingMessage.classList.remove('text-yellow-400');
+            loadingMessage.classList.add('text-red-400');
+            loadingProgressBar.style.backgroundColor = '#ef4444'; // red-500
+            fallbackMessage.classList.remove('hidden');
+            setTimeout(() => {
+                loadingProgressContainer.classList.add('hidden');
+                loadingMessage.classList.add('hidden');
+            }, 500);
+        }
+
+        if (stage !== 'complete' && stage !== 'fallback') {
+            loadingMessage.innerHTML = spinner + message;
+            loadingProgressBar.style.backgroundColor = '#6366f1'; // indigo-500
+        }
+        loadingProgressBar.style.width = `${width}%`;
+    }
+
+    // ---- FIRESTORE UTILS ----
+
+    function getUserWorkoutsCollectionRef() {
+        if (!userId) {
+            console.error("Firestore Error: User ID is null. Cannot build path.");
+            return null;
+        }
+        const collectionPath = `artifacts/${appId}/users/${userId}/workouts`;
+        return collection(firestoreDb, collectionPath);
+    }
+
+    /**
+     * Set up real-time listener for workout data.
+     */
+    function setupHistoryListener() {
+        if (!isAuthReady || !userId) {
+            console.log("Step 4: History Listener Skipped (Auth not ready).");
+            return;
+        }
+        console.log("Step 4: Setting up Firestore History Listener...");
+
+        const workoutsRef = getUserWorkoutsCollectionRef();
+        if (!workoutsRef) return;
+
+        const q = query(workoutsRef); 
+
+        onSnapshot(q, (snapshot) => {
+            console.log("Step 4: Firestore Snapshot Received. Data loaded.");
+            loggedWorkouts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            loggedWorkouts.sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO));
+            
+            renderHistoryUI();
+            
+            // Successfully loaded data
+            nextToBuilderBtn.disabled = false;
+            finishSaveBtn.disabled = false;
+            clearHistoryBtn.disabled = loggedWorkouts.length === 0;
+
+            // Clear the timeout handler if successful
+            clearTimeout(fallbackHandler);
+            updateLoadingStatus('complete'); 
+
+        }, (error) => {
+            console.error("Step 4: Error listening to Firestore history:", error);
+            showCustomDialog(`Error loading history: ${error.message}`);
+            // Force fallback if data listener fails
+            triggerFallback();
+        });
+    }
+
+    // ---- AUTHENTICATION ----
+
+    let fallbackHandler = null;
+
+    /**
+     * Triggers the application to switch to local mode, enabling the UI but disabling saving.
+     */
+    function triggerFallback() {
+        if (isAuthReady) return; // Only run if auth hasn't completed successfully
+
+        console.warn("Step 5: Initialization Timeout. Triggering Fallback.");
+        isAuthReady = false;
+        userId = 'local_mode'; 
+
+        // Enable UI for local use
+        nextToBuilderBtn.disabled = false;
+        finishSaveBtn.disabled = true; // Still disable saving
+        updateLoadingStatus('fallback');
+
+        // Clear history table to show local mode state
+        historyTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-500">History is unavailable in local mode. Please refresh when your connection is stable.</td></tr>`;
+        if (chart) chart.destroy();
+    }
+
+    async function initializeAuth() {
+        console.log("Step 2: Auth Process Started...");
+        updateLoadingStatus('auth'); 
+        try {
+            if (initialAuthToken) {
+                console.log("Step 2: Signing in with Custom Token...");
+                await signInWithCustomToken(firebaseAuth, initialAuthToken);
+            } else {
+                console.log("Step 2: Signing in Anonymously...");
+                await signInAnonymously(firebaseAuth);
+            }
+            console.log("Step 2: Auth attempt finished.");
+        } catch (error) {
+            console.error("Step 2: Firebase Sign-in Failed:", error);
+            // Don't trigger fallback here, let the onAuthStateChanged handle the final state.
+        }
+    }
+
+    // Listener for auth state changes
+    onAuthStateChanged(firebaseAuth, (user) => {
+        if (user) {
+            console.log(`Step 3: Auth State Change (User Found: ${user.uid}).`);
+            userId = user.uid;
+            isAuthReady = true;
+            
+            userIdDisplay.classList.remove('hidden');
+            userIdDisplay.querySelector('code').textContent = userId;
+            
+            updateLoadingStatus('data'); 
+            setupHistoryListener(); // Proceed to data loading
+        } else {
+            console.log("Step 3: Auth State Change (No User/Signed Out).");
+            userId = null;
+            isAuthReady = false;
+            loadingMessage.textContent = "Authentication required to save data.";
+            
+            // If sign-in failed, ensure fallback triggers if the timeout hasn't yet.
+            if (!fallbackHandler) { 
+                triggerFallback();
+            } else {
+                // If onAuthStateChanged returns null, re-attempt sign-in
+                initializeAuth(); 
+            }
+        }
+    });
+
+    // ---- INIT ----
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM Content Loaded.");
+        updateLoadingStatus('init'); 
+
+        // Set up the timeout for a hard fallback
+        fallbackHandler = setTimeout(triggerFallback, FALLBACK_TIMEOUT_MS);
+        console.log(`Fallback timer set for ${FALLBACK_TIMEOUT_MS / 1000} seconds.`);
+
+        initTabs();
+        initJumpButtons();
+        initSetup();
+        initBuilder();
+        initHistory();
+        
+        // Starts the auth process which the onAuthStateChanged listener tracks
+        initializeAuth();
+    });
+
+    // ---- Tabs / Views ----
+    function initTabs() {
+        tabs.forEach(btn => {
+            btn.addEventListener("click", () => {
+                if (!nextToBuilderBtn.disabled && btn.dataset.target === "#builder") {
+                    if (!sessionConfig) {
+                        showCustomDialog("Please complete the Setup step first.");
+                        selectTab("#setup");
+                        return;
+                    }
+                }
+                selectTab(btn.dataset.target);
+            });
+        });
+    }
+
+    function initJumpButtons() {
+        $$("[data-jump]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                selectTab(btn.dataset.jump);
+            });
+        });
+    }
+
+    function selectTab(id) {
+        tabs.forEach(b => {
+            const isActive = b.dataset.target === id;
+            b.classList.toggle("active", isActive);
+            b.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+        views.forEach(v => v.classList.toggle("active", `#${v.id}` === id));
+        if (id === "#history") setTimeout(() => { if (chart) chart.resize(); }, 50);
+        if (id === "#builder") {
+            if (!sessionConfig) {
+                showCustomDialog("Please complete the Setup step first.");
+                selectTab("#setup");
+                return;
+            }
+            if (!workoutBody.children.length) addExerciseRow();
+        }
+    }
+
+    // ---- Setup step ----
+    function handleFocusChange() {
+        const isSpecificMuscle = workoutFocusSel.value === "specific muscle";
+        
+        if (isSpecificMuscle) {
+            specificFocusContainer.style.maxHeight = '50px';
+            specificFocusContainer.style.opacity = '1';
+            specificFocusTxt.disabled = false;
+        } else {
+            specificFocusContainer.style.maxHeight = '0px';
+            specificFocusContainer.style.opacity = '0';
+            specificFocusTxt.disabled = true; 
+            specificFocusTxt.value = "";
+        }
+    }
+
+    function initSetup() {
+        handleFocusChange(); 
+        workoutFocusSel.addEventListener("change", handleFocusChange);
+        
+        whenRadios.forEach(r => r.addEventListener("change", () => {
+            sessionDate.disabled = (getSelectedWhen() !== "date");
+            if (!sessionDate.disabled && !sessionDate.value) {
+                sessionDate.valueAsDate = new Date();
+            }
+        }));
+
+        otherEquipChk.addEventListener("change", () => {
+            otherEquipTxt.disabled = !otherEquipChk.checked;
+            if (!otherEquipChk.checked) otherEquipTxt.value = "";
+        });
+
+        setupForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            proceedToBuilderFromSetup();
+        });
+    }
+
+    function proceedToBuilderFromSetup() {
+        if (nextToBuilderBtn.disabled) {
+            showCustomDialog("Please wait for application services to load before proceeding.");
+            return;
+        }
+
+        const location = $("#location").value;
+        if (!location) {
+            showCustomDialog("Please select where you're training.");
+            return;
+        }
+
+        const when = getSelectedWhen();
+        let dateISO;
+        if (when === "now") {
+            dateISO = new Date().toISOString();
+        } else {
+            dateISO = sessionDate.value ? new Date(sessionDate.value).toISOString() : new Date().toISOString();
+        }
+
+        const mainFocusValue = workoutFocusSel.value;
+        const focus = mainFocusValue ? [mainFocusValue] : [];
+        const specific = !specificFocusTxt.disabled ? specificFocusTxt.value.trim() : "";
+
+        const equip = $$("#equipGroup input[type=checkbox]:checked")
+            .map(cb => cb.value);
+        const otherTxt = otherEquipTxt.value.split(",").map(s => s.trim()).filter(Boolean);
+        const equipment = Array.from(new Set(equip.concat(otherTxt)));
+
+        sessionConfig = { location, dateISO, focus, specific, equipment };
+        filteredExerciseOptionsHtml = generateFilteredExerciseOptions(sessionConfig);
+
+        let focusText = mainFocusValue || "n/a";
+        if (specific) { focusText += ` (${escapeHtml(specific)})`; }
+
+        sessionSummary.innerHTML = [
+            `Date: <code>${formatDateShort(new Date(sessionConfig.dateISO))}</code>`,
+            `Where: <code>${escapeHtml(sessionConfig.location)}</code>`,
+            `Focus: <code>${focusText}</code>`,
+            `Equipment: <code>${sessionConfig.equipment.join(", ") || "n/a"}</code>`
+        ].join(" • ");
+        
+        if(workoutBody.children.length > 0) {
+            const currentEx = collectWorkout();
+            workoutBody.innerHTML = "";
+            currentEx.forEach(ex => addExerciseRow(ex));
+            if(currentEx.length === 0) addExerciseRow();
+        }
+
+        selectTab("#builder");
+    }
+
+    function getSelectedWhen() {
+        const r = $('input[name="when"]:checked');
+        return r ? r.value : "now";
+    }
+
+    function generateFilteredExerciseOptions(cfg) {
+        const chosenFocus = new Set(cfg.focus);
+        const chosenEquip = new Set(cfg.equipment);
+        const allowAllEquip = chosenEquip.size === 0;
+
+        const list = EXERCISE_LIBRARY.filter(item => {
+            const matchesFocus = chosenFocus.size === 0 || item.f.some(t => chosenFocus.has(t));
+            const matchesEquip = allowAllEquip || item.e.some(t => chosenEquip.has(t) || chosenEquip.has("Other"));
+            return matchesFocus && matchesEquip;
+        });
+
+        const names = Array.from(new Set(list.map(x => x.n)));
+        names.sort((a,b) => a.localeCompare(b));
+
+        let html = '<option value="">Select Exercise</option>';
+        if (names.length === 0) {
+             html = '<option value="" disabled>No exercises match your filters (Change Focus/Equipment)</option>';
+        } else {
+             names.forEach(name => {
+                html += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+            });
+        }
+        return html;
+    }
+
+
+    // ---- Builder step ----
+    function initBuilder() {
+        $("#addExercise").addEventListener("click", () => addExerciseRow());
+        $("#backToSetup").addEventListener("click", () => selectTab("#setup"));
+        $("#computeTotals").addEventListener("click", computeTotals);
+        $("#finishSave").addEventListener("click", finishAndSave);
+    }
+
+    function addExerciseRow(initial = null) {
+        if (!sessionConfig) {
+            showCustomDialog("Please complete the Setup step first.");
+            selectTab("#setup");
+            return;
+        }
+
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-slate-700 hover:bg-slate-800 transition duration-150";
+        tr.innerHTML = `
+            <td class="p-2">
+                <select class="ex-select w-full" required>
+                </select>
+            </td>
+            <td class="p-2">
+                <input class="ex-sets w-full" type="number" min="1" max="20" value="${initial?.setsCount || 3}">
+            </td>
+            <td class="p-2">
+                <div class="sets-pairs"></div>
+            </td>
+            <td class="p-2 hidden sm:table-cell">
+                <input class="ex-notes w-full" type="text" placeholder="Notes (optional)" value="${initial?.notes || ""}">
+            </td>
+            <td class="p-2">
+                <button class="remove-row text-red-400 hover:text-red-300" title="Remove row">✖</button>
+            </td>
+        `;
+
+        const selectEl = $(".ex-select", tr);
+        const setsInput = $(".ex-sets", tr);
+        const pairsWrap = $(".sets-pairs", tr);
+        const removeBtn = $(".remove-row", tr);
+
+        selectEl.innerHTML = filteredExerciseOptionsHtml;
+        if (initial?.name) {
+            selectEl.value = initial.name;
+        }
+
+        renderSetPairs(pairsWrap, +setsInput.value, initial?.sets || []);
+
+        setsInput.addEventListener("input", () => {
+            const val = clamp(parseInt(setsInput.value || "0", 10), 1, 20);
+            setsInput.value = val;
+            renderSetPairs(pairsWrap, val);
+            debounceComputeTotals();
+        });
+
+        selectEl.addEventListener("change", () => debounceComputeTotals());
+        pairsWrap.addEventListener("input", () => debounceComputeTotals());
+
+        removeBtn.addEventListener("click", () => {
+            tr.remove();
+            computeTotals();
+        });
+
+        workoutBody.appendChild(tr);
+        computeTotals();
+        return tr;
+    }
+
+    function renderSetPairs(container, count, existing = []) {
+        container.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+            const pair = document.createElement("div");
+            pair.className = "pair";
+            const repVal = existing[i]?.reps ?? "";
+            const wtVal = existing[i]?.weight ?? "";
+            pair.innerHTML = `
+                <input type="number" class="reps" min="1" placeholder="Reps" value="${repVal}" title="Reps for Set ${i+1}">
+                <input type="number" class="weight" min="0" step="0.5" placeholder="Weight" value="${wtVal}" title="Weight for Set ${i+1}">
+            `;
+            container.appendChild(pair);
+        }
+    }
+
+    let computeDebTimer = null;
+    function debounceComputeTotals() {
+        clearTimeout(computeDebTimer);
+        computeDebTimer = setTimeout(computeTotals, 150);
+    }
+
+    function computeTotals() {
+        const rows = $$("#workoutBody tr");
+        let totalSets = 0, totalReps = 0, totalVolume = 0;
+
+        rows.forEach(tr => {
+            const sets = +$(".ex-sets", tr).value || 0;
+            const name = $(".ex-select", tr).value;
+            if (!name) return;
+
+            totalSets += sets;
+            $$(".pair", tr).forEach(p => {
+                const reps = +$(".reps", p).value || 0;
+                const weight = +$(".weight", p).value || 0;
+                totalReps += reps;
+                totalVolume += reps * weight;
+            });
+        });
+
+        totalSetsEl.textContent = totalSets;
+        totalRepsEl.textContent = totalReps;
+        totalVolumeEl.textContent = round1(totalVolume);
+    }
+
+    function collectWorkout() {
+        const entries = [];
+        $$("#workoutBody tr").forEach(tr => {
+            const name = $(".ex-select", tr).value;
+            if (!name) return;
+            const notes = $(".ex-notes", tr).value.trim();
+            const sets = $$(".pair", tr).map(p => ({
+                reps: +$(".reps", p).value || 0,
+                weight: +$(".weight", p).value || 0
+            }));
+            
+            if (sets.length > 0) {
+                 entries.push({ name, notes, sets, setsCount: sets.length });
+            }
+        });
+        return entries;
+    }
+
+    async function finishAndSave() {
+        if (!isAuthReady) {
+            showCustomDialog("Cannot save: Application is in local mode. Please refresh when your network is stable.");
+            return;
+        }
+
+        const entries = collectWorkout();
+        if (!entries.length) {
+            showCustomDialog("Add at least one exercise with some sets and a selection from the drop-down.");
+            return;
+        }
+
+        const per = entries.map(e => {
+            const reps = e.sets.reduce((a, s) => a + (s.reps || 0), 0);
+            const volume = e.sets.reduce((a, s) => a + (s.reps * s.weight || 0), 0);
+            return { name: e.name, sets: e.sets.length, reps, volume };
+        });
+
+        const totals = {
+            sets: per.reduce((a, x) => a + x.sets, 0),
+            reps: per.reduce((a, x) => a + x.reps, 0),
+            volume: round1(per.reduce((a, x) => a + x.volume, 0))
+        };
+
+        const record = {
+            dateISO: sessionConfig.dateISO,
+            location: sessionConfig.location,
+            focus: sessionConfig.focus,
+            specific: sessionConfig.specific,
+            equipment: sessionConfig.equipment,
+            entries,
+            totals,
+            createdAt: new Date().toISOString()
+        };
+        
+        try {
+            const workoutsRef = getUserWorkoutsCollectionRef();
+            await addDoc(workoutsRef, record);
+            console.log("Workout saved successfully to Firestore.");
+
+            // Clear builder UI and reset
+            workoutBody.innerHTML = "";
+            addExerciseRow();
+            computeTotals();
+
+            populateSummaryDialog({ ...record, totals }, per);
+            if (typeof summaryDialog.showModal === "function") {
+                summaryDialog.showModal();
+            }
+        } catch (error) {
+            console.error("Error saving workout to Firestore:", error);
+            showCustomDialog(`Failed to save workout. Please try again. Error: ${error.message}`);
+        }
+    }
+
+    // ---- History & Charts ----
+    function initHistory() {
+        historyExerciseSel.addEventListener("change", renderChartAndTable);
+        historyMetricSel.addEventListener("change", renderChartAndTable);
+        clearHistoryBtn.addEventListener("click", clearAllHistory);
+    }
+
+    function clearAllHistory() {
+        if (!isAuthReady) {
+            showCustomDialog("Cannot clear history: Application is in local mode.");
+            return;
+        }
+
+        const dialog = document.createElement('dialog');
+        dialog.className = 'card p-6';
+        dialog.innerHTML = `
+            <h3 class="text-xl font-bold mb-4">Confirm Clear History</h3>
+            <p class="mb-6">Are you sure you want to clear ALL saved workouts? This cannot be undone.</p>
+            <div class="flex justify-end gap-4">
+                <form method="dialog"><button class="px-4 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg">Cancel</button></form>
+                <button id="confirmClear" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">Clear All</button>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+        dialog.showModal();
+
+        $("#confirmClear", dialog).addEventListener('click', async () => {
+            dialog.close();
+            try {
+                const workoutsRef = getUserWorkoutsCollectionRef();
+                const q = query(workoutsRef);
+                const snapshot = await getDocs(q);
+                
+                if (snapshot.empty) return;
+
+                const batch = writeBatch(firestoreDb);
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                console.log("All workout documents deleted successfully.");
+            } catch (error) {
+                console.error("Error clearing history:", error);
+                showCustomDialog(`Failed to clear history: ${error.message}`);
+            }
+        });
+    }
+
+    function renderHistoryUI() {
+        const history = loggedWorkouts;
+        const allExercises = new Set();
+        history.forEach(r => r.entries.forEach(e => allExercises.add(e.name)));
+
+        const prev = historyExerciseSel.value;
+        historyExerciseSel.innerHTML = `<option value="__ALL__">All exercises (Total Volume)</option>`;
+        Array.from(allExercises).sort((a,b)=>a.localeCompare(b)).forEach(name => {
+            const opt = document.createElement("option");
+            opt.value = name; opt.textContent = name;
+            historyExerciseSel.appendChild(opt);
+        });
+        const canRestore = Array.from(historyExerciseSel.options).some(o => o.value === prev);
+        historyExerciseSel.value = canRestore ? prev : "__ALL__";
+
+        renderChartAndTable();
+    }
+
+    function renderChartAndTable() {
+        const history = loggedWorkouts;
+        const selExercise = historyExerciseSel.value;
+        const metric = historyMetricSel.value;
+
+        const labels = [];
+        const values = [];
+        const tableRows = [];
+
+        // Reverse for the chart (oldest first)
+        const sortedHistory = history.slice().reverse();
+
+        if (selExercise === "__ALL__") {
+            sortedHistory.forEach(rec => {
+                labels.push(formatDateShort(new Date(rec.dateISO)));
+                values.push(rec.totals.volume || 0);
+            });
+            history.forEach(rec => { // Original order (newest first) for table
+                 tableRows.push({
+                    date: rec.dateISO,
+                    location: rec.location,
+                    exercise: "(all)",
+                    sets: rec.totals.sets,
+                    reps: rec.totals.reps,
+                    volume: rec.totals.volume
+                });
+            });
+
+        } else {
+            sortedHistory.forEach(rec => {
+                const entry = rec.entries.find(e => e.name === selExercise);
+                if (!entry) return;
+                const best = entry.sets.reduce((m,s)=>Math.max(m, s.weight||0), 0);
+                const volume = entry.sets.reduce((a,s)=>a+(s.reps*s.weight||0),0);
+                labels.push(formatDateShort(new Date(rec.dateISO)));
+                values.push(metric === "best" ? best : round1(volume));
+            });
+            history.forEach(rec => { // Original order (newest first) for table
+                const entry = rec.entries.find(e => e.name === selExercise);
+                if (!entry) return;
+                const reps = entry.sets.reduce((a,s)=>a+(s.reps||0),0);
+                 tableRows.push({
+                    date: rec.dateISO,
+                    location: rec.location,
+                    exercise: entry.name,
+                    sets: entry.sets.length,
+                    reps,
+                    volume: entry.sets.reduce((a,s)=>a+(s.reps*s.weight||0),0)
+                });
+            });
+        }
+
+        drawChart(labels, values, selExercise, metric);
+
+        historyTableBody.innerHTML = "";
+        if (tableRows.length === 0) {
+            historyTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-500">No workouts saved yet or no data matches the current filter.</td></tr>`;
+        } else {
+            tableRows.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-slate-700";
+                tr.innerHTML = `
+                    <td class="p-2">${formatDateLong(new Date(row.date))}</td>
+                    <td class="p-2">${escapeHtml(row.location)}</td>
+                    <td class="p-2">${escapeHtml(row.exercise)}</td>
+                    <td class="p-2">${row.sets}</td>
+                    <td class="p-2">${row.reps}</td>
+                    <td class="p-2">${round1(row.volume)}</td>
+                `;
+                historyTableBody.appendChild(tr);
+            });
+        }
+    }
+
+    function drawChart(labels, values, selExercise, metric) {
+        const title = selExercise === "__ALL__"
+            ? "Total Volume by Workout"
+            : `${selExercise} • ${metric === "best" ? "Best Weight (Proxy)" : "Total Volume"}`;
+
+        const dsColor = metric === "best" ? "#60a5fa" : "#6ee7b7";
+
+        if (chart) { chart.destroy(); }
+        chart = new Chart(chartCanvas.getContext("2d"), {
+            type: "line",
+            data: {
+                labels,
+                datasets: [{
+                    label: title,
+                    data: values,
+                    borderColor: dsColor,
+                    backgroundColor: dsColor + "33",
+                    tension: 0.25,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: "#9aa0b4" }, grid: { color: "#283047" } },
+                    y: { ticks: { color: "#9aa0b4" }, grid: { color: "#283047" } }
+                },
+                plugins: {
+                    legend: { labels: { color: "#f4f6ff" } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label.split(" • ")[0]}: ${round1(ctx.parsed.y)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function populateSummaryDialog(record, per) {
+        let focusText = record.focus[0] || "n/a";
+        if (record.specific) { focusText += ` (${escapeHtml(record.specific)})`; }
+        
+        const summaryMeta = $("#summaryMeta");
+        const summaryTableBody = $("#summaryTable tbody");
+        const sumSets = $("#sumSets");
+        const sumReps = $("#sumReps");
+        const sumVolume = $("#sumVolume");
+
+        summaryMeta.textContent = `${formatDateLong(new Date(record.dateISO))} • ${escapeHtml(record.location)} • Focus: ${focusText}`;
+        summaryTableBody.innerHTML = "";
+        per.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="p-2">${escapeHtml(row.name)}</td>
+                <td class="p-2">${row.sets}</td>
+                <td class="p-2">${row.reps}</td>
+                <td class="p-2">${round1(row.volume)}</td>
+            `;
+            summaryTableBody.appendChild(tr);
+        });
+        sumSets.textContent = record.totals.sets;
+        sumReps.textContent = record.totals.reps;
+        sumVolume.textContent = record.totals.volume;
+    }
+
+
+    // ---- Utils ----
+    function formatDateShort(d) {
+        const opts = { day: "2-digit", month: "short", year: "numeric" };
+        return d.toLocaleDateString(undefined, opts);
+    }
+    function formatDateLong(d) {
+        const opts = { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" };
+        return d.toLocaleDateString(undefined, opts);
+    }
+    function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+    function round1(n){ return Math.round(n * 10) / 10; }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    function showCustomDialog(message) {
+        const customAlert = document.createElement('dialog');
+        customAlert.className = 'card p-6';
+        customAlert.innerHTML = `<p class="p-4 text-center">${escapeHtml(message)}</p><form method="dialog"><button class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded mt-4 mx-auto block">OK</button></form>`;
+        document.body.appendChild(customAlert);
+        customAlert.showModal();
+    }
+
+</script>
+</body>
+</html>
+
