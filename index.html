@@ -3,395 +3,977 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Fitness Tracker</title>
+    <title>Advanced Fitness Dashboard</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configure Tailwind to use Inter font and simple theme -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'primary': '#059669', // Emerald 600
-                        'primary-dark': '#047857', // Emerald 700
-                        'secondary': '#f97316', // Orange 600
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Configure Tailwind for the Inter font -->
     <style>
-        /* Custom styles for mobile-first design */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Gray 100 */
+            background-color: #f0f4f8;
+            transition: all 0.3s ease;
         }
-        .app-container {
-            max-width: 420px; /* Max width for mobile aesthetic */
-            min-height: 100vh;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        /* Custom scrollbar for better aesthetics */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
         }
-        .action-button {
-            transition: all 0.2s;
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #9ca3af;
+            border-radius: 3px;
         }
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        .custom-scroll::-webkit-scrollbar-track {
+            background-color: #e5e7eb;
+        }
+        .view-container {
+            min-height: calc(100vh - 4rem); /* Ensure full height on mobile */
         }
     </style>
 </head>
-<body class="flex justify-center">
-    <div id="app" class="app-container bg-white flex flex-col">
-        <!-- Header -->
-        <header class="bg-primary text-white p-4 shadow-lg sticky top-0 z-10">
-            <h1 class="text-2xl font-bold text-center">My Progress Hub</h1>
-        </header>
+<body class="p-4 md:p-8">
 
-        <!-- Main Content View -->
-        <main id="content-view" class="flex-grow p-4 overflow-y-auto">
-            <!-- Content will be rendered here by JavaScript -->
-        </main>
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <!-- Dynamic Message Box (for alerts/confirmations) -->
+        <div id="message-box" class="fixed top-4 right-4 z-50 p-4 bg-green-100 text-green-800 border-l-4 border-green-500 rounded-lg shadow-xl font-medium hidden transition-opacity duration-300 ease-in-out opacity-0">
+            <p id="message-text"></p>
+        </div>
+        
+        <!-- --- 1. DASHBOARD VIEW (MAIN) --- -->
+        <div id="view-dashboard" class="view-container space-y-8">
+             <header class="bg-white p-6 rounded-2xl shadow-xl transition-all hover:shadow-2xl">
+                <h1 class="text-4xl font-black text-gray-900 mb-2">Fitness Dashboard</h1>
+                <div class="md:flex md:space-x-8">
+                    <p class="text-lg text-gray-600">
+                        <span class="font-bold text-indigo-600">User:</span> <span id="user-name">Alex Johnson</span>
+                    </p>
+                    <p class="text-lg text-gray-600">
+                        <span class="font-bold text-indigo-600">Goal:</span> <span id="user-goal">Build Strength & Endurance</span>
+                    </p>
+                </div>
+            </header>
 
-        <!-- Action Buttons Footer -->
-        <footer class="bg-white border-t border-gray-200 p-3 shadow-2xl sticky bottom-0 z-10">
-            <div id="action-buttons" class="flex justify-around">
-                <!-- Buttons are rendered by JS -->
+            <!-- Action Buttons / Navigation -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                
+                <button onclick="showView('gym-config')" class="bg-indigo-500 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg hover:bg-indigo-600 transition duration-150 transform hover:scale-[1.02]">
+                    🏋️ Configure Gym
+                    <p id="current-gym-status" class="mt-1 text-sm opacity-80 italic"></p>
+                </button>
+                
+                <button onclick="showView('plan-workout')" class="bg-green-500 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg hover:bg-green-600 transition duration-150 transform hover:scale-[1.02]">
+                    💪 Plan Workout
+                </button>
+                
+                <button onclick="showView('meal-log')" class="bg-yellow-500 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg hover:bg-yellow-600 transition duration-150 transform hover:scale-[1.02]">
+                    🥗 Log Meal
+                </button>
+                
+                <button id="view-history-btn" class="bg-gray-500 text-white font-bold py-4 px-6 rounded-xl text-xl shadow-lg hover:bg-gray-600 transition duration-150 transform hover:scale-[1.02]">
+                    📊 View History
+                </button>
             </div>
-        </footer>
+        </div>
+
+        <!-- --- 2. GYM CONFIGURATION VIEW --- -->
+        <div id="view-gym-config" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h2 class="text-3xl font-bold text-indigo-700">⚙️ Gym Setup Configuration</h2>
+                <button onclick="showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    &larr; Return to Dashboard
+                </button>
+            </div>
+            
+            <form id="gym-setup-form" class="space-y-6">
+                <div class="space-y-2">
+                    <label for="gym-name" class="block text-sm font-medium text-gray-700">Gym Profile Name</label>
+                    <input type="text" id="gym-name" value="My Home Gym" required
+                           class="w-full p-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Weights -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2">Weights</h3>
+                        <div id="weights-options" class="space-y-1 text-sm"></div>
+                    </div>
+                    <!-- Cardio -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2">Cardio</h3>
+                        <div id="cardio-options" class="space-y-1 text-sm"></div>
+                    </div>
+                    <!-- Floor Space -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-2">Floor Space</h3>
+                        <div id="floor-options" class="space-y-1 text-sm"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition duration-150 shadow-lg">
+                    Save Gym Equipment
+                </button>
+            </form>
+        </div>
+        
+        <!-- --- 3. MEAL LOG VIEW --- -->
+        <div id="view-meal-log" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h2 class="text-3xl font-bold text-yellow-600">🥗 Log a Meal</h2>
+                <button onclick="showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    &larr; Return to Dashboard
+                </button>
+            </div>
+            
+            <form id="add-meal-form" class="space-y-4">
+                <input type="text" placeholder="Meal Name (e.g., Chicken & Rice)" required
+                       class="w-full p-3 border border-gray-300 rounded-xl focus:ring-yellow-500 focus:border-yellow-500">
+                <textarea placeholder="Nutritional Details / Ingredients" rows="4"
+                          class="w-full p-3 border border-gray-300 rounded-xl focus:ring-yellow-500 focus:border-yellow-500"></textarea>
+                <button type="submit" class="w-full py-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-150 shadow-lg">
+                    Log Meal
+                </button>
+            </form>
+        </div>
+        
+        <!-- --- 4. WORKOUT PLANNING VIEW --- -->
+        <div id="view-plan-workout" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h2 class="text-3xl font-bold text-green-600">💪 Select Training Focus</h2>
+                <div class="space-x-2">
+                    <button onclick="showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+                        &larr; Return to Dashboard
+                    </button>
+                </div>
+            </div>
+            
+            <form id="workout-planning-form" class="space-y-4">
+                <div>
+                    <label for="workout-focus" class="block text-sm font-medium text-gray-700">What are you training?</label>
+                    <select id="workout-focus"
+                            class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-green-500 focus:border-green-500 transition duration-150">
+                        <!-- Options added by JS -->
+                    </select>
+                </div>
+
+                <!-- Checkboxes: Specific Muscles (Hidden by default) -->
+                <div id="muscle-checkboxes" class="hidden">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Select Target Muscles:</p>
+                    <div id="muscle-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition duration-150 shadow-lg">
+                    Start Workout &rarr;
+                </button>
+            </form>
+        </div>
+
+        <!-- --- 5. ACTIVE WORKOUT TRACKING VIEW --- -->
+        <div id="view-track-workout" class="view-container p-6 bg-white rounded-2xl shadow-2xl border-2 border-green-500 space-y-6 hidden">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h2 class="text-3xl font-extrabold text-green-700">Active Workout: <span id="active-workout-title"></span></h2>
+                <div class="space-x-2">
+                    <button id="open-equipment-modal-btn" class="text-sm py-2 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150">
+                        🛠️ Equipment
+                    </button>
+                    <button onclick="saveWorkout(); showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+                        &larr; Finish & Dashboard
+                    </button>
+                </div>
+            </div>
+            
+            <form id="add-exercise-form" class="space-y-4 p-4 bg-green-50 rounded-xl">
+                <h3 class="text-xl font-bold text-green-800">Add Exercise</h3>
+                
+                <!-- Exercise Dropdown -->
+                <div>
+                    <label for="exercise-select" class="block text-sm font-medium text-gray-700">Choose Exercise (Filtered by Equipment & Focus)</label>
+                    <select id="exercise-select" required
+                            class="w-full p-3 border border-gray-300 rounded-xl bg-white focus:ring-green-500 focus:border-green-500 transition duration-150">
+                        <option value="">-- Select an Exercise --</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Sets Input -->
+                    <div>
+                        <label for="sets-input" class="block text-sm font-medium text-gray-700">Sets</label>
+                        <input type="number" id="sets-input" value="3" min="1" max="10" required
+                               class="w-full p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <!-- Reps Input (Initial/Target) -->
+                    <div>
+                        <label for="target-reps-input" class="block text-sm font-medium text-gray-700">Target Reps</label>
+                        <input type="number" id="target-reps-input" value="10" min="1" max="50" required
+                               class="w-full p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500">
+                    </div>
+                </div>
+
+                <button type="button" id="start-sets-btn" class="w-full py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-150 shadow-md">
+                    Configure Sets
+                </button>
+            </form>
+
+            <!-- Dynamic Sets and Reps Tracking -->
+            <div id="sets-tracking-container" class="space-y-6">
+                <!-- Sets will be rendered here -->
+            </div>
+            
+            <!-- Summary of Logged Exercises -->
+            <div id="logged-exercises-summary" class="mt-8 space-y-4">
+                <h3 class="text-xl font-bold text-green-800 border-t pt-4">Logged Exercises</h3>
+                <!-- List of finished exercises in the current session -->
+            </div>
+            
+            <button id="finish-workout-btn" class="mt-8 w-full py-4 bg-indigo-600 text-white font-extrabold rounded-xl hover:bg-indigo-700 transition duration-150 shadow-2xl">
+                Finish & Save Workout
+            </button>
+        </div>
+
+        <!-- --- MODALS --- -->
+
+        <!-- Exercise History Modal -->
+        <div id="history-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-indigo-700">Exercise History (Best Lifts)</h2>
+                    <button id="close-history-btn" class="text-gray-500 hover:text-gray-700 text-3xl font-light leading-none">&times;</button>
+                </div>
+                <div id="history-content" class="p-6 overflow-y-auto custom-scroll space-y-4 flex-grow">
+                    <p class="text-gray-500 italic text-center">No history yet. Log a workout to see your best lifts!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipment Adjustment Modal (Mid-Workout) -->
+        <div id="equipment-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="p-6 border-b flex justify-between items-center bg-blue-100">
+                    <h2 class="text-2xl font-bold text-blue-700">Adjust Available Equipment</h2>
+                    <button id="close-equipment-modal-btn" class="text-gray-500 hover:text-gray-700 text-3xl font-light leading-none">&times;</button>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scroll flex-grow">
+                    <form id="active-gym-setup-form" class="space-y-6">
+                        <p class="text-gray-600 mb-4">Temporarily adjust what equipment is available right now. This will update your exercise selection.</p>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <!-- Weights -->
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">Weights</h3>
+                                <div id="active-weights-options" class="space-y-1 text-sm"></div>
+                            </div>
+                            <!-- Cardio -->
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">Cardio</h3>
+                                <div id="active-cardio-options" class="space-y-1 text-sm"></div>
+                            </div>
+                            <!-- Floor Space -->
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">Floor Space</h3>
+                                <div id="active-floor-options" class="space-y-1 text-sm"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-150 shadow-lg">
+                            Apply Changes & Close
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Firebase Imports and Setup -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // --- GLOBAL STATE AND DATA ---
+        let state = {
+            currentView: 'dashboard',
+            userName: "Alex Johnson",
+            goal: "Build Strength & Endurance",
+            gymName: "My Home Gym",
+            gymSetup: { weights: ["dumbbell", "bench", "barbell"], cardio: ["treadmill"], floor: ["TRX"] }, // Initialize with some equipment
+            exerciseHistory: {},
+            currentWorkout: null,
+            workoutLog: [],
+            previousView: 'dashboard', // For "Back" button functionality
+        };
 
-        setLogLevel('Debug');
+        const EQUIPMENT_MAP = {
+            weights: ["bench", "barbell", "dumbbell", "pinstack machines", "weighted machines", "cables"],
+            cardio: ["treadmill", "bike", "rower", "cross trainer", "assault bike", "ski erg", "step machine"],
+            floor: ["TRX", "Ropes", "sandbag", "medicine ball", "slam ball"],
+        };
 
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const FOCUS_OPTIONS = [
+            "Full Body", "Upper Body", "Lower Body", "Press", "Pull", "Squat", "Hinge", "Specific Muscles"
+        ];
+        
+        const MUSCLE_GROUPS = [
+            "biceps", "triceps", "shoulders", "quads", "hamstrings", "abs", "chest", "lats", "upper back", "glutes", "calves"
+        ];
+        
+        // --- EXPANDED EXERCISE LIBRARY ---
+        const EXERCISE_LIBRARY = [
+            // --- FULL BODY FOCUS ---
+            { name: "Barbell Clean & Press", equipment: ["barbell"], focus: ["Full Body", "Press", "shoulders", "quads", "glutes"] },
+            { name: "Dumbbell Thrusters", equipment: ["dumbbell"], focus: ["Full Body", "Squat", "Press", "shoulders", "quads"] },
+            { name: "Sandbag Get-Ups", equipment: ["sandbag", "floor"], focus: ["Full Body", "abs", "shoulders"] },
+            { name: "Medicine Ball Slams", equipment: ["medicine ball", "floor", "slam ball"], focus: ["Full Body", "abs"] },
 
-        let db = null;
-        let auth = null;
-        let userId = null;
+            // --- UPPER BODY / PRESS FOCUS ---
+            { name: "Barbell Bench Press", equipment: ["bench", "barbell"], focus: ["Upper Body", "Press", "chest", "triceps", "shoulders"] },
+            { name: "Dumbbell Overhead Press", equipment: ["dumbbell"], focus: ["Upper Body", "Press", "shoulders", "triceps"] },
+            { name: "Machine Chest Press", equipment: ["weighted machines", "pinstack machines"], focus: ["Upper Body", "Press", "chest", "triceps"] },
+            { name: "Cable Crossover (High)", equipment: ["cables"], focus: ["Upper Body", "Press", "chest"] },
+            { name: "Dumbbell Incline Press", equipment: ["bench", "dumbbell"], focus: ["Upper Body", "Press", "chest", "shoulders"] },
+            { name: "Pinstack Shoulder Press", equipment: ["pinstack machines"], focus: ["Press", "shoulders", "triceps"] },
 
-        // Initialize Firebase
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
+            // --- UPPER BODY / PULL FOCUS ---
+            { name: "Barbell Bent-Over Row", equipment: ["barbell"], focus: ["Upper Body", "Pull", "lats", "upper back", "biceps"] },
+            { name: "Dumbbell Single-Arm Row", equipment: ["dumbbell", "bench"], focus: ["Upper Body", "Pull", "lats", "upper back"] },
+            { name: "Cable Face Pulls", equipment: ["cables"], focus: ["Upper Body", "Pull", "upper back", "shoulders"] },
+            { name: "Lat Pulldown (Machine)", equipment: ["pinstack machines"], focus: ["Upper Body", "Pull", "lats", "biceps"] },
+            { name: "TRX Inverted Row", equipment: ["TRX", "floor"], focus: ["Upper Body", "Pull", "upper back", "biceps"] },
+            { name: "Seated Cable Row", equipment: ["cables"], focus: ["Pull", "upper back", "lats", "biceps"] },
 
-            // Authentication
-            const setupAuth = async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase Auth failed:", error);
-                }
-            };
+            // --- LOWER BODY / SQUAT FOCUS ---
+            { name: "Barbell Back Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes", "hamstrings", "calves"] },
+            { name: "Dumbbell Goblet Squat", equipment: ["dumbbell", "floor"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+            { name: "Leg Extension (Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Squat", "quads"] },
+            { name: "Leg Press (Machine)", equipment: ["weighted machines"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+            { name: "Dumbbell Bulgarian Split Squat", equipment: ["dumbbell", "bench"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    console.log("User authenticated:", userId);
-                    // Start fetching data or rendering initial view after auth
-                    initApp();
-                } else {
-                    userId = null;
-                    console.log("User signed out or failed to authenticate.");
-                    initApp(); // Fallback for rendering, although data fetching will fail without auth
-                }
+            // --- LOWER BODY / HINGE FOCUS ---
+            { name: "Barbell Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes", "Full Body", "lats"] },
+            { name: "Dumbbell Romanian Deadlift", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes"] },
+            { name: "Cable Pull-Through", equipment: ["cables"], focus: ["Lower Body", "Hinge", "glutes", "hamstrings"] },
+            { name: "Leg Curl (Machine)", equipment: ["pinstack machines", "weighted machines"], focus: ["Lower Body", "Hinge", "hamstrings"] },
+            { name: "Glute-Ham Raise (Floor)", equipment: ["floor"], focus: ["Hinge", "hamstrings", "glutes"] },
+
+            // --- SPECIFIC MUSCLES ---
+            { name: "Dumbbell Hammer Curl", equipment: ["dumbbell"], focus: ["biceps"] },
+            { name: "Barbell Bicep Curl", equipment: ["barbell"], focus: ["biceps"] },
+            { name: "Cable Rope Tricep Pushdown", equipment: ["cables"], focus: ["triceps"] },
+            { name: "Dumbbell Skullcrushers", equipment: ["dumbbell", "bench"], focus: ["triceps"] },
+            { name: "Dumbbell Lateral Raise", equipment: ["dumbbell"], focus: ["shoulders"] },
+            { name: "Cable Rear Delt Fly", equipment: ["cables"], focus: ["shoulders", "upper back"] },
+            { name: "Machine Hip Abduction", equipment: ["weighted machines"], focus: ["glutes"] },
+            { name: "Hanging Leg Raise", equipment: ["floor"], focus: ["abs"] },
+            { name: "Weighted Machine Crunch", equipment: ["weighted machines"], focus: ["abs"] },
+            { name: "Dumbbell Calf Raise", equipment: ["dumbbell"], focus: ["calves"] },
+            { name: "Hyperextension (Floor)", equipment: ["floor"], focus: ["hamstrings", "glutes"] },
+
+            // --- CARDIO FOCUS ---
+            { name: "Treadmill 5K Run", equipment: ["treadmill"], focus: ["Cardio", "Full Body"] },
+            { name: "Rower 2000m Sprint", equipment: ["rower"], focus: ["Cardio", "Full Body"] },
+            { name: "Assault Bike Interval", equipment: ["assault bike"], focus: ["Cardio", "Full Body"] },
+            { name: "Cross Trainer Endurance", equipment: ["cross trainer"], focus: ["Cardio", "Full Body"] },
+            { name: "Ski Erg 10 Minute Challenge", equipment: ["ski erg"], focus: ["Cardio", "Full Body", "Upper Body", "Pull"] },
+            { name: "Step Machine Climb", equipment: ["step machine"], focus: ["Cardio", "Lower Body"] },
+        ];
+        // --- END EXERCISE LIBRARY ---
+
+
+        // --- DOM ELEMENTS (Global) ---
+        const views = ['dashboard', 'gym-config', 'meal-log', 'plan-workout', 'track-workout'];
+        const viewElements = views.reduce((acc, id) => {
+            acc[id] = document.getElementById(`view-${id}`);
+            return acc;
+        }, {});
+        
+        const gymSetupForm = document.getElementById('gym-setup-form');
+        const currentGymStatus = document.getElementById('current-gym-status');
+        
+        const workoutPlanningForm = document.getElementById('workout-planning-form');
+        const workoutFocusSelect = document.getElementById('workout-focus');
+        const muscleCheckboxesDiv = document.getElementById('muscle-checkboxes');
+        const muscleOptionsDiv = document.getElementById('muscle-options');
+        
+        const activeWorkoutTitle = document.getElementById('active-workout-title');
+        const exerciseSelect = document.getElementById('exercise-select');
+        const setsInput = document.getElementById('sets-input');
+        const targetRepsInput = document.getElementById('target-reps-input');
+        const setsTrackingContainer = document.getElementById('sets-tracking-container');
+        const loggedExercisesSummary = document.getElementById('logged-exercises-summary');
+        
+        const historyModal = document.getElementById('history-modal');
+        const historyContent = document.getElementById('history-content');
+        
+        const equipmentModal = document.getElementById('equipment-modal');
+        const activeGymSetupForm = document.getElementById('active-gym-setup-form');
+        
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+
+        // --- UTILITY & NAVIGATION FUNCTIONS ---
+        
+        /** Manages the visibility of the application views. */
+        function showView(viewName, updateHistory = true) {
+            // Guard clause if user tries to navigate away from an active, unsaved exercise
+            if (state.currentWorkout && state.currentWorkout.currentExercise && viewName !== 'track-workout') {
+                if (!confirmExit()) return;
+            }
+            
+            // Set the previous view only if not navigating between track/plan view
+            if (updateHistory && state.currentView !== viewName) {
+                state.previousView = state.currentView;
+            }
+
+            views.forEach(id => {
+                viewElements[id].classList.add('hidden');
+                viewElements[id].classList.remove('flex'); // Remove flex utility for consistency
             });
 
-            setupAuth();
-        } else {
-            console.warn("Firebase config not available. Running in local mode.");
-            initApp();
+            if (viewElements[viewName]) {
+                viewElements[viewName].classList.remove('hidden');
+                // Use block or flex depending on the view layout needs
+                viewElements[viewName].classList.add('block'); 
+                state.currentView = viewName;
+            }
+            
+            // Special setup needed when entering certain views
+            if (viewName === 'gym-config') {
+                renderGymSetupCheckboxes(document.getElementById('weights-options'), document.getElementById('cardio-options'), document.getElementById('floor-options'));
+                // Pre-populate values for the gym config name
+                document.getElementById('gym-name').value = state.gymName;
+            } else if (viewName === 'plan-workout') {
+                // Ensure exercises are rendered based on current focus
+                renderExerciseDropdown();
+            } else if (viewName === 'track-workout') {
+                // Pre-populate equipment modal with current state
+                renderActiveEquipmentModal();
+                updateLoggedExercisesSummary();
+            }
+
+            updateDashboardStatus();
         }
 
-        // --- Application State and Logic ---
-        let currentView = 'home';
-        let measurementsData = []; // State for measurements
+        /** Prompts user if they try to exit an active exercise without saving. */
+        function confirmExit() {
+             // Since alert/confirm are forbidden, we rely on the internal message box and state logic.
+             // For this application, we'll temporarily allow navigation and clear the exercise if not saved.
+             // In a real app, a modal confirmation would be required.
+             state.currentWorkout.currentExercise = null;
+             return true;
+        }
 
-        const VIEWS = {
-            'home': { name: 'Home', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
-            'workouts': { name: 'Workouts', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 17h8"/><path d="M8 13h8"/></svg>` },
-            'meal-plans': { name: 'Meal Plans', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>` },
-            'measurements': { name: 'Measurements', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M4 15V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M15 11l-3 3-3-3"/></svg>` }
-        };
+        /** Shows a temporary message in the custom box. */
+        function showMessage(message, type = 'success', duration = 3000) {
+            let bgColor, borderColor, textColor;
+            if (type === 'success') {
+                bgColor = 'bg-green-100';
+                borderColor = 'border-green-500';
+                textColor = 'text-green-800';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-100';
+                borderColor = 'border-red-500';
+                textColor = 'text-red-800';
+            } else if (type === 'info') {
+                bgColor = 'bg-blue-100';
+                borderColor = 'border-blue-500';
+                textColor = 'text-blue-800';
+            }
 
-        const BODY_PARTS = [
-            'Shoulders', 'Chest', 'Lats', 'Torso', 'Hips', 'Glutes',
-            'Biceps L & R', 'Triceps L & R', 'Upper Legs L & R', 'Calves L & R'
-        ];
+            messageBox.className = `fixed top-4 right-4 z-50 p-4 ${bgColor} ${textColor} border-l-4 ${borderColor} rounded-lg shadow-xl font-medium transition-opacity duration-300 ease-in-out opacity-0`;
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => messageBox.classList.add('opacity-100'), 10);
 
-        // Function to change the view
-        window.setView = (view) => {
-            currentView = view;
-            renderApp();
-        };
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                setTimeout(() => messageBox.classList.add('hidden'), 300);
+            }, duration);
+        }
 
-        // --- View Rendering Functions ---
+        /** Formats a number to 1 decimal place if it has a decimal, otherwise an integer. */
+        function formatWeight(w) {
+            return Number.isInteger(w) ? w : w.toFixed(1);
+        }
 
-        const renderHomeView = () => {
-            return `
-                <div class="space-y-6">
-                    <div class="bg-primary-dark text-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-xl font-semibold mb-2">Welcome Back!</h2>
-                        <p>Track your fitness journey. Navigate using the buttons below.</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-primary">
-                            <p class="font-medium text-lg">Workouts Log</p>
-                            <p class="text-gray-500 text-sm">Review your session history.</p>
+        /** Calculates volume (Sets * Reps * Weight) */
+        function calculateVolume(setsData) {
+            return setsData.reduce((total, set) => total + (set.reps * set.weight), 0);
+        }
+        
+        /** Updates the status text on the main dashboard */
+        function updateDashboardStatus() {
+             const totalEquipment = state.gymSetup.weights.length + state.gymSetup.cardio.length + state.gymSetup.floor.length;
+             currentGymStatus.textContent = `${state.gymName} | ${totalEquipment} items available.`;
+        }
+
+
+        // --- RENDER & LOGIC FUNCTIONS ---
+
+        /** Renders the Gym Setup Checkboxes for a given container */
+        function renderGymSetupCheckboxes(weightsContainer, cardioContainer, floorContainer, useActiveState = false) {
+            const currentSetup = useActiveState ? state.gymSetup : state.gymSetup; // Currently they refer to the same state
+            
+            const createCheckboxes = (container, category) => {
+                container.innerHTML = EQUIPMENT_MAP[category].map(item => {
+                    const id = (useActiveState ? 'active-' : '') + item.replace(/\s/g, '-');
+                    const checked = currentSetup[category].includes(item) ? 'checked' : '';
+                    return `
+                        <div class="flex items-center">
+                            <input id="${id}" name="${category}" type="checkbox" value="${item}" ${checked}
+                                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="${id}" class="ml-2 text-gray-600 capitalize">${item}</label>
                         </div>
-                        <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-secondary">
-                            <p class="font-medium text-lg">Meal Summary</p>
-                            <p class="text-gray-500 text-sm">Check your calorie intake.</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-blue-500">
-                            <p class="font-medium text-lg">Body Progress</p>
-                            <p class="text-gray-500 text-sm">View measurement changes.</p>
-                        </div>
-                    </div>
-                    
-                    ${userId ? `<p class="text-xs text-center text-gray-400 mt-4">User ID: ${userId}</p>` : ''}
+                    `;
+                }).join('');
+            };
+
+            createCheckboxes(weightsContainer, 'weights');
+            createCheckboxes(cardioContainer, 'cardio');
+            createCheckboxes(floorContainer, 'floor');
+        }
+
+        /** Renders the muscle selection checkboxes for Workout Planning */
+        function renderMuscleCheckboxes() {
+            muscleOptionsDiv.innerHTML = MUSCLE_GROUPS.map(muscle => `
+                <div class="flex items-center">
+                    <input id="muscle-${muscle}" type="checkbox" name="muscle" value="${muscle}"
+                           class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                    <label for="muscle-${muscle}" class="ml-2 text-gray-600 capitalize text-sm">${muscle}</label>
                 </div>
-            `;
-        };
+            `).join('');
+        }
 
-        const renderPlaceholderView = (title) => {
-            return `
-                <div class="p-6 bg-white rounded-xl shadow-lg text-center">
-                    <h2 class="text-2xl font-bold text-primary mb-4">${title}</h2>
-                    <p class="text-gray-600">This area is under development.</p>
-                    <p class="text-sm mt-2">You can implement your specific logic for ${title.toLowerCase()} tracking here, including Firestore integration using the available <code class="bg-gray-200 p-1 rounded">db</code> and <code class="bg-gray-200 p-1 rounded">userId</code> variables.</p>
-                </div>
-            `;
-        };
+        /** Renders the Workout Focus Dropdown */
+        function renderWorkoutFocus() {
+            workoutFocusSelect.innerHTML = FOCUS_OPTIONS.map(focus => `
+                <option value="${focus.toLowerCase().replace(/\s/g, '-')}">${focus}</option>
+            `).join('');
+            workoutFocusSelect.value = ''; // Default to nothing selected
+            workoutFocusSelect.insertAdjacentHTML('afterbegin', '<option value="" disabled selected>-- Choose Focus --</option>');
+        }
 
-        const renderMeasurementsView = () => {
-            const today = new Date().toISOString().split('T')[0];
+        /** Filters and renders available exercises based on gym and focus */
+        function renderExerciseDropdown() {
+            const selectedFocus = workoutFocusSelect.value;
+            const selectedMuscles = Array.from(document.querySelectorAll('#muscle-options input:checked')).map(cb => cb.value);
+            const availableEquipment = [...state.gymSetup.weights, ...state.gymSetup.cardio, ...state.gymSetup.floor];
 
-            return `
-                <div class="space-y-8">
-                    <h2 class="text-2xl font-bold text-primary border-b pb-2 mb-6">Body Measurements Log</h2>
+            let filteredExercises = EXERCISE_LIBRARY.filter(exercise => {
+                // Check if the exercise can be done with the available equipment
+                const equipmentMatch = exercise.equipment.some(item => availableEquipment.includes(item));
+                
+                // Check if the focus matches
+                let focusMatch = false;
+                const normalizedFocus = exercise.focus.map(f => f.toLowerCase().replace(/\s/g, '-'));
 
-                    <!-- Photo Log Section -->
-                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-500">
-                        <h3 class="text-xl font-semibold mb-3 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                            Progress Photos
-                        </h3>
-                        <input type="file" id="photo-upload" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark cursor-pointer">
-                        <p class="text-xs text-gray-500 mt-2">Select one or more photos to track visual progress.</p>
-                        <div id="photo-preview" class="grid grid-cols-2 gap-2 mt-4">
-                            <!-- Image previews will appear here -->
-                        </div>
-                    </div>
+                if (selectedFocus === 'specific-muscles' && selectedMuscles.length > 0) {
+                    focusMatch = selectedMuscles.some(muscle => normalizedFocus.includes(muscle));
+                } else if (selectedFocus) {
+                    focusMatch = normalizedFocus.includes(selectedFocus);
+                } else {
+                    focusMatch = true;
+                }
 
-                    <!-- Measurement Input Section -->
-                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-secondary">
-                        <h3 class="text-xl font-semibold mb-3 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M12 2H2v10l10 10 10-10L12 2zM7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
-                            Add New Measurements
-                        </h3>
-                        <form id="measurement-form" class="space-y-4">
-                            <div>
-                                <label for="date-input" class="block text-sm font-medium text-gray-700">Date</label>
-                                <input type="date" id="date-input" value="${today}" max="${today}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border">
-                            </div>
+                return equipmentMatch && focusMatch;
+            });
 
-                            <div>
-                                <label for="body-part-select" class="block text-sm font-medium text-gray-700">Body Part</label>
-                                <select id="body-part-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border bg-white">
-                                    <option value="">-- Select Measurement --</option>
-                                    ${BODY_PARTS.map(part => `<option value="${part}">${part}</option>`).join('')}
-                                </select>
-                            </div>
+            exerciseSelect.innerHTML = filteredExercises.map(ex => `<option value="${ex.name}">${ex.name}</option>`).join('');
+            exerciseSelect.insertAdjacentHTML('afterbegin', '<option value="" disabled selected>-- Select an Exercise --</option>');
+            
+            if (filteredExercises.length === 0 && selectedFocus) {
+                showMessage("No exercises match your current gym setup and focus! Try selecting different equipment or focus.", 'error', 5000);
+            }
+        }
 
-                            <div id="measurement-inputs" class="space-y-3 p-3 bg-gray-50 rounded-lg">
-                                <!-- Dynamic inputs will be added here -->
-                                <p class="text-sm text-gray-500 italic">Select a body part above to enter the size (e.g., in inches or cm).</p>
-                            </div>
+        /** Renders the interactive sets/reps/weight input fields */
+        function renderSetsTracking() {
+            const exerciseName = exerciseSelect.value;
+            const numSets = parseInt(setsInput.value);
+            const targetReps = parseInt(targetRepsInput.value);
 
-                            <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition duration-150">
-                                Save Measurement
-                            </button>
-                        </form>
-                    </div>
+            if (!exerciseName || isNaN(numSets) || isNaN(targetReps)) {
+                showMessage("Please select an exercise and enter valid sets/reps.", 'error');
+                return;
+            }
 
-                    <!-- Measurement History (Simple Log) -->
-                    <div class="bg-white p-5 rounded-xl shadow-md">
-                        <h3 class="text-xl font-semibold mb-3">Measurement History</h3>
-                        <div id="history-log" class="space-y-2">
-                            ${measurementsData.length === 0 ? '<p class="text-gray-500 italic">No measurements logged yet.</p>' : measurementsData.map(log => `
-                                <div class="p-3 bg-gray-100 rounded-lg border-l-4 border-primary-dark">
-                                    <p class="font-medium text-sm">${log.date} - ${log.part}</p>
-                                    ${Object.keys(log.values).map(key => `<span class="inline-block text-xs mr-3">${key}: <span class="font-bold">${log.values[key]}</span></span>`).join('')}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
+            // Initialize the current exercise data structure
+            state.currentWorkout.currentExercise = {
+                name: exerciseName,
+                setsData: Array.from({ length: numSets }, (_, i) => ({
+                    set: i + 1,
+                    reps: targetReps,
+                    weight: 0.0 // Start at 0.0
+                }))
+            };
+            
+            // Get best weight history for display
+            const bestWeight = state.exerciseHistory[exerciseName]?.bestWeight || 0;
 
-        // --- Core Application Loop ---
-
-        const renderActionButtons = () => {
-            const container = document.getElementById('action-buttons');
-            container.innerHTML = Object.keys(VIEWS).map(key => {
-                const view = VIEWS[key];
-                const isActive = key === currentView;
-                const baseClasses = "flex flex-col items-center justify-center p-2 rounded-xl action-button text-sm font-medium transition duration-200";
-                const activeClasses = "text-primary bg-primary/10 shadow-md";
-                const inactiveClasses = "text-gray-500 hover:text-primary hover:bg-gray-100";
-
+            setsTrackingContainer.innerHTML = state.currentWorkout.currentExercise.setsData.map((set, index) => {
+                const setNumber = index + 1;
                 return `
-                    <button onclick="setView('${key}')" class="${baseClasses} ${isActive ? activeClasses : inactiveClasses}">
-                        ${view.icon}
-                        <span class="mt-1">${view.name}</span>
-                    </button>
+                    <div class="set-row p-4 border border-gray-200 rounded-xl bg-gray-50 grid grid-cols-1 md:grid-cols-4 gap-4 items-center" data-set-index="${index}">
+                        <h4 class="font-bold text-lg text-green-700">Set ${setNumber}</h4>
+                        
+                        <!-- Reps Control -->
+                        <div class="flex items-center space-x-2">
+                            <label class="font-medium text-gray-700 w-16">Reps:</label>
+                            <button type="button" class="rep-change bg-gray-300 hover:bg-gray-400 p-2 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-delta="-1" data-field="reps">-</button>
+                            <input type="number" value="${set.reps}" min="1" class="set-input-field w-12 text-center border-b-2 border-gray-400" data-field="reps">
+                            <button type="button" class="rep-change bg-gray-300 hover:bg-gray-400 p-2 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-delta="1" data-field="reps">+</button>
+                        </div>
+
+                        <!-- Weight Control -->
+                        <div class="flex items-center space-x-2">
+                            <label class="font-medium text-gray-700 w-16">Weight (kg):</label>
+                            <button type="button" class="rep-change bg-gray-300 hover:bg-gray-400 p-2 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-delta="-2.5" data-field="weight">-</button>
+                            <input type="number" step="0.5" value="${formatWeight(set.weight)}" class="set-input-field w-16 text-center border-b-2 border-gray-400" data-field="weight">
+                            <button type="button" class="rep-change bg-gray-300 hover:bg-gray-400 p-2 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-delta="2.5" data-field="weight">+</button>
+                        </div>
+                        
+                        <!-- Best Lift Display -->
+                        <div class="text-sm text-gray-500 italic md:text-right">
+                            PB: ${formatWeight(bestWeight)}kg
+                        </div>
+                    </div>
                 `;
             }).join('');
-        };
-
-        const renderApp = () => {
-            renderActionButtons();
-            const contentView = document.getElementById('content-view');
-
-            switch (currentView) {
-                case 'workouts':
-                    contentView.innerHTML = renderPlaceholderView('Workouts Tracker');
-                    break;
-                case 'meal-plans':
-                    contentView.innerHTML = renderPlaceholderView('Meal Plans Manager');
-                    break;
-                case 'measurements':
-                    contentView.innerHTML = renderMeasurementsView();
-                    // Setup listeners for the measurements view after rendering
-                    setupMeasurementsListeners();
-                    break;
-                case 'home':
-                default:
-                    contentView.innerHTML = renderHomeView();
+            
+            setsTrackingContainer.insertAdjacentHTML('beforeend', `
+                <button type="button" id="save-exercise-btn" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition duration-150 shadow-lg">
+                    Log Exercise: ${exerciseName}
+                </button>
+            `);
+            
+            document.getElementById('save-exercise-btn').addEventListener('click', saveExercise);
+            document.querySelectorAll('.rep-change').forEach(btn => {
+                btn.addEventListener('click', handleSetRepWeightChange);
+            });
+            document.querySelectorAll('.set-input-field').forEach(input => {
+                input.addEventListener('change', handleSetInputUpdate);
+            });
+        }
+        
+        /** Renders the list of exercises already logged in the current workout */
+        function updateLoggedExercisesSummary() {
+            if (!state.currentWorkout || state.currentWorkout.exercises.length === 0) {
+                loggedExercisesSummary.innerHTML = '<p class="text-gray-500 italic">No exercises logged yet in this session.</p>';
+                return;
             }
-        };
 
-        // --- Measurements Specific Logic ---
+            const items = state.currentWorkout.exercises.map(ex => {
+                const totalVolume = calculateVolume(ex.setsData);
+                const maxWeight = ex.setsData.reduce((max, s) => Math.max(max, s.weight), 0);
+                
+                return `
+                    <div class="p-3 border-l-4 border-green-400 bg-gray-50 rounded-lg">
+                        <p class="font-semibold text-gray-800">${ex.name}</p>
+                        <p class="text-sm text-gray-600">Sets: ${ex.setsData.length} | Max: ${formatWeight(maxWeight)}kg | Vol: ${formatWeight(totalVolume)}kg</p>
+                    </div>
+                `;
+            }).join('');
+            
+            loggedExercisesSummary.innerHTML = `
+                <h3 class="text-xl font-bold text-green-800 border-t pt-4">Logged Exercises (${state.currentWorkout.exercises.length})</h3>
+                <div class="space-y-2">${items}</div>
+            `;
+        }
 
-        const setupMeasurementsListeners = () => {
-            const selectElement = document.getElementById('body-part-select');
-            const inputsContainer = document.getElementById('measurement-inputs');
-            const form = document.getElementById('measurement-form');
-            const photoUpload = document.getElementById('photo-upload');
-            const photoPreview = document.getElementById('photo-preview');
-
-            // 1. Dynamic Input Generation
-            selectElement.onchange = () => {
-                const selectedPart = selectElement.value;
-                inputsContainer.innerHTML = '';
-                if (!selectedPart) {
-                    inputsContainer.innerHTML = '<p class="text-sm text-gray-500 italic">Select a body part above to enter the size (e.g., in inches or cm).</p>';
-                    return;
-                }
-
-                if (selectedPart.includes('L & R')) {
-                    const basePart = selectedPart.replace(' L & R', '');
-                    inputsContainer.innerHTML = `
-                        <div>
-                            <label for="input-left" class="block text-sm font-medium text-gray-700">${basePart} - Left (cm/in)</label>
-                            <input type="number" step="0.1" id="input-left" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border">
-                        </div>
-                        <div>
-                            <label for="input-right" class="block text-sm font-medium text-gray-700">${basePart} - Right (cm/in)</label>
-                            <input type="number" step="0.1" id="input-right" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border">
+        /** Sets up the equipment modal with the current equipment state */
+        function renderActiveEquipmentModal() {
+            // Re-render the checklists in the modal, checking the currently selected items
+            const w = document.getElementById('active-weights-options');
+            const c = document.getElementById('active-cardio-options');
+            const f = document.getElementById('active-floor-options');
+            
+            // Helper function to create checkboxes in the modal based on current state
+            const createModalCheckboxes = (container, category) => {
+                container.innerHTML = EQUIPMENT_MAP[category].map(item => {
+                    const id = 'active-' + item.replace(/\s/g, '-');
+                    const checked = state.gymSetup[category].includes(item) ? 'checked' : '';
+                    return `
+                        <div class="flex items-center">
+                            <input id="${id}" name="${category}" type="checkbox" value="${item}" ${checked}
+                                class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="${id}" class="ml-2 text-gray-600 capitalize">${item}</label>
                         </div>
                     `;
-                } else {
-                    inputsContainer.innerHTML = `
-                        <div>
-                            <label for="input-single" class="block text-sm font-medium text-gray-700">${selectedPart} (cm/in)</label>
-                            <input type="number" step="0.1" id="input-single" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-2 border">
-                        </div>
-                    `;
-                }
+                }).join('');
             };
 
-            // 2. Form Submission (Data Logging)
-            form.onsubmit = (e) => {
+            createModalCheckboxes(w, 'weights');
+            createModalCheckboxes(c, 'cardio');
+            createModalCheckboxes(f, 'floor');
+        }
+
+        // --- HANDLERS ---
+
+        /** 1. Handles Gym Setup Submission (Both main and active modal) */
+        function handleGymSetupSave(e) {
+            e.preventDefault();
+            const form = e.currentTarget;
+            const formData = new FormData(form);
+            
+            const isModal = form.id === 'active-gym-setup-form';
+
+            if (!isModal) {
+                 // Save Name only if it's the main gym config form
+                state.gymName = formData.get('gym-name') || "Custom Gym";
+            }
+            
+            state.gymSetup.weights = formData.getAll('weights');
+            state.gymSetup.cardio = formData.getAll('cardio');
+            state.gymSetup.floor = formData.getAll('floor');
+
+            if (isModal) {
+                equipmentModal.classList.add('hidden');
+                // Since equipment changed, re-render the available exercises mid-workout
+                renderExerciseDropdown();
+                showMessage(`Equipment updated! Exercise list refreshed.`, 'info');
+            } else {
+                showMessage("Gym setup saved successfully!", 'success');
+                showView('dashboard');
+            }
+        }
+        
+        /** 2. Toggles muscle checkboxes based on focus selection and updates exercise list */
+        function handleFocusChange() {
+            const isSpecific = workoutFocusSelect.value === 'specific-muscles';
+            muscleCheckboxesDiv.classList.toggle('hidden', !isSpecific);
+            renderExerciseDropdown();
+        }
+
+        /** 3. Handles Workout Planning Submission (Start Workout) */
+        function handleStartWorkout(e) {
+            e.preventDefault();
+            
+            const focus = workoutFocusSelect.value;
+            if (!focus) {
+                showMessage("Please select a training focus before starting.", 'error');
+                return;
+            }
+
+            // Create new workout session
+            state.currentWorkout = {
+                title: focus.replace(/-/g, ' ').toUpperCase(),
+                date: new Date().toISOString(),
+                exercises: [],
+                currentExercise: null, // Ensure currentExercise is reset
+            };
+
+            // Transition UI to active workout view
+            activeWorkoutTitle.textContent = state.currentWorkout.title;
+            setsTrackingContainer.innerHTML = ''; // Clear sets tracking area
+            updateLoggedExercisesSummary();
+            showView('track-workout');
+            
+            // Pre-populate exercise list based on chosen focus
+            renderExerciseDropdown();
+            showMessage(`Workout started: ${state.currentWorkout.title}`, 'info', 4000);
+        }
+
+        /** 4. Handles button click to adjust sets/reps/weight */
+        function handleSetRepWeightChange(e) {
+            const button = e.currentTarget;
+            const delta = parseFloat(button.getAttribute('data-delta'));
+            const field = button.getAttribute('data-field');
+            const row = button.closest('.set-row');
+            const index = parseInt(row.getAttribute('data-set-index'));
+            
+            const inputField = row.querySelector(`.set-input-field[data-field="${field}"]`);
+            let currentValue = parseFloat(inputField.value);
+            
+            let newValue = currentValue + delta;
+            
+            if (field === 'reps') {
+                newValue = Math.max(1, Math.round(newValue));
+            } else if (field === 'weight') {
+                newValue = Math.max(0.0, newValue);
+            }
+            
+            inputField.value = formatWeight(newValue);
+            handleSetInputUpdate({ currentTarget: inputField });
+        }
+        
+        /** 5. Handles direct input field change (for sets/reps/weight) */
+        function handleSetInputUpdate(e) {
+            const inputField = e.currentTarget;
+            const row = inputField.closest('.set-row');
+            const index = parseInt(row.getAttribute('data-set-index'));
+            const field = inputField.getAttribute('data-field');
+            const value = parseFloat(inputField.value);
+            
+            if (state.currentWorkout?.currentExercise && !isNaN(value)) {
+                state.currentWorkout.currentExercise.setsData[index][field] = value;
+            }
+        }
+
+        /** 6. Saves the currently configured exercise to the workout log */
+        function saveExercise() {
+            if (!state.currentWorkout || !state.currentWorkout.currentExercise) {
+                showMessage("Error: No active exercise to save.", 'error');
+                return;
+            }
+            
+            const exercise = state.currentWorkout.currentExercise;
+            const volume = calculateVolume(exercise.setsData);
+            
+            // Find the best weight lifted in this exercise (for 1 or more reps)
+            const maxWeight = exercise.setsData
+                .filter(s => s.reps > 0)
+                .reduce((max, s) => Math.max(max, s.weight), 0);
+            
+            // Update the history (Best Lift tracking)
+            if (!state.exerciseHistory[exercise.name] || maxWeight > state.exerciseHistory[exercise.name].bestWeight) {
+                state.exerciseHistory[exercise.name] = {
+                    bestWeight: maxWeight,
+                    bestReps: exercise.setsData.find(s => s.weight === maxWeight)?.reps || 0,
+                    lastDate: new Date().toLocaleDateString(),
+                };
+                showMessage(`New PB for ${exercise.name}: ${formatWeight(maxWeight)}kg!`, 'success');
+            }
+
+            // Save the exercise to the current workout
+            state.currentWorkout.exercises.push({
+                ...exercise,
+                volume: volume,
+            });
+            
+            // Clear the active exercise view inputs/data
+            setsTrackingContainer.innerHTML = '';
+            exerciseSelect.value = '';
+            setsInput.value = 3;
+            targetRepsInput.value = 10;
+            state.currentWorkout.currentExercise = null;
+            
+            updateLoggedExercisesSummary();
+            showMessage(`${exercise.name} logged successfully! Total volume: ${formatWeight(volume)}kg.`, 'success');
+        }
+
+        /** 7. Saves the entire workout session */
+        function saveWorkout() {
+            // Guard clause to handle unsaved sets
+            if (state.currentWorkout?.currentExercise) {
+                // In a real app, this should trigger a confirmation modal.
+                // For this single-file app, we'll auto-save the sets if possible, or warn/clear them.
+                if (state.currentWorkout.currentExercise.setsData.some(s => s.weight > 0 || s.reps > 0)) {
+                    saveExercise(); // Attempt to save the active exercise first
+                } else {
+                    state.currentWorkout.currentExercise = null; // Clear empty exercise
+                }
+            }
+
+            if (!state.currentWorkout || state.currentWorkout.exercises.length === 0) {
+                showMessage("The workout is empty. No session saved.", 'error');
+                // Reset session state anyway to clean up
+                state.currentWorkout = null;
+                return;
+            }
+            
+            const totalVolume = state.currentWorkout.exercises.reduce((total, ex) => total + ex.volume, 0);
+
+            // Log the finished workout
+            state.workoutLog.push({
+                ...state.currentWorkout,
+                totalVolume: totalVolume,
+                duration: '45 min (simulated)',
+            });
+            
+            // Reset UI
+            state.currentWorkout = null;
+            
+            showMessage(`Workout finished! Total volume lifted: ${formatWeight(totalVolume)}kg. Great job!`, 'success', 6000);
+        }
+
+        /** 8. Renders and shows the history modal */
+        function renderHistory() {
+            historyContent.innerHTML = '';
+            const historyKeys = Object.keys(state.exerciseHistory).sort();
+            
+            if (historyKeys.length === 0) {
+                historyContent.innerHTML = '<p class="text-gray-500 italic text-center">No history yet. Log a workout to see your best lifts!</p>';
+                return;
+            }
+
+            const items = historyKeys.map(name => {
+                const item = state.exerciseHistory[name];
+                return `
+                    <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm">
+                        <h4 class="text-xl font-bold text-gray-800">${name}</h4>
+                        <p class="text-gray-600 mt-1">
+                            <span class="font-semibold">Best Weight:</span> ${formatWeight(item.bestWeight)}kg (for ${item.bestReps} reps)
+                        </p>
+                        <p class="text-xs text-gray-400">
+                            Last PB Achieved: ${item.lastDate}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            historyContent.innerHTML = `<div class="space-y-4">${items}</div>`;
+        }
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+
+        function initApp() {
+            // Load user info (currently hardcoded)
+            document.getElementById('user-name').textContent = state.userName;
+            document.getElementById('user-goal').textContent = state.goal;
+
+            // Render initial controls
+            renderMuscleCheckboxes();
+            renderWorkoutFocus();
+            updateDashboardStatus();
+            
+            // Setup default view
+            showView('dashboard', false); // Do not update history on init
+
+            // Event Listeners for forms
+            gymSetupForm.addEventListener('submit', handleGymSetupSave);
+            activeGymSetupForm.addEventListener('submit', handleGymSetupSave); // Active modal save handler
+            workoutFocusSelect.addEventListener('change', handleFocusChange);
+            workoutPlanningForm.addEventListener('submit', handleStartWorkout);
+            
+            // Active Workout Listeners
+            document.getElementById('start-sets-btn').addEventListener('click', renderSetsTracking);
+            document.getElementById('finish-workout-btn').addEventListener('click', () => {
+                saveWorkout();
+                showView('dashboard');
+            });
+
+            // Navigation Listeners
+            document.getElementById('view-history-btn').addEventListener('click', () => {
+                renderHistory();
+                historyModal.classList.remove('hidden');
+            });
+            document.getElementById('close-history-btn').addEventListener('click', () => {
+                historyModal.classList.add('hidden');
+            });
+
+            // Equipment Modal Listeners
+            document.getElementById('open-equipment-modal-btn').addEventListener('click', () => {
+                renderActiveEquipmentModal();
+                equipmentModal.classList.remove('hidden');
+            });
+            document.getElementById('close-equipment-modal-btn').addEventListener('click', () => {
+                equipmentModal.classList.add('hidden');
+            });
+
+            // Meal Logging (Simple implementation)
+            document.getElementById('add-meal-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const part = selectElement.value;
-                const date = document.getElementById('date-input').value;
-                let values = {};
-                let isValid = false;
+                const mealName = e.target.querySelector('input[type="text"]').value;
+                showMessage(`Meal "${mealName}" logged!`, 'success');
+                e.target.reset();
+                showView('dashboard');
+            });
+            
+            // Re-render exercise list when muscles are checked/unchecked
+            muscleOptionsDiv.addEventListener('change', () => {
+                 if (workoutFocusSelect.value === 'specific-muscles') {
+                    renderExerciseDropdown();
+                 }
+            });
+        }
 
-                if (part.includes('L & R')) {
-                    const left = document.getElementById('input-left').value;
-                    const right = document.getElementById('input-right').value;
-                    if (left && right) {
-                        values['Left'] = left;
-                        values['Right'] = right;
-                        isValid = true;
-                    }
-                } else if (part) {
-                    const single = document.getElementById('input-single').value;
-                    if (single) {
-                        values[part] = single;
-                        isValid = true;
-                    }
-                }
+        // Run initialization when the page is ready
+        window.onload = initApp;
 
-                if (isValid) {
-                    const newLog = { date, part, values };
-                    // In a real app, you would save this to Firestore here
-                    // For now, update client-side state and re-render
-                    measurementsData.unshift(newLog); // Add to the beginning
-                    console.log("Measurement Logged:", newLog);
-                    renderApp(); // Re-render to update the history log
-                } else {
-                    console.error("Please enter a value for the selected body part.");
-                    // You would show a user-friendly message here instead of alert/console.error
-                }
-            };
-
-            // 3. Photo Preview Handling
-            photoUpload.onchange = (e) => {
-                photoPreview.innerHTML = '';
-                const files = e.target.files;
-
-                if (files.length > 0) {
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            const imgContainer = document.createElement('div');
-                            imgContainer.className = 'w-full h-32 bg-gray-200 rounded-lg overflow-hidden';
-                            imgContainer.innerHTML = `<img src="${event.target.result}" alt="Progress Photo" class="w-full h-full object-cover">`;
-                            photoPreview.appendChild(imgContainer);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-            };
-        };
-
-        // Initial app launch
-        const initApp = () => {
-            renderApp();
-            // Note: Data fetching/Firestore setup would typically go here using onSnapshot
-        };
     </script>
 </body>
 </html>
