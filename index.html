@@ -1,39 +1,1335 @@
-import React, { useState, useEffect, useCallback, useReducer } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, setLogLevel, onSnapshot, orderBy } from 'firebase/firestore';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFit Gym & Workout Tracker</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Load React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Load Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// Define the available routes/views
-/** @typedef {'login' | 'register' | 'dashboard' | 'gym-setup' | 'start-workout' | 'active-workout' | 'history'} View */
+    <!-- Configure Tailwind to use Inter font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for better mobile feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #C05621;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-// Global variables provided by the Canvas environment (used directly)
-/* global __app_id, __firebase_config, __initial_auth_token */
+    <!-- Load Firebase CDN imports (ES Modules) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, setLogLevel, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Expose Firebase modules to the global scope for the Babel script to use
+        window.firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, 
+            getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, setLogLevel, onSnapshot, orderBy
+        };
+    </script>
 
-// --- GLOBAL CONSTANTS ---
-const VFIT_PRIMARY = '#C05621'; // Dark Orange
-const VFIT_DARK_BG = '#1f2937'; // Dark Grey
-const VFIT_ACCENT = '#f97316'; // Lighter Orange
+    <!-- The React Application Code -->
+    <script type="text/babel">
+        // Global variables provided by the Canvas environment (simulated or left for runtime injection)
+        // For local testing on GitHub Pages, you might need to define these mock values:
+        const __app_id = typeof window.__app_id !== 'undefined' ? window.__app_id : 'vfit-gh-pages-12345';
+        const __firebase_config = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : '{"apiKey": "AIzaSy...", "projectId": "vfit-project", "appId": "1:234567..."}';
+        const __initial_auth_token = typeof window.__initial_auth_token !== 'undefined' ? window.__initial_auth_token : null; 
 
-const workoutSplits = ['Full Body', 'Upper Body', 'Lower Body', 'Press', 'Pull', 'Squat', 'Hinge', 'Specific Muscles'];
-const muscleGroups = ['Biceps', 'Triceps', 'Shoulders', 'Quads', 'Hamstrings', 'Abs', 'Chest', 'Lats', 'Upper Back', 'Glutes', 'Calves'];
+        // Use a wrapper function to ensure all Firebase globals are available before running the app
+        window.runVFitApp = () => {
+            const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, 
+                   getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, setLogLevel, onSnapshot } = window.firebase;
 
-const gymEquipment = {
-    weights: [
-        { key: 'bench', name: 'Bench', icon: '🪑' },
-        { key: 'barbell', name: 'Barbell', icon: '🏋️' },
-        { key: 'dumbbell', name: 'Dumbbell', icon: '💪' },
-        { key: 'pinstack', name: 'Pin Stack Machines', icon: '⚙️' },
-        { key: 'weighted_machines', name: 'Weighted Machines', icon: '🧱' },
-        { key: 'cables', name: 'Cables', icon: '🔗' },
-    ],
-    cardio: [
-        { key: 'treadmill', name: 'Treadmill', icon: '🏃' },
-        { key: 'bike', name: 'Bike', icon: '🚴' },
-        { key: 'rower', name: 'Rower', icon: '🛶' },
-        { key: 'cross_trainer', name: 'Cross Trainer', icon: '🚶' },
-        { key: 'assault_bike', name: 'Assault Bike', icon: '🔥' },
-        { key: 'ski_erg', name: 'Ski Erg', icon: '⛷️' },
-        { key: 'step_machine', name: 'Step Machine', icon: '🪜' },
+            const { useState, useEffect, useCallback, useReducer } = React;
+
+            // Define the available routes/views
+            /** @typedef {'login' | 'register' | 'dashboard' | 'gym-setup' | 'start-workout' | 'active-workout' | 'history'} View */
+
+            // --- GLOBAL CONSTANTS ---
+            const VFIT_PRIMARY = '#C05621'; // Dark Orange
+            const VFIT_DARK_BG = '#1f2937'; // Dark Grey
+            const VFIT_ACCENT = '#f97316'; // Lighter Orange
+
+            const workoutSplits = ['Full Body', 'Upper Body', 'Lower Body', 'Press', 'Pull', 'Squat', 'Hinge', 'Specific Muscles'];
+            const muscleGroups = ['Biceps', 'Triceps', 'Shoulders', 'Quads', 'Hamstrings', 'Abs', 'Chest', 'Lats', 'Upper Back', 'Glutes', 'Calves'];
+
+            const gymEquipment = {
+                weights: [
+                    { key: 'bench', name: 'Bench', icon: '🪑' },
+                    { key: 'barbell', name: 'Barbell', icon: '🏋️' },
+                    { key: 'dumbbell', name: 'Dumbbell', icon: '💪' },
+                    { key: 'pinstack', name: 'Pin Stack Machines', icon: '⚙️' },
+                    { key: 'weighted_machines', name: 'Weighted Machines', icon: '🧱' },
+                    { key: 'cables', name: 'Cables', icon: '🔗' },
+                ],
+                cardio: [
+                    { key: 'treadmill', name: 'Treadmill', icon: '🏃' },
+                    { key: 'bike', name: 'Bike', icon: '🚴' },
+                    { key: 'rower', name: 'Rower', icon: '🛶' },
+                    { key: 'cross_trainer', name: 'Cross Trainer', icon: '🚶' },
+                    { key: 'assault_bike', name: 'Assault Bike', icon: '🔥' },
+                    { key: 'ski_erg', name: 'Ski Erg', icon: '⛷️' },
+                    { key: 'step_machine', name: 'Step Machine', icon: '🪜' },
+                ],
+                floorSpace: [
+                    { key: 'trx', name: 'TRX', icon: '🎗️' },
+                    { key: 'ropes', name: 'Ropes', icon: '➰' },
+                    { key: 'sandbag', name: 'Sandbag', icon: '🍚' },
+                    { key: 'medicine_ball', name: 'Medicine Ball', icon: '🏀' },
+                    { key: 'slam_ball', name: 'Slam Ball', icon: '🏐' },
+                ],
+            };
+
+            // --- EXERCISE CATALOG & MAPPING ---
+            const EXERCISE_CATALOG = [
+                // Compounds & Bench/Barbell movements
+                { name: 'Barbell Squat', primary: ['Quads', 'Glutes'], equipment: ['barbell'] },
+                { name: 'Bench Press', primary: ['Chest', 'Triceps', 'Shoulders'], equipment: ['barbell', 'bench'] },
+                { name: 'Deadlift', primary: ['Hamstrings', 'Glutes', 'Upper Back'], equipment: ['barbell'] },
+                { name: 'Overhead Press', primary: ['Shoulders', 'Triceps'], equipment: ['barbell'] },
+                { name: 'Barbell Row', primary: ['Lats', 'Upper Back'], equipment: ['barbell'] },
+                
+                // Dumbbell movements
+                { name: 'Dumbbell Curl', primary: ['Biceps'], equipment: ['dumbbell'] },
+                { name: 'Incline Dumbbell Press', primary: ['Chest', 'Shoulders'], equipment: ['dumbbell', 'bench'] },
+                { name: 'Lateral Raise (Dumbbell)', primary: ['Shoulders'], equipment: ['dumbbell'] },
+                { name: 'Bulgarian Split Squat', primary: ['Quads', 'Glutes'], equipment: ['dumbbell', 'bench'] },
+
+                // Cable/Machine movements
+                { name: 'Triceps Pushdown', primary: ['Triceps'], equipment: ['cables'] },
+                { name: 'Leg Extension', primary: ['Quads'], equipment: ['weighted_machines', 'pinstack'] },
+                { name: 'Leg Curl', primary: ['Hamstrings'], equipment: ['weighted_machines', 'pinstack'] },
+                { name: 'Cable Fly', primary: ['Chest'], equipment: ['cables'] },
+                { name: 'Face Pull', primary: ['Shoulders', 'Upper Back'], equipment: ['cables'] },
+                { name: 'Lat Pulldown', primary: ['Lats'], equipment: ['weighted_machines', 'pinstack', 'cables'] },
+
+                // Bodyweight/Other
+                { name: 'Ab Rollout', primary: ['Abs'], equipment: ['floorSpace'] },
+                { name: 'Push-ups', primary: ['Chest', 'Triceps'], equipment: ['floorSpace'] },
+                { name: 'Pull-ups/Chin-ups', primary: ['Lats', 'Biceps'], equipment: ['floorSpace'] },
+            ];
+
+            const SPLIT_MUSCLE_MAPPING = {
+                'Full Body': ['Chest', 'Lats', 'Upper Back', 'Quads', 'Hamstrings', 'Glutes', 'Shoulders', 'Biceps', 'Triceps', 'Abs'],
+                'Upper Body': ['Chest', 'Lats', 'Upper Back', 'Shoulders', 'Biceps', 'Triceps'],
+                'Lower Body': ['Quads', 'Hamstrings', 'Glutes', 'Calves'],
+                'Press': ['Chest', 'Shoulders', 'Triceps'],
+                'Pull': ['Lats', 'Upper Back', 'Biceps'],
+                'Squat': ['Quads', 'Glutes'],
+                'Hinge': ['Hamstrings', 'Glutes', 'Upper Back'],
+                // 'Specific Muscles' will use workoutConfig.muscleSelection directly
+            };
+            // --- END CONSTANTS ---
+
+
+            // --- FIREBASE INITIALIZATION ---
+            let auth;
+            let db;
+
+            const VFitApp = () => {
+                // --- APP STATE ---
+                /** @type {[View, Function]} */
+                const [view, setView] = useState('login');
+                const [user, setUser] = useState(null);
+                const [dbReady, setDbReady] = useState(false);
+                const [error, setError] = useState(null);
+                
+                // User Data State
+                const [gymProfile, setGymProfile] = useState({});
+                const [bestLifts, setBestLifts] = useState({}); // {exerciseId: {weight: 100, reps: 5}}
+                const [userProfile, setUserProfile] = useState({ name: 'Fit User', goal: 'Strength Gain' });
+                const [workoutHistory, setWorkoutHistory] = useState([]);
+                const [mealHistory, setMealHistory] = useState([]); // Placeholder for meal history
+
+                // Workout State (used across Start/Active views)
+                const [workoutConfig, setWorkoutConfig] = useState({
+                    split: workoutSplits[0],
+                    muscleSelection: [],
+                    sessionName: '',
+                });
+                const [activeWorkout, setActiveWorkout] = useState([]);
+
+                // Computed values
+                const userId = user ? user.uid : null;
+                const isAuthenticated = !!user;
+
+                // --- FIREBASE INTEGRATION & LIFECYCLE ---
+
+                // 1. Initialization and Auth Listener
+                useEffect(() => {
+                    setLogLevel('debug');
+
+                    const initializeFirebase = async () => {
+                        try {
+                            if (auth && db) { setDbReady(true); return; }
+
+                            const firebaseConfig = JSON.parse(
+                                typeof __firebase_config !== 'undefined' ? __firebase_config : '{}'
+                            );
+                            
+                            const app = initializeApp(firebaseConfig);
+                            auth = getAuth(app);
+                            db = getFirestore(app);
+
+                            // Auth Listener: Triggers state updates
+                            const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+                                setUser(currentUser);
+                                setDbReady(true);
+                            });
+                            
+                            // Initial Sign-in
+                            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            if (token) {
+                                await signInWithCustomToken(auth, token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+
+                            return () => unsubscribe();
+                        } catch (err) {
+                            console.error('Firebase initialization failed:', err);
+                            setError('Failed to initialize application.');
+                            setDbReady(true);
+                        }
+                    };
+
+                    initializeFirebase();
+                }, []);
+
+                // 2. View Synchronization & Data Fetching
+                useEffect(() => {
+                    if (!dbReady) return;
+                    
+                    if (isAuthenticated && userId) {
+                        setView('dashboard');
+                        fetchUserData(userId);
+                    } else {
+                        setView('login');
+                    }
+                }, [isAuthenticated, dbReady, userId]);
+
+                // 3. Real-time History Listener
+                useEffect(() => {
+                    if (!db || !userId) return;
+
+                    const workoutColRef = collection(db, getWorkoutHistoryCollectionPath());
+                    // Note: For history, sorting by date is ideal, but Firestore's orderBy() requires an index.
+                    // We will fetch and sort in memory to avoid index requirements in this single-file app.
+                    const unsubscribeWorkout = onSnapshot(workoutColRef, (snapshot) => {
+                        const historyList = [];
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            historyList.push({ id: doc.id, ...data });
+                        });
+                        // Sort by date descending (newest first) in memory
+                        historyList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                        setWorkoutHistory(historyList);
+                    }, (err) => {
+                        console.error("Error listening to workout history:", err);
+                        setError("Failed to load workout history.");
+                    });
+
+                    // Placeholder for Meal History Listener
+                    // const mealColRef = collection(db, getMealHistoryCollectionPath());
+                    // const unsubscribeMeal = onSnapshot(mealColRef, (snapshot) => { ... });
+
+                    return () => {
+                        unsubscribeWorkout();
+                        // unsubscribeMeal();
+                    };
+
+                }, [db, userId]);
+
+                // --- DATA HANDLING ---
+
+                const getPrivateDocPath = (docId) => `artifacts/${__app_id}/users/${userId}/config/${docId}`;
+                const getBestLiftsCollectionPath = () => `artifacts/${__app_id}/users/${userId}/bestLifts`;
+                const getWorkoutHistoryCollectionPath = () => `artifacts/${__app_id}/users/${userId}/workoutHistory`;
+                // const getMealHistoryCollectionPath = () => `artifacts/${__app_id}/users/${userId}/mealHistory`; // Placeholder path
+
+                const fetchUserData = async (uid) => {
+                    if (!db || !uid) return;
+
+                    // Fetch Gym Profile
+                    const gymRef = doc(db, getPrivateDocPath('gymProfile'));
+                    const gymSnap = await getDoc(gymRef);
+                    if (gymSnap.exists()) {
+                        setGymProfile(gymSnap.data());
+                    }
+
+                    // Fetch User Profile (Name/Goal)
+                    const userRef = doc(db, getPrivateDocPath('userProfile'));
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        setUserProfile({ ...userProfile, ...userSnap.data() });
+                    }
+                    
+                    // Fetch Best Lifts (Simplification: fetch all for now, in a real app, query is better)
+                    const bestLiftsSnap = await getDocs(collection(db, getBestLiftsCollectionPath()));
+                    const lifts = {};
+                    bestLiftsSnap.forEach(d => {
+                        lifts[d.id] = d.data();
+                    });
+                    setBestLifts(lifts);
+                };
+                
+                // --- NAVIGATION & AUTH HELPERS ---
+
+                /** @param {View} newView */
+                const navigate = (newView) => {
+                    if (newView === 'dashboard' && !isAuthenticated) return;
+                    setView(newView);
+                };
+
+                const handleLogout = async () => {
+                    try {
+                        await signOut(auth);
+                        console.log('User logged out successfully.');
+                        setGymProfile({});
+                        setUserProfile({ name: 'Fit User', goal: 'Strength Gain' });
+                        navigate('login'); // Navigation back to login
+                    } catch (err) {
+                        console.error('Logout failed:', err);
+                        setError('Logout failed. Please try again.');
+                    }
+                };
+                
+                // --- UI COMPONENTS ---
+
+                const LoadingSpinner = () => (
+                    <div className="text-center py-10">
+                        <p className="text-xl font-semibold text-gray-700 mb-4">Initializing Application...</p>
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{ borderBottomColor: VFIT_PRIMARY }}></div>
+                    </div>
+                );
+                
+                // --- VIEW 1: AUTH ---
+
+                const LoginView = () => (
+                    <div className="space-y-6">
+                        <h2 className="text-3xl font-bold text-gray-800 text-center">Login to VFit</h2>
+                        <form onSubmit={(e) => { e.preventDefault(); if (isAuthenticated) navigate('dashboard'); }} className="space-y-4">
+                            <input type="email" placeholder="Email (dummy)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                            <input type="password" placeholder="Password (dummy)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                            <button type="submit" 
+                                    style={{ backgroundColor: VFIT_PRIMARY }}
+                                    className="w-full py-3 text-white font-semibold rounded-lg shadow-md hover:bg-opacity-90 transition duration-300">
+                                Sign In
+                            </button>
+                        </form>
+                        <p className="text-center text-sm text-gray-600">
+                            Don't have an account? 
+                            <span onClick={() => navigate('register')} style={{ color: VFIT_PRIMARY }} className="font-medium cursor-pointer hover:underline">Register here</span>
+                        </p>
+                    </div>
+                );
+
+                const RegisterView = () => (
+                    <div className="space-y-6">
+                        <h2 className="text-3xl font-bold text-gray-800 text-center">Join VFit</h2>
+                        <form onSubmit={(e) => { e.preventDefault(); navigate('login'); }} className="space-y-4">
+                            <input type="text" placeholder="Username (dummy)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                            <input type="email" placeholder="Email (dummy)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                            <input type="password" placeholder="Password (dummy)" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                            <button type="submit" 
+                                    style={{ backgroundColor: VFIT_PRIMARY }}
+                                    className="w-full py-3 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-300">
+                                Create Account
+                            </button>
+                        </form>
+                        <p className="text-center text-sm text-gray-600">
+                            Already have an account? 
+                            <span onClick={() => navigate('login')} style={{ color: VFIT_PRIMARY }} className="font-medium cursor-pointer hover:underline">Sign In</span>
+                        </p>
+                    </div>
+                );
+                
+                // --- VIEW 2: GYM SETUP ---
+                
+                const GymSetupView = () => {
+                    const [tempProfile, setTempProfile] = useState(gymProfile.equipment || {});
+                    const [isSaving, setIsSaving] = useState(false);
+
+                    const handleCheckboxChange = (category, key, checked) => {
+                        setTempProfile(prev => ({
+                            ...prev,
+                            [category]: {
+                                ...(prev[category] || {}),
+                                [key]: checked,
+                            }
+                        }));
+                    };
+
+                    const saveGymProfile = async () => {
+                        if (!userId || isSaving) return;
+                        setIsSaving(true);
+                        try {
+                            const gymRef = doc(db, getPrivateDocPath('gymProfile'));
+                            await setDoc(gymRef, { equipment: tempProfile, updateDate: new Date() });
+                            setGymProfile({ equipment: tempProfile }); // Update local state
+                            navigate('dashboard');
+                        } catch (err) {
+                            console.error("Failed to save gym profile:", err);
+                            setError("Failed to save gym profile.");
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold text-gray-800 text-center mb-6">Set Up Your Training</h2>
+                            <div className="text-sm text-gray-600 text-center">
+                                Select the equipment available at your gym. This helps customize your workout suggestions.
+                            </div>
+
+                            {Object.entries(gymEquipment).map(([category, items]) => (
+                                <div key={category} className="p-4 border rounded-xl bg-gray-50 shadow-sm">
+                                    <h3 className="text-xl font-semibold capitalize mb-3" style={{ color: VFIT_PRIMARY }}>
+                                        {category.replace(/([A-Z])/g, ' $1')}
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {items.map(item => (
+                                            <div key={item.key} className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id={item.key}
+                                                    checked={tempProfile[category]?.[item.key] || false}
+                                                    onChange={(e) => handleCheckboxChange(category, item.key, e.target.checked)}
+                                                    className="h-4 w-4 rounded border-gray-300"
+                                                    style={{ color: VFIT_PRIMARY, borderColor: VFIT_PRIMARY }}
+                                                />
+                                                <label htmlFor={item.key} className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                                    {item.icon} {item.name}
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            <button 
+                                onClick={saveGymProfile}
+                                disabled={isSaving}
+                                style={{ backgroundColor: VFIT_PRIMARY }}
+                                className="w-full py-3 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-300 disabled:opacity-50">
+                                {isSaving ? 'Saving...' : 'Save Gym Profile'}
+                            </button>
+                        </div>
+                    );
+                };
+
+                // --- VIEW 3: DASHBOARD ---
+
+                const DashboardView = () => {
+                    
+                    const [logType, setLogType] = useState('workout'); // 'workout' or 'meal'
+                    // No longer need isAdding state
+
+                    const handleAddLog = (e) => {
+                        e.preventDefault();
+                        if (logType === 'workout') {
+                            navigate('start-workout');
+                        } else {
+                            // Meal logging implementation would go here
+                            console.log('Meal logging feature placeholder!');
+                        }
+                    };
+
+                    const renderLogForm = () => (
+                        <form onSubmit={handleAddLog} className="space-y-4">
+                            <div className="flex space-x-4">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setLogType('workout')}
+                                    className={`flex-1 py-2 rounded-lg font-semibold transition ${logType === 'workout' ? 'text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    style={{ backgroundColor: logType === 'workout' ? VFIT_PRIMARY : '' }}
+                                >
+                                    Add Workout
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setLogType('meal')}
+                                    className={`flex-1 py-2 rounded-lg font-semibold transition ${logType === 'meal' ? 'text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    style={{ backgroundColor: logType === 'meal' ? VFIT_PRIMARY : '' }}
+                                >
+                                    Add Meal
+                                </button>
+                            </div>
+
+                            <div className="bg-white p-4 rounded-xl shadow border border-gray-200">
+                                {logType === 'workout' ? (
+                                    <div>
+                                        <p className="text-gray-700 font-semibold mb-2">Log a new training session.</p>
+                                        <button 
+                                            type="submit" 
+                                            style={{ backgroundColor: VFIT_PRIMARY }}
+                                            className="w-full py-2 text-white font-semibold rounded-lg hover:opacity-90 transition">
+                                            START WORKOUT
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <input type="text" placeholder="Meal Name" className="w-full p-2 border border-gray-300 rounded-lg mb-2" />
+                                        <input type="text" placeholder="Calories (kcal)" className="w-full p-2 border border-gray-300 rounded-lg mb-2" />
+                                        <button 
+                                            type="submit" 
+                                            className="w-full py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
+                                            LOG MEAL
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </form>
+                    );
+
+                    return (
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold text-gray-800 text-center">Dashboard</h2>
+
+                            {/* Profile Overview */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-blue-100 p-4 rounded-xl border-l-4 border-blue-500">
+                                    <p className="text-sm font-medium text-gray-500">Name</p>
+                                    <p className="text-xl font-bold text-gray-800">{userProfile.name}</p>
+                                </div>
+                                <div className="bg-purple-100 p-4 rounded-xl border-l-4 border-purple-500">
+                                    <p className="text-sm font-medium text-gray-500">Goal</p>
+                                    <p className="text-xl font-bold text-gray-800">{userProfile.goal}</p>
+                                </div>
+                            </div>
+
+                            {/* Gym Setup Status */}
+                            <div className="p-4 rounded-xl border-2 border-dashed border-gray-300 text-center cursor-pointer hover:bg-gray-50 transition"
+                                onClick={() => navigate('gym-setup')}>
+                                <p className="text-lg font-semibold" style={{ color: VFIT_PRIMARY }}>
+                                    {Object.keys(gymProfile.equipment || {}).length > 0 ? 'Gym Profile Set Up' : 'Set Up Your Gym Profile'}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                    {Object.keys(gymProfile.equipment || {}).length > 0 ? 'Click to Review/Edit' : 'Define your available equipment.'}
+                                </p>
+                            </div>
+
+                            {/* Log Activity */}
+                            {renderLogForm()}
+
+                            {/* History Button */}
+                            <button onClick={() => navigate('history')} 
+                                    className="w-full py-3 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 transition duration-300">
+                                View Activity History
+                            </button>
+
+                            {/* Logout Button */}
+                            <button onClick={handleLogout} className="w-full py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+                                Logout ({userId ? userId.substring(0, 4) : '...' })
+                            </button>
+                        </div>
+                    );
+                };
+                
+                // --- VIEW 4: START WORKOUT CONFIG ---
+
+                const StartWorkoutView = () => {
+                    // Move state management for the form locally to prevent parent re-renders on every keystroke.
+                    const [localSessionName, setLocalSessionName] = useState(workoutConfig.sessionName);
+                    const [localSplit, setLocalSplit] = useState(workoutConfig.split);
+                    const [localMuscleSelection, setLocalMuscleSelection] = useState(workoutConfig.muscleSelection);
+                    
+                    // Effect to initialize local state if parent workoutConfig changes (e.g., if navigated to dashboard and back)
+                    useEffect(() => {
+                        setLocalSessionName(workoutConfig.sessionName);
+                        setLocalSplit(workoutConfig.split);
+                        setLocalMuscleSelection(workoutConfig.muscleSelection);
+                    }, [workoutConfig]);
+
+
+                    const handleConfigChange = (e) => {
+                        const { name, value } = e.target;
+                        if (name === 'sessionName') {
+                            // Update local state, no parent re-render
+                            setLocalSessionName(value);
+                        } else if (name === 'split') {
+                            // Update local state for split
+                            setLocalSplit(value);
+                            // Reset muscle selection if we switch away from Specific Muscles
+                            if (value !== 'Specific Muscles') {
+                                setLocalMuscleSelection([]);
+                            }
+                        }
+                    };
+
+                    const handleMuscleToggle = (muscle) => {
+                        // Update local state for muscle selection
+                        setLocalMuscleSelection(prev => {
+                            return prev.includes(muscle)
+                                ? prev.filter(m => m !== muscle)
+                                : [...prev, muscle];
+                        });
+                    };
+                    
+                    const startSession = (e) => {
+                        e.preventDefault();
+                        // 1. Validation using local state
+                        if (localSplit === 'Specific Muscles' && localMuscleSelection.length === 0) {
+                            setError('Please select at least one muscle group.');
+                            return;
+                        }
+                        if (!localSessionName) {
+                            setError('Please enter a session name.');
+                            return;
+                        }
+                        setError(null);
+                        
+                        // 2. Update parent state ONCE on successful submission
+                        setWorkoutConfig({
+                            split: localSplit,
+                            muscleSelection: localMuscleSelection,
+                            sessionName: localSessionName,
+                        });
+
+                        setActiveWorkout([]); // Reset active workout exercises
+                        navigate('active-workout');
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold text-gray-800 text-center">Start Training Session</h2>
+                            <button onClick={() => navigate('dashboard')} className="text-sm text-gray-500 hover:text-gray-700 flex items-center mb-4">
+                                &#8592; Back to Dashboard
+                            </button>
+
+                            <form onSubmit={startSession} className="space-y-4 p-4 border rounded-xl shadow-sm bg-white">
+                                {/* Session Name */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Session Name</label>
+                                    <input 
+                                        type="text" 
+                                        name="sessionName"
+                                        // Use local state
+                                        value={localSessionName}
+                                        onChange={handleConfigChange}
+                                        placeholder="e.g., Heavy Lower Body Day" 
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }} />
+                                </div>
+
+                                {/* Workout Split */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Workout Split/Focus</label>
+                                    <select 
+                                        name="split"
+                                        // Use local state
+                                        value={localSplit}
+                                        onChange={handleConfigChange}
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }}>
+                                        <option value="">-- Select Split --</option>
+                                        {workoutSplits.map(split => <option key={split} value={split}>{split}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* Muscle Checkboxes (Conditional) */}
+                                {localSplit === 'Specific Muscles' && (
+                                    <div className="p-3 bg-gray-50 rounded-lg">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Select Muscle Groups:</label>
+                                        <div className="grid grid-cols-3 gap-2 text-sm">
+                                            {muscleGroups.map(muscle => (
+                                                <div key={muscle} className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`muscle-${muscle}`}
+                                                        // Use local state
+                                                        checked={localMuscleSelection.includes(muscle)}
+                                                        onChange={() => handleMuscleToggle(muscle)}
+                                                        className="h-4 w-4 rounded border-gray-300"
+                                                        style={{ color: VFIT_PRIMARY, borderColor: VFIT_PRIMARY }}
+                                                    />
+                                                    <label htmlFor={`muscle-${muscle}`} className="ml-1 text-gray-600 text-xs cursor-pointer">
+                                                        {muscle}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Error Message */}
+                                {error && <div className="text-red-600 text-sm">{error}</div>}
+
+                                <button 
+                                    type="submit" 
+                                    style={{ backgroundColor: VFIT_PRIMARY }}
+                                    className="w-full py-3 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-300">
+                                    START WORKOUT
+                                </button>
+                            </form>
+                        </div>
+                    );
+                };
+
+                // --- VIEW 5: ACTIVE WORKOUT ---
+                
+                const ActiveWorkoutView = () => {
+                    const [exerciseName, setExerciseName] = useState('');
+                    const [sets, setSets] = useState(3);
+                    const [weight, setWeight] = useState(0);
+                    const [reps, setReps] = useState(8);
+                    const [isSaving, setIsSaving] = useState(false);
+                    const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
+                    
+                    // State for temporary session-specific equipment override
+                    // Initializing with existing profile, defaults to {} if profile is empty
+                    const [tempEquipmentOverride, setTempEquipmentOverride] = useState(gymProfile.equipment || {});
+
+                    // Initializing with existing best lift for the currently selected exercise
+                    useEffect(() => {
+                        const currentBest = bestLifts[exerciseName] || { weight: 0, reps: 0 };
+                        setWeight(currentBest.weight || 0);
+                        setReps(currentBest.reps || 8);
+                    }, [exerciseName, bestLifts]);
+
+                    // Initialize tempEquipmentOverride when gymProfile loads or changes
+                    useEffect(() => {
+                        setTempEquipmentOverride(gymProfile.equipment || {});
+                    }, [gymProfile]);
+
+
+                    // Determine available exercises based on config (focus) and equipment
+                    const getSuggestedExercises = useCallback(() => {
+                        const targetSplit = workoutConfig.split;
+                        const currentAvailableEquipment = tempEquipmentOverride; 
+                        
+                        // Determine target muscles based on the selected split or specific muscle selection
+                        const targetMuscles = targetSplit === 'Specific Muscles' 
+                            ? workoutConfig.muscleSelection 
+                            : SPLIT_MUSCLE_MAPPING[targetSplit] || []; // Uses the refined SPLIT_MUSCLE_MAPPING
+                            
+                        if (targetMuscles.length === 0) return [];
+
+                        return EXERCISE_CATALOG
+                            .filter(ex => 
+                                // 1. Filter by Muscle Target: Exercise primary muscle must intersect with the target muscle list
+                                ex.primary.some(muscle => targetMuscles.includes(muscle))
+                            )
+                            .filter(ex => 
+                                // 2. Filter by Available Equipment: All required equipment for the exercise must be available
+                                ex.equipment.every(requiredKey => 
+                                    // Check if the required key exists and is checked in any equipment category (weights, cardio, floorSpace)
+                                    Object.values(currentAvailableEquipment).some(category => category?.[requiredKey])
+                                )
+                            )
+                            .map(ex => ex.name); 
+                    }, [workoutConfig, tempEquipmentOverride]); // Dependencies ensure re-calculation on config or equipment change
+                    
+                    // Cache the suggested exercises
+                    const suggestedExercises = getSuggestedExercises();
+                    const currentBestLift = bestLifts[exerciseName] || { weight: 0, reps: 0 };
+                    
+                    // If the selected exercise is no longer in the suggested list, reset it
+                    useEffect(() => {
+                        if (exerciseName && !suggestedExercises.includes(exerciseName)) {
+                            setExerciseName('');
+                        }
+                    }, [suggestedExercises, exerciseName]);
+                    
+                    // Add a new exercise to the active workout log
+                    const addExercise = (e) => {
+                        e.preventDefault();
+                        if (!exerciseName || sets <= 0 || reps <= 0) return;
+                        
+                        const newExercise = {
+                            id: Date.now(),
+                            name: exerciseName,
+                            setLogs: Array.from({ length: sets }, () => ({
+                                reps: reps,
+                                weight: weight,
+                            })),
+                            totalVolume: 0,
+                        };
+                        
+                        // Calculate total volume for the newly added exercise
+                        newExercise.totalVolume = newExercise.setLogs.reduce((sum, log) => sum + (log.reps * log.weight), 0);
+
+                        setActiveWorkout(prev => [...prev, newExercise]);
+                        
+                        // Reset form for next exercise (keep weight/reps from previous set)
+                        setExerciseName('');
+                        setSets(3);
+                        // weight/reps are kept to make logging similar lifts easier
+                    };
+                    
+                    // Update reps/weight for an individual set log
+                    const updateSetLog = (exerciseId, setIndex, field, value) => {
+                        setActiveWorkout(prev => prev.map(ex => {
+                            if (ex.id === exerciseId) {
+                                const newSetLogs = ex.setLogs.map((set, i) => 
+                                    i === setIndex ? { ...set, [field]: value } : set
+                                );
+                                // Recalculate total volume
+                                const newTotalVolume = newSetLogs.reduce((sum, log) => sum + (log.reps * log.weight), 0);
+                                return { ...ex, setLogs: newSetLogs, totalVolume: newTotalVolume };
+                            }
+                            return ex;
+                        }));
+                    };
+
+                    const saveWorkout = async () => {
+                        if (!userId || activeWorkout.length === 0 || isSaving) return;
+                        setIsSaving(true);
+                        
+                        try {
+                            // 1. Save Workout History
+                            const historyColRef = collection(db, getWorkoutHistoryCollectionPath());
+                            await addDoc(historyColRef, {
+                                userId: userId,
+                                sessionName: workoutConfig.sessionName || 'Untitled Session',
+                                split: workoutConfig.split,
+                                date: new Date().toISOString(),
+                                exercises: activeWorkout,
+                                totalSessionVolume: activeWorkout.reduce((sum, ex) => sum + ex.totalVolume, 0),
+                            });
+                            
+                            // 2. Update Best Lifts (based on highest weight or highest volume at equal weight)
+                            for (const ex of activeWorkout) {
+                                // Find the best single set in the current session based on PR logic (Volume first, then Weight)
+                                let sessionBestSet = { weight: 0, reps: 0, volume: 0 };
+                                
+                                for (const set of ex.setLogs) {
+                                    const volume = set.reps * set.weight;
+                                    
+                                    // Primary check: Highest Volume
+                                    if (volume > sessionBestSet.volume) {
+                                        sessionBestSet = { weight: set.weight, reps: set.reps, volume: volume };
+                                    } else if (volume === sessionBestSet.volume && set.weight > sessionBestSet.weight) {
+                                        // Volume Tie-breaker: Prefer set with higher weight
+                                        sessionBestSet = { weight: set.weight, reps: set.reps, volume: volume };
+                                    }
+                                }
+
+                                const currentBest = bestLifts[ex.name] || { weight: 0, reps: 0 };
+                                const currentBestVolume = currentBest.weight * currentBest.reps;
+                                
+                                // Only update if the session best set is better than the current overall best
+                                if (sessionBestSet.volume > currentBestVolume) {
+                                    const bestLiftRef = doc(db, getBestLiftsCollectionPath(), ex.name);
+                                    await setDoc(bestLiftRef, { 
+                                        weight: sessionBestSet.weight, 
+                                        reps: sessionBestSet.reps,
+                                        volume: sessionBestSet.volume,
+                                        date: new Date().toISOString()
+                                    });
+                                    // Update local state
+                                    setBestLifts(prev => ({ 
+                                        ...prev, 
+                                        [ex.name]: { 
+                                            weight: sessionBestSet.weight, 
+                                            reps: sessionBestSet.reps, 
+                                            volume: sessionBestSet.volume 
+                                        } 
+                                    }));
+                                }
+                            }
+
+                            console.log('Workout saved successfully! Total Volume: ' + activeWorkout.reduce((sum, ex) => sum + ex.totalVolume, 0) + ' kg');
+                            
+                            // Reset and navigate
+                            setActiveWorkout([]);
+                            setWorkoutConfig({ split: workoutSplits[0], muscleSelection: [], sessionName: '' });
+                            navigate('dashboard');
+                            
+                        } catch (err) {
+                            console.error("Failed to save workout:", err);
+                            setError("Failed to save workout data.");
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                            
+                            {/* Navigation Buttons */}
+                            <div className="flex justify-between items-center mb-4">
+                                <button onClick={() => navigate('start-workout')} className="text-sm px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 flex items-center">
+                                    &#8592; Back to Config
+                                </button>
+                                <button onClick={() => navigate('dashboard')} className="text-sm px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700">
+                                    Go to Dashboard
+                                </button>
+                            </div>
+
+                            <h2 className="text-3xl font-bold text-gray-800 text-center">{workoutConfig.sessionName || 'Active Workout'}</h2>
+                            <div className="text-sm text-gray-500 text-center">Focus: {workoutConfig.split}</div>
+                            
+                            {/* Current Workout Summary */}
+                            <div className="p-4 bg-gray-100 rounded-xl shadow-inner space-y-3">
+                                <p className="font-bold text-lg text-gray-800">Exercises Logged: {activeWorkout.length}</p>
+                                <p className="text-sm text-gray-600">Total Volume: {activeWorkout.reduce((sum, ex) => sum + ex.totalVolume, 0)} kg</p>
+                            </div>
+
+                            {/* Log New Exercise Form */}
+                            <form onSubmit={addExercise} className="p-4 border border-gray-300 rounded-xl shadow-md space-y-3 relative">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-xl font-semibold" style={{ color: VFIT_PRIMARY }}>Add Exercise</h3>
+                                    {/* Equipment Adjuster Button */}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsEquipmentModalOpen(true)}
+                                        className="text-sm px-3 py-1 rounded-full text-white font-medium hover:bg-opacity-90 transition"
+                                        style={{ backgroundColor: VFIT_ACCENT }}>
+                                        Edit Equipment
+                                    </button>
+                                </div>
+                                
+                                {/* Exercise Dropdown */}
+                                <div>
+                                    <select 
+                                        value={exerciseName}
+                                        onChange={(e) => setExerciseName(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none" style={{ borderColor: VFIT_PRIMARY, '--tw-ring-color': VFIT_PRIMARY }}>
+                                        <option value="">-- Select Exercise --</option>
+                                        {suggestedExercises.length === 0 ? (
+                                            <option disabled>No exercises found for this focus or equipment.</option>
+                                        ) : (
+                                            suggestedExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)
+                                        )}
+                                    </select>
+                                </div>
+
+                                {/* Sets, Reps, Weight Inputs */}
+                                <div className="grid grid-cols-3 gap-2">
+                                    <CounterInput label="Sets" value={sets} setValue={setSets} min={1} />
+                                    <CounterInput label="Reps" value={reps} setValue={setReps} min={1} />
+                                    <CounterInput label="Weight (kg)" value={weight} setValue={setWeight} min={0} bestLift={currentBestLift} />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    className="w-full py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                                    disabled={suggestedExercises.length === 0 || !exerciseName}>
+                                    ADD TO WORKOUT
+                                </button>
+                                {suggestedExercises.length === 0 && (
+                                    <p className="text-red-500 text-xs mt-2 text-center">No exercises available. Adjust focus or equipment.</p>
+                                )}
+                            </form>
+
+                            {/* Logged Exercises */}
+                            <div className="space-y-4">
+                                {activeWorkout.map((ex, exIndex) => (
+                                    <div key={ex.id} className="p-3 bg-white rounded-lg shadow border border-gray-200">
+                                        <h4 className="font-bold text-lg text-gray-800">{ex.name} (Volume: {ex.totalVolume} kg)</h4>
+                                        <div className="mt-2 space-y-2">
+                                            {ex.setLogs.map((set, setIndex) => (
+                                                <SetLogEditor
+                                                    key={setIndex}
+                                                    setIndex={setIndex}
+                                                    setLog={set}
+                                                    updateLog={(field, value) => updateSetLog(ex.id, setIndex, field, value)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Finish Workout Button */}
+                            <button 
+                                onClick={saveWorkout}
+                                disabled={activeWorkout.length === 0 || isSaving}
+                                style={{ backgroundColor: activeWorkout.length > 0 ? VFIT_ACCENT : 'gray' }}
+                                className="w-full py-3 text-white font-extrabold rounded-lg shadow-xl hover:opacity-90 transition disabled:opacity-50">
+                                {isSaving ? 'Saving Workout...' : 'FINISH & SAVE WORKOUT'}
+                            </button>
+                            
+                            {/* Equipment Modal */}
+                            <GymEquipmentModal 
+                                isOpen={isEquipmentModalOpen} 
+                                onClose={() => setIsEquipmentModalOpen(false)}
+                                initialEquipment={tempEquipmentOverride}
+                                onSave={setTempEquipmentOverride}
+                            />
+                        </div>
+                    );
+                };
+                
+                // --- VIEW 6: HISTORY ---
+
+                const HistoryView = () => {
+                    const [activeTab, setActiveTab] = useState('workouts');
+                    
+                    // Helper to format date
+                    const formatDate = (isoString) => {
+                        const date = new Date(isoString);
+                        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    };
+                    
+                    // Find the best set (PR) in a given list of set logs for an exercise
+                    const getExercisePR = (setLogs) => {
+                        let volumePR = { weight: 0, reps: 0, volume: 0 };
+                        let weightPR = { weight: 0, reps: 0 }; 
+
+                        for (const set of setLogs) {
+                            const volume = set.weight * set.reps;
+                            
+                            // 1. Volume PR Calculation (Primary metric)
+                            if (volume > volumePR.volume) {
+                                volumePR = { weight: set.weight, reps: set.reps, volume: volume };
+                            } else if (volume === volumePR.volume && set.weight > volumePR.weight) {
+                                // Volume Tie-breaker: Prefer set with higher weight
+                                volumePR = { weight: set.weight, reps: set.reps, volume: volume };
+                            }
+
+                            // 2. Max Weight PR Calculation
+                            if (set.weight > weightPR.weight) {
+                                weightPR = { weight: set.weight, reps: set.reps };
+                            } else if (set.weight === weightPR.weight && set.reps > weightPR.reps) {
+                                // Max Weight Tie-breaker: Same weight, higher reps is better for the 1RM estimation
+                                weightPR = { weight: set.weight, reps: set.reps };
+                            }
+                        }
+                        return { volumePR, weightPR };
+                    };
+
+                    const WorkoutHistoryTab = () => (
+                        <div className="space-y-4 pt-4">
+                            {workoutHistory.length === 0 ? (
+                                <div className="p-4 bg-blue-100 rounded-lg text-blue-700 text-center">
+                                    No workouts logged yet. Start a session from the Dashboard!
+                                </div>
+                            ) : (
+                                workoutHistory.map(workout => (
+                                    <div key={workout.id} className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                                        <div className="flex justify-between items-start mb-2 border-b pb-2">
+                                            <h3 className="text-xl font-bold" style={{ color: VFIT_PRIMARY }}>
+                                                {workout.sessionName}
+                                            </h3>
+                                            <div className="text-right">
+                                                <p className="text-sm font-medium text-gray-500">{formatDate(workout.date)}</p>
+                                                <p className="text-xs text-gray-400">Split: {workout.split}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <p className="text-sm font-semibold text-gray-700 mb-3">Total Volume: {workout.totalSessionVolume} kg</p>
+
+                                        <div className="space-y-2">
+                                            {workout.exercises.map((ex, exIndex) => {
+                                                const { volumePR, weightPR } = getExercisePR(ex.setLogs);
+                                                
+                                                // Check if the Max Volume set and the Max Weight set are the exact same
+                                                const isSameSet = volumePR.weight === weightPR.weight && volumePR.reps === weightPR.reps;
+                                                
+                                                return (
+                                                    <div key={exIndex} className="p-2 bg-gray-50 rounded-lg">
+                                                        <h4 className="text-md font-semibold text-gray-800">{ex.name}</h4>
+                                                        
+                                                        {/* Max Volume PR Display */}
+                                                        <div className="mt-1 text-xs flex justify-between items-center text-gray-600">
+                                                            <span className="font-bold text-gray-700">Max Volume:</span>
+                                                            <span className="text-green-600 font-medium">
+                                                                {volumePR.weight} kg x {volumePR.reps} reps
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Max Weight PR Display (Only if it's a different set) */}
+                                                        {!isSameSet && (
+                                                            <div className="mt-0.5 text-xs flex justify-between items-center text-gray-600">
+                                                                <span className="font-bold text-gray-700">Max Weight:</span>
+                                                                <span className="text-blue-600 font-medium">
+                                                                    {weightPR.weight} kg ({weightPR.reps} reps)
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Detailed Sets - collapsed by default for brevity */}
+                                                        <details className="mt-1 text-xs">
+                                                            <summary className="cursor-pointer text-gray-500 hover:text-gray-700">View All Sets ({ex.setLogs.length})</summary>
+                                                            <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                                                                {ex.setLogs.map((set, setIndex) => (
+                                                                    <li key={setIndex} className="text-gray-500">
+                                                                        Set {setIndex + 1}: {set.weight} kg x {set.reps} reps (Volume: {set.weight * set.reps} kg)
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </details>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    );
+
+                    const MealHistoryTab = () => (
+                        <div className="space-y-4 pt-4">
+                            <div className="p-4 bg-yellow-100 rounded-lg text-yellow-700 text-center">
+                                Meal logging feature is not yet fully implemented.
+                            </div>
+                            {/* Placeholder for meal history list */}
+                            {mealHistory.length === 0 ? (
+                                <div className="p-4 bg-gray-100 rounded-lg text-gray-500 text-center">
+                                    No meals logged.
+                                </div>
+                            ) : (
+                                // Meal list rendering here...
+                                <div>Meal log goes here</div>
+                            )}
+                        </div>
+                    );
+
+                    return (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <button onClick={() => navigate('dashboard')} className="text-sm px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 flex items-center">
+                                    &#8592; Back to Dashboard
+                                </button>
+                                <h2 className="text-3xl font-bold text-gray-800">History</h2>
+                                <div></div> {/* Spacer */}
+                            </div>
+                            
+
+                            {/* Tab Navigation */}
+                            <div className="flex border-b border-gray-300">
+                                <button 
+                                    onClick={() => setActiveTab('workouts')}
+                                    className={`py-2 px-4 font-semibold ${activeTab === 'workouts' ? 'border-b-2 text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+                                    style={{ borderBottomColor: activeTab === 'workouts' ? VFIT_PRIMARY : 'transparent' }}>
+                                    Workout Logs
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('meals')}
+                                    className={`py-2 px-4 font-semibold ${activeTab === 'meals' ? 'border-b-2 text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+                                    style={{ borderBottomColor: activeTab === 'meals' ? VFIT_PRIMARY : 'transparent' }}>
+                                    Meal Logs
+                                </button>
+                            </div>
+
+                            {/* Tab Content */}
+                            {activeTab === 'workouts' ? <WorkoutHistoryTab /> : <MealHistoryTab />}
+
+                        </div>
+                    );
+                };
+
+                // --- SUB-COMPONENTS (shared) ---
+                
+                // Quick Equipment Adjuster Modal
+                const GymEquipmentModal = ({ isOpen, onClose, initialEquipment, onSave }) => {
+                    const [tempProfile, setTempProfile] = useState(initialEquipment);
+
+                    useEffect(() => {
+                        // Reset temp profile when modal opens with new initial data
+                        if (isOpen) {
+                            setTempProfile(initialEquipment);
+                        }
+                    }, [isOpen, initialEquipment]);
+
+                    const handleCheckboxChange = (category, key, checked) => {
+                        setTempProfile(prev => ({
+                            ...prev,
+                            [category]: {
+                                ...(prev[category] || {}),
+                                [key]: checked,
+                            }
+                        }));
+                    };
+
+                    const handleSave = () => {
+                        onSave(tempProfile);
+                        onClose();
+                    };
+
+                    if (!isOpen) return null;
+
+                    return (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                                <h3 className="text-2xl font-bold" style={{ color: VFIT_PRIMARY }}>
+                                    Quick Equipment Adjuster
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                    These changes only affect the suggested exercises for the current session.
+                                </p>
+
+                                {Object.entries(gymEquipment).map(([category, items]) => (
+                                    <div key={category} className="p-3 border rounded-lg bg-gray-50">
+                                        <h4 className="font-semibold capitalize mb-2">{category.replace(/([A-Z])/g, ' $1')}</h4>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            {items.map(item => (
+                                                <div key={item.key} className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`modal-${item.key}`}
+                                                        checked={tempProfile[category]?.[item.key] || false}
+                                                        onChange={(e) => handleCheckboxChange(category, item.key, e.target.checked)}
+                                                        className="h-4 w-4 rounded border-gray-300"
+                                                        style={{ color: VFIT_ACCENT, borderColor: VFIT_ACCENT }}
+                                                    />
+                                                    <label htmlFor={`modal-${item.key}`} className="ml-2 text-gray-700 cursor-pointer">
+                                                        {item.icon} {item.name}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button 
+                                    onClick={handleSave}
+                                    style={{ backgroundColor: VFIT_PRIMARY }}
+                                    className="w-full py-3 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-300">
+                                    Apply Changes
+                                </button>
+                                <button 
+                                    onClick={onClose}
+                                    className="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-300">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    );
+                };
+
+                const CounterInput = ({ label, value, setValue, min = 0, bestLift = null }) => (
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">{label}
+                            {bestLift && label.includes('Weight') && bestLift.weight > 0 && 
+                                <span className="ml-1 text-xs text-green-500 font-normal"> (PR: {bestLift.weight}kg x {bestLift.reps}r)</span>
+                            }
+                        </label>
+                        <div className="flex items-center space-x-1">
+                            <button type="button" onClick={() => setValue(Math.max(min, value - 1))} className="p-1 bg-gray-200 rounded-lg hover:bg-gray-300 w-8">-</button>
+                            <input 
+                                type="number" 
+                                value={value} 
+                                onChange={(e) => setValue(Math.max(min, Number(e.target.value)))} 
+                                className="w-full text-center p-1 border rounded-lg"
+                            />
+                            <button type="button" onClick={() => setValue(value + 1)} className="p-1 bg-gray-200 rounded-lg hover:bg-gray-300 w-8">+</button>
+                        </div>
+                    </div>
+                );
+                
+                const SetLogEditor = ({ setIndex, setLog, updateLog }) => (
+                    <div className="flex items-center space-x-2 bg-gray-50 p-2 rounded-md">
+                        <span className="font-medium w-8 text-center text-gray-600">Set {setIndex + 1}</span>
+                        
+                        <div className="flex-1 flex items-center space-x-1">
+                            <CounterInput label="Reps" value={setLog.reps} setValue={(val) => updateLog('reps', val)} min={1} />
+                        </div>
+                        
+                        <div className="flex-1 flex items-center space-x-1">
+                            <CounterInput label="Weight" value={setLog.weight} setValue={(val) => updateLog('weight', val)} min={0} />
+                        </div>
+                    </div>
+                );
+
+                // --- MAIN RENDERER ---
+
+                const renderView = () => {
+                    switch (view) {
+                        case 'login':
+                            return <LoginView />;
+                        case 'register':
+                            return <RegisterView />;
+                        case 'gym-setup':
+                            return <GymSetupView />;
+                        case 'start-workout':
+                            return <StartWorkoutView />;
+                        case 'active-workout':
+                            return <ActiveWorkoutView />;
+                        case 'history':
+                            return <HistoryView />;
+                        case 'dashboard':
+                        default:
+                            return <DashboardView />;
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-gray-100">
+                        {/* Sticky Header: Dark Grey BG, Dark Orange VFit Text */}
+                        <header className="fixed top-0 left-0 right-0 w-full h-16 shadow-xl z-50 flex items-center justify-center" style={{ backgroundColor: VFIT_DARK_BG }}>
+                            <h1 
+                                style={{ color: VFIT_PRIMARY }}
+                                className="text-3xl font-extrabold tracking-widest uppercase cursor-pointer" 
+                                onClick={() => navigate('dashboard')}>
+                                VFit
+                            </h1>
+                        </header>
+
+                        <main className="pt-16 min-h-screen flex items-start justify-center p-4 sm:p-6 lg:p-8">
+                            <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 sm:p-8">
+
+                                {/* Global Error Display */}
+                                {error && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                                        {error}
+                                        <button onClick={() => setError(null)} className="ml-4 font-bold float-right">X</button>
+                                    </div>
+                                )}
+
+                                {/* Content Router */}
+                                {!dbReady ? <LoadingSpinner /> : renderView()}
+                            </div>
+                        </main>
+                    </div>
+                );
+            };
+
+            const container = document.getElementById('root');
+            const root = ReactDOM.createRoot(container);
+            root.render(<VFitApp />);
+        };
+        
+        // Wait for the Firebase script (type="module") to execute and populate window.firebase
+        window.onload = () => {
+            // Check for the presence of the global firebase object before running the app
+            if (window.firebase) {
+                window.runVFitApp();
+            } else {
+                console.error("Firebase modules not loaded. Cannot run VFitApp.");
+                document.getElementById('root').innerHTML = '<div class="text-center p-10 text-red-600">Error: Firebase modules failed to load.</div>';
+            }
+        };
+
+    </script>
+</body>
+</html>
+
     ],
     floorSpace: [
         { key: 'trx', name: 'TRX', icon: '🎗️' },
