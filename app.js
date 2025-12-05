@@ -1,3 +1,18 @@
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                primary: '#4F46E5',
+                'primary-dark': '#4338CA',
+                secondary: '#F97316',
+            },
+            fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+            },
+        }
+    }
+};
+
 // Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
