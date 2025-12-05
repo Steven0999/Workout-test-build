@@ -13,6 +13,7 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 let db = null;
 let auth = null;
 let userId = null;
+let isAuthReady = false; // Flag to ensure rendering only happens after auth check
 
 // Initialize Firebase
 if (Object.keys(firebaseConfig).length > 0) {
@@ -20,7 +21,7 @@ if (Object.keys(firebaseConfig).length > 0) {
     db = getFirestore(app);
     auth = getAuth(app);
 
-    // Authentication
+    // Authentication Setup
     const setupAuth = async () => {
         try {
             if (initialAuthToken) {
@@ -37,26 +38,28 @@ if (Object.keys(firebaseConfig).length > 0) {
         if (user) {
             userId = user.uid;
             console.log("User authenticated:", userId);
-            initApp();
         } else {
             userId = null;
             console.log("User signed out or failed to authenticate.");
-            initApp(); 
         }
+        isAuthReady = true; // Auth check has completed
+        initApp(); // Trigger rendering now that we have auth status
     });
 
     setupAuth();
 } else {
     console.warn("Firebase config not available. Running in local mode.");
-    initApp();
+    // In local mode, we consider auth "ready" immediately
+    isAuthReady = true; 
 }
+
 
 // --- Application State and Mock Data ---
 let currentView = 'home';
 let measurementsData = [
     // Mock data for initial view
-    { date: '2024-07-20', part: 'Chest', values: { 'Chest': '105' }, timestamp: '2024-07-20T10:00:00Z' },
-    { date: '2024-07-15', part: 'Biceps L & R', values: { 'Left': '38', 'Right': '37' }, timestamp: '2024-07-15T12:00:00Z' }
+    { date: '2024-07-20', part: 'Chest', values: { 'Chest': '105cm' }, timestamp: '2024-07-20T10:00:00Z' },
+    { date: '2024-07-15', part: 'Biceps L & R', values: { 'Left': '38cm', 'Right': '37cm' }, timestamp: '2024-07-15T12:00:00Z' }
 ]; 
 
 let historyLog = [
@@ -78,11 +81,6 @@ const VIEWS = {
     'meal-plans': { name: 'Meal Plans', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>` },
     'measurements': { name: 'Progress', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M4 15V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M15 11l-3 3-3-3"/></svg>` }
 };
-
-const BODY_PARTS = [
-    'Shoulders', 'Chest', 'Lats', 'Torso', 'Hips', 'Glutes',
-    'Biceps L & R', 'Triceps L & R', 'Upper Legs L & R', 'Calves L & R'
-];
 
 // Function to change the view
 window.setView = (view) => {
@@ -125,7 +123,7 @@ const renderEquipmentSummary = () => {
             ${maintenanceNeeded > 0 
                 ? `<p class="text-sm font-medium mt-2 text-red-500">⚠️ ${maintenanceNeeded} item(s) need maintenance.</p>` 
                 : '<p class="text-sm font-medium mt-2 text-primary">✅ All equipment looks good!</p>'}
-            <p class="text-xs mt-2 text-gray-400">Last used: ${equipmentInventory[1].last_used}</p>
+            <p class="text-xs mt-2 text-gray-400">User ID: ${userId || 'N/A'}</p>
         </div>
     `;
 };
@@ -172,7 +170,7 @@ const renderHistorySummary = () => {
             </h3>
             <div class="space-y-3">
                 ${historyLog.slice(0, 3).map(item => `
-                    <div class="flex items-center p-2 bg-gray-50 rounded-lg">
+                    <div class="flex items-center p-2 bg-gray-100 rounded-lg">
                         <span class="text-lg mr-3">${item.icon}</span>
                         <div class="flex-grow">
                             <p class="font-medium text-sm">${item.description}</p>
@@ -194,7 +192,7 @@ const renderHomeView = () => {
         <div class="space-y-6">
             <div class="text-center p-4 bg-gray-100 rounded-xl">
                 <h2 class="text-2xl font-bold text-gray-800">The Ultimate Dashboard</h2>
-                ${userId ? `<p class="text-xs text-gray-500 mt-1">User ID: ${userId}</p>` : ''}
+                ${userId ? `<p class="text-xs text-gray-500 mt-1">User ID: ${userId}</p>` : '<p class="text-xs text-red-500 mt-1">Not Authenticated</p>'}
             </div>
 
             <!-- 1. Quick Actions: Start Workout / Add Meal Plan -->
@@ -305,7 +303,10 @@ const renderMeasurementsView = () => {
 
 const renderActionButtons = () => {
     const container = document.getElementById('action-buttons');
-    if (!container) return;
+    if (!container) {
+        console.error("Action buttons container not found.");
+        return;
+    }
     
     container.innerHTML = Object.keys(VIEWS).map(key => {
         const view = VIEWS[key];
@@ -324,10 +325,17 @@ const renderActionButtons = () => {
 };
 
 const renderApp = () => {
-    renderActionButtons();
+    // Check if the DOM elements are definitely present before attempting to render
     const contentView = document.getElementById('content-view');
-    if (!contentView) return;
+    if (!contentView) {
+        // If content view is missing, abort rendering
+        console.error("Content view element (#content-view) not found. Aborting render.");
+        return;
+    }
 
+    renderActionButtons();
+    
+    // Display content based on current view
     switch (currentView) {
         case 'workouts':
             contentView.innerHTML = renderPlaceholderView('Workouts Tracker');
@@ -346,6 +354,11 @@ const renderApp = () => {
 };
 
 // --- Measurements Specific Logic ---
+
+const BODY_PARTS = [
+    'Shoulders', 'Chest', 'Lats', 'Torso', 'Hips', 'Glutes',
+    'Biceps L & R', 'Triceps L & R', 'Upper Legs L & R', 'Calves L & R'
+];
 
 const setupMeasurementsListeners = () => {
     const selectElement = document.getElementById('body-part-select');
@@ -397,18 +410,21 @@ const setupMeasurementsListeners = () => {
         let values = {};
         let isValid = false;
 
+        // Determine the unit to append (for mock purposes)
+        const unit = 'cm'; // Assume cm for simple mock data
+
         if (part.includes('L & R')) {
             const left = document.getElementById('input-left').value;
             const right = document.getElementById('input-right').value;
             if (left && right) {
-                values['Left'] = left;
-                values['Right'] = right;
+                values['Left'] = `${left}${unit}`;
+                values['Right'] = `${right}${unit}`;
                 isValid = true;
             }
         } else if (part) {
             const single = document.getElementById('input-single').value;
             if (single) {
-                values[part] = single;
+                values[part] = `${single}${unit}`;
                 isValid = true;
             }
         }
@@ -465,6 +481,12 @@ const setupMeasurementsListeners = () => {
 
 // Initial app launch
 const initApp = () => {
-    renderApp();
+    // Only attempt to render if the authentication state is resolved (or local mode)
+    if (isAuthReady) {
+        renderApp();
+    }
 };
+
+// Ensure the application renders only after the entire page (including the header/content divs) is loaded.
+window.onload = initApp;
 
