@@ -1,39 +1,408 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VFit Gym & Workout Tracker</title>
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-    <!-- Load React and ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Load Babel for in-browser JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+import { ChangeDetectionStrategy, Component, computed, signal, OnInit, effect } from '@angular/core';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { getFirestore, doc, setDoc, Firestore, collection, query, where, getDocs, setLogLevel } from 'firebase/firestore';
 
-    <!-- Configure Tailwind to use Inter font -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+// Define the available routes/views
+type View = 'login' | 'register' | 'dashboard';
+
+// These variables are typically injected by the hosting environment. 
+// When running on a static host like GitHub Pages, they will be UNDEFINED,
+// so we handle the fallback logic in initializeFirebase().
+declare const __app_id: string;
+declare const __firebase_config: string;
+declare const __initial_auth_token: string;
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <!-- Sticky Header: Dark Grey BG, Dark Orange VFit Text -->
+    <header class="fixed top-0 left-0 right-0 w-full h-16 bg-gray-900 shadow-xl z-50 flex items-center justify-center">
+        <h1 class="text-vfit-primary text-3xl font-extrabold tracking-widest uppercase cursor-pointer" 
+            (click)="setView('dashboard')">
+            VFit
+        </h1>
+    </header>
+
+    <main class="pt-16 min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 sm:p-8">
+
+            <!-- Loading/Initialization State -->
+            @if (!dbReady()) {
+                <div class="text-center py-10">
+                    <p class="text-xl font-semibold text-gray-700 mb-4">Initializing Application...</p>
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-vfit-primary mx-auto"></div>
+                </div>
+            } @else {
+                <!-- Login View -->
+                @if (view() === 'login') {
+                    <div class="space-y-6">
+                        <h2 class="text-3xl font-bold text-gray-800 text-center">Login to VFit</h2>
+                        <form (submit)="handleLogin($event)" class="space-y-4">
+                            <input type="email" placeholder="Email (dummy)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-vfit-primary focus:border-vfit-primary">
+                            <input type="password" placeholder="Password (dummy)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-vfit-primary focus:border-vfit-primary">
+                            <button type="submit" class="w-full py-3 bg-vfit-primary text-white font-semibold rounded-lg shadow-md hover:bg-vfit-accent transition duration-300">
+                                Sign In
+                            </button>
+                        </form>
+                        <p class="text-center text-sm text-gray-600">
+                            Don't have an account? 
+                            <span (click)="setView('register')" class="text-vfit-primary font-medium cursor-pointer hover:underline">Register here</span>
+                        </p>
+                    </div>
+                }
+
+                <!-- Register View -->
+                @if (view() === 'register') {
+                    <div class="space-y-6">
+                        <h2 class="text-3xl font-bold text-gray-800 text-center">Join VFit</h2>
+                        <form (submit)="handleRegister($event)" class="space-y-4">
+                            <input type="text" placeholder="Username (dummy)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-vfit-primary focus:border-vfit-primary">
+                            <input type="email" placeholder="Email (dummy)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-vfit-primary focus:border-vfit-primary">
+                            <input type="password" placeholder="Password (dummy)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-vfit-primary focus:border-vfit-primary">
+                            <button type="submit" class="w-full py-3 bg-vfit-primary text-white font-semibold rounded-lg shadow-md hover:bg-vfit-accent transition duration-300">
+                                Create Account
+                            </button>
+                        </form>
+                        <p class="text-center text-sm text-gray-600">
+                            Already have an account? 
+                            <span (click)="setView('login')" class="text-vfit-primary font-medium cursor-pointer hover:underline">Sign In</span>
+                        </p>
+                    </div>
+                }
+
+                <!-- Dashboard View (Protected) -->
+                @if (view() === 'dashboard') {
+                    <div class="space-y-6">
+                        <h2 class="text-3xl font-bold text-gray-800 text-center">VFit Dashboard</h2>
+                        
+                        <!-- User Status -->
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                            <p class="text-sm font-semibold text-indigo-700">Welcome back, {{ username() }}!</p>
+                            <p class="text-xs text-indigo-600">Your User ID: <span class="break-all">{{ userId() }}</span></p>
+                        </div>
+                        
+                        <!-- Main Dashboard Content Placeholder -->
+                        <div class="bg-gray-50 p-6 rounded-lg border border-dashed text-center space-y-3">
+                            <p class="text-xl font-medium text-gray-700">Your Activity Summary</p>
+                            <p class="text-gray-500">This is where your personalized fitness metrics and workout logs would appear.</p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <button (click)="logout()" class="w-full py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+                            Logout
+                        </button>
+                    </div>
                 }
             }
+        </div>
+    </main>
+  `,
+  styles: [`
+    .text-vfit-primary { color: #C05621; }
+    .bg-vfit-primary { background-color: #C05621; }
+    .hover\\:bg-vfit-accent:hover { background-color: #f97316; }
+    .focus\\:border-vfit-primary:focus { border-color: #C05621; }
+    .focus\\:ring-vfit-primary:focus { --tw-ring-color: #C05621; }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class App implements OnInit {
+  // State Signals
+  view = signal<View>('login');
+  user = signal<User | null>(null);
+  dbReady = signal(false);
+  auth!: Auth;
+  firestore!: Firestore;
+
+  // Computed Properties
+  userId = computed(() => this.user()?.uid || 'Not Authenticated');
+  username = computed(() => this.user() ? `User-${this.user()!.uid.substring(0, 4)}` : 'Guest');
+
+  constructor() {
+    // Effect to handle navigation based on authentication status
+    effect(() => {
+      const currentUser = this.user();
+      if (this.dbReady()) {
+        if (currentUser) {
+          // If authenticated, go to dashboard
+          this.view.set('dashboard');
+        } else {
+          // If not authenticated, go to login
+          this.view.set('login');
         }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
+      }
+    });
+
+    // Set Firestore log level for debugging
+    setLogLevel('debug');
+  }
+
+  ngOnInit() {
+    this.initializeFirebase();
+  }
+
+  async initializeFirebase() {
+    try {
+      // --- GITHUB PAGES/STATIC HOST FALLBACK LOGIC ---
+      // Provide placeholder values if the global variables are not defined (e.g., when running on GitHub Pages)
+      const DUMMY_FIREBASE_CONFIG = '{"apiKey": "AIzaSy_DUMMY_KEY", "projectId": "vfit-gh-pages-mock", "appId": "1:234567:web"}';
+      
+      // Access globals safely via 'window as any' and provide fallbacks
+      const firebaseConfigStr = typeof (window as any).__firebase_config !== 'undefined'
+        ? (window as any).__firebase_config
+        : DUMMY_FIREBASE_CONFIG;
+
+      const initialAuthToken = typeof (window as any).__initial_auth_token !== 'undefined'
+        ? (window as any).__initial_auth_token
+        : null;
+      // --- END FALLBACK LOGIC ---
+
+      const firebaseConfig = JSON.parse(firebaseConfigStr);
+      const app = initializeApp(firebaseConfig);
+      this.auth = getAuth(app);
+      this.firestore = getFirestore(app);
+
+      // 1. Initial Authentication Check
+      await new Promise<void>(resolve => {
+        const unsubscribe = onAuthStateChanged(this.auth, async (user) => {
+          this.user.set(user);
+          this.dbReady.set(true);
+          unsubscribe();
+          resolve();
+        });
+      });
+
+      // 2. Sign In if initial auth token is present (from Canvas or mock)
+      if (initialAuthToken && !this.user()) {
+        await signInWithCustomToken(this.auth, initialAuthToken);
+      } else if (!this.user()) {
+        // Fallback to anonymous sign-in if no custom token is provided
+        await signInAnonymously(this.auth);
+      }
+
+      // 3. Set up persistent listener
+      onAuthStateChanged(this.auth, (user) => {
+        this.user.set(user);
+      });
+
+    } catch (error) {
+      console.error('Firebase initialization failed:', error);
+      // Ensure dbReady is set to true even on failure so the UI can render
+      this.dbReady.set(true); 
+    }
+  }
+
+  setView(newView: View) {
+    // Only allow navigation if the user is authorized for the target view
+    if (newView === 'dashboard' && !this.user()) {
+      // Prevent unauthorized access to the dashboard
+      return;
+    }
+    this.view.set(newView);
+  }
+
+  // --- Authentication Handlers (Dummy) ---
+
+  async handleLogin(event: Event) {
+    event.preventDefault();
+    console.log('Attempting login...');
+    // TEMPORARY: Since we can't use email/password auth in this environment, 
+    // this action is just a placeholder and will rely on the initial auth setup.
+    if (this.user()) {
+        this.setView('dashboard');
+    } else {
+        console.error('Login failed (simulated). Check console logs for details.');
+    }
+  }
+
+  async handleRegister(event: Event) {
+    event.preventDefault();
+    console.log('Attempting registration...');
+    // TEMPORARY: For demonstration, we simply navigate to the login page.
+    this.setView('login');
+  }
+
+  async logout() {
+    try {
+      await this.auth.signOut();
+      console.log('User logged out successfully.');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }
+}
+
+                        <p class="text-center text-sm text-gray-600">
+                            Already have an account? 
+                            <span (click)="setView('login')" class="text-vfit-primary font-medium cursor-pointer hover:underline">Sign In</span>
+                        </p>
+                    </div>
+                }
+
+                <!-- Dashboard View (Protected) -->
+                @if (view() === 'dashboard') {
+                    <div class="space-y-6">
+                        <h2 class="text-3xl font-bold text-gray-800 text-center">VFit Dashboard</h2>
+                        
+                        <!-- User Status -->
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                            <p class="text-sm font-semibold text-indigo-700">Welcome back, {{ username() }}!</p>
+                            <p class="text-xs text-indigo-600">Your User ID: <span class="break-all">{{ userId() }}</span></p>
+                        </div>
+                        
+                        <!-- Main Dashboard Content Placeholder -->
+                        <div class="bg-gray-50 p-6 rounded-lg border border-dashed text-center space-y-3">
+                            <p class="text-xl font-medium text-gray-700">Your Activity Summary</p>
+                            <p class="text-gray-500">This is where your personalized fitness metrics and workout logs would appear.</p>
+                        </div>
+
+                        <!-- Action Button -->
+                        <button (click)="logout()" class="w-full py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+                            Logout
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    </main>
+  `,
+  styles: [`
+    .text-vfit-primary { color: #C05621; }
+    .bg-vfit-primary { background-color: #C05621; }
+    .hover\\:bg-vfit-accent:hover { background-color: #f97316; }
+    .focus\\:border-vfit-primary:focus { border-color: #C05621; }
+    .focus\\:ring-vfit-primary:focus { --tw-ring-color: #C05621; }
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class App implements OnInit {
+  // State Signals
+  view = signal<View>('login');
+  user = signal<User | null>(null);
+  dbReady = signal(false);
+  auth!: Auth;
+  firestore!: Firestore;
+
+  // Computed Properties
+  userId = computed(() => this.user()?.uid || 'Not Authenticated');
+  username = computed(() => this.user() ? `User-${this.user()!.uid.substring(0, 4)}` : 'Guest');
+
+  constructor() {
+    // Effect to handle navigation based on authentication status
+    effect(() => {
+      const currentUser = this.user();
+      if (this.dbReady()) {
+        if (currentUser) {
+          // If authenticated, go to dashboard
+          this.view.set('dashboard');
+        } else {
+          // If not authenticated, go to login
+          this.view.set('login');
         }
-        /* Custom scrollbar for better mobile feel */
-        ::-webkit-scrollbar {
-            width: 6px;
+      }
+    });
+
+    // Set Firestore log level for debugging
+    setLogLevel('debug');
+  }
+
+  ngOnInit() {
+    this.initializeFirebase();
+  }
+
+  async initializeFirebase() {
+    try {
+      // --- GITHUB PAGES/STATIC HOST FALLBACK LOGIC ---
+      // Provide placeholder values if the global variables are not defined (e.g., when running on GitHub Pages)
+      const DUMMY_FIREBASE_CONFIG = '{"apiKey": "AIzaSy_DUMMY_KEY", "projectId": "vfit-gh-pages-mock", "appId": "1:234567:web"}';
+      
+      // Access globals safely via 'window as any' and provide fallbacks
+      const firebaseConfigStr = typeof (window as any).__firebase_config !== 'undefined'
+        ? (window as any).__firebase_config
+        : DUMMY_FIREBASE_CONFIG;
+
+      const initialAuthToken = typeof (window as any).__initial_auth_token !== 'undefined'
+        ? (window as any).__initial_auth_token
+        : null;
+      // --- END FALLBACK LOGIC ---
+
+      const firebaseConfig = JSON.parse(firebaseConfigStr);
+      const app = initializeApp(firebaseConfig);
+      this.auth = getAuth(app);
+      this.firestore = getFirestore(app);
+
+      // 1. Initial Authentication Check
+      await new Promise<void>(resolve => {
+        const unsubscribe = onAuthStateChanged(this.auth, async (user) => {
+          this.user.set(user);
+          this.dbReady.set(true);
+          unsubscribe();
+          resolve();
+        });
+      });
+
+      // 2. Sign In if initial auth token is present (from Canvas or mock)
+      if (initialAuthToken && !this.user()) {
+        await signInWithCustomToken(this.auth, initialAuthToken);
+      } else if (!this.user()) {
+        // Fallback to anonymous sign-in if no custom token is provided
+        await signInAnonymously(this.auth);
+      }
+
+      // 3. Set up persistent listener
+      onAuthStateChanged(this.auth, (user) => {
+        this.user.set(user);
+      });
+
+    } catch (error) {
+      console.error('Firebase initialization failed:', error);
+      // Ensure dbReady is set to true even on failure so the UI can render
+      this.dbReady.set(true); 
+    }
+  }
+
+  setView(newView: View) {
+    // Only allow navigation if the user is authorized for the target view
+    if (newView === 'dashboard' && !this.user()) {
+      // Prevent unauthorized access to the dashboard
+      return;
+    }
+    this.view.set(newView);
+  }
+
+  // --- Authentication Handlers (Dummy) ---
+
+  async handleLogin(event: Event) {
+    event.preventDefault();
+    console.log('Attempting login...');
+    // TEMPORARY: Since we can't use email/password auth in this environment, 
+    // this action is just a placeholder and will rely on the initial auth setup.
+    if (this.user()) {
+        this.setView('dashboard');
+    } else {
+        console.error('Login failed (simulated). Check console logs for details.');
+    }
+  }
+
+  async handleRegister(event: Event) {
+    event.preventDefault();
+    console.log('Attempting registration...');
+    // TEMPORARY: For demonstration, we simply navigate to the login page.
+    this.setView('login');
+  }
+
+  async logout() {
+    try {
+      await this.auth.signOut();
+      console.log('User logged out successfully.');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }
+}
+
         }
         ::-webkit-scrollbar-thumb {
             background-color: #C05621;
