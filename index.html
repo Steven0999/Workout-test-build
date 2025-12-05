@@ -1,42 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personal Fitness Tracker</title>
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Tailwind Config -->
-    <script src="tailwind-config.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ["Inter", "sans-serif"] },
+                    colors: {
+                        primary: "#059669",
+                        "primary-dark": "#047857",
+                        secondary: "#f97316",
+                    },
+                },
+            },
+        };
+    </script>
 
-    <!-- App Styles -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body class="flex justify-center">
     <div id="app" class="app-container bg-white flex flex-col">
-        
+
         <!-- Header -->
         <header class="bg-primary text-white p-4 shadow-lg sticky top-0 z-10">
             <h1 class="text-2xl font-bold text-center">My Progress Hub</h1>
         </header>
 
-        <!-- Main Content -->
-        <main id="content-view" class="flex-grow p-4 overflow-y-auto">
-            <!-- Rendered by JS -->
-        </main>
+        <!-- Dynamic content -->
+        <main id="content-view" class="flex-grow p-4 overflow-y-auto"></main>
 
-        <!-- Footer Buttons -->
+        <!-- Action Buttons -->
         <footer class="bg-white border-t border-gray-200 p-3 shadow-2xl sticky bottom-0 z-10">
-            <div id="action-buttons" class="flex justify-around">
-                <!-- Rendered by JS -->
-            </div>
+            <div id="action-buttons" class="flex justify-around"></div>
         </footer>
     </div>
 
-    <!-- Main App Script -->
-    <script type="module" src="app.js"></script>
+    <!-- Main JS -->
+    <script type="module" src="app.js" defer></script>
 </body>
 </html>
