@@ -1,29 +1,51 @@
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f0f4f8; /* From Advanced Dashboard */
-        transition: all 0.3s ease;
-    }
-    /* Custom scrollbar for better aesthetics (From Advanced Dashboard) */
-    .custom-scroll::-webkit-scrollbar {
-        width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background-color: #9ca3af;
-        border-radius: 3px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-        background-color: #e5e7eb;
-    }
-    .view-container {
-        min-height: calc(100vh - 4rem);
-    }
-    /* Modal transitions (From Body Metrics) */
-    .modal-metrics { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
-    .fade-in { opacity: 1; transform: translateY(0); }
-    .fade-out { opacity: 0; transform: translateY(-10px); }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Fitness Dashboard (Local Storage)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
+            transition: all 0.3s ease;
+        }
+        /* Custom scrollbar for better aesthetics */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #9ca3af;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background-color: #e5e7eb;
+        }
+        .view-container {
+            min-height: calc(100vh - 4rem);
+        }
+        /* Modal transitions */
+        .modal-metrics { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+        .fade-in { opacity: 1; transform: translateY(0); }
+        .fade-out { opacity: 0; transform: translateY(-10px); }
+    </style>
+    <script>
+        // Tailwind config to ensure Inter font is used
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
 
 <div class="max-w-5xl mx-auto space-y-8">
     
@@ -43,7 +65,7 @@
                 <p class="text-lg text-gray-600">
                     <span class="font-bold text-indigo-600">Goal:</span> <span id="user-goal"></span>
                 </p>
-                <p id="user-id-display" class="text-sm text-indigo-300 mt-1"></p>
+                <!-- Removed Firebase User ID Display -->
             </div>
         </header>
 
@@ -170,7 +192,7 @@
                 <button id="open-equipment-modal-btn" class="text-sm py-2 px-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 shadow-md">
                     <i class="fas fa-tools mr-1"></i> Equipment
                 </button>
-                <button onclick="saveWorkout(); showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition shadow-md">
+                <button onclick="saveWorkout(true); showView('dashboard')" class="text-sm py-2 px-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition shadow-md">
                     <i class="fas fa-times-circle mr-1"></i> Finish & Dashboard
                 </button>
             </div>
@@ -234,10 +256,7 @@
         <div id="measurements-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             </div>
 
-        <div id="loading-state-metrics" class="text-center p-12">
-            <i class="fas fa-spinner fa-spin text-4xl text-purple-500"></i>
-            <p class="mt-4 text-gray-700 font-semibold">Initializing Firebase and loading data...</p>
-        </div>
+        <!-- Removed Firebase loading state -->
     </div>
 
     <div id="history-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
@@ -343,19 +362,19 @@
 
 </div>
 
-<script type="module">
-    // --- FIREBASE IMPORTS (From Body Metrics Tracker) ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<script>
+    // --- LOCAL STORAGE KEYS ---
+    const LS_KEY_STATE = 'FT_GLOBAL_STATE';
+    const LS_KEY_WORKOUTS = 'FT_WORKOUT_LOG';
+    const LS_KEY_MEALS = 'FT_MEAL_LOG';
+    const LS_KEY_METRICS = 'FT_BODY_METRICS';
 
-
-    // --- GLOBAL STATE AND DATA (Combined) ---
+    // --- GLOBAL STATE AND DATA (Initial Default State) ---
     let state = {
         currentView: 'dashboard',
         userName: "Steven",
         goal: "Muscle Gain",
-        gymName: "Places Leisure",
+        gymName: "My Home Gym",
         gymSetup: { weights: ["dumbbell", "bench", "barbell", "cables", "weighted machines"], cardio: ["treadmill", "rower"], floor: ["TRX", "sandbag"] }, 
         exerciseHistory: {},
         currentWorkout: null,
@@ -383,17 +402,8 @@
         'Right Calf', 'Left Calf', 'Shoulders',
     ];
 
-    // Access global variables provided by the environment (Firebase related)
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-    let db, auth, userId = null;
-    let isAuthReady = false;
-
-
-    // --- EXPANDED EXERCISE LIBRARY (Unchanged) ---
+    // --- EXERCISE LIBRARY (Unchanged) ---
     const EXERCISE_LIBRARY = [
-        // [Exercises as defined in the original Advanced Dashboard]
         //Movements
         { name: "Barbell Clean & Press", equipment: ["barbell"], focus: ["Full Body", "Press", "shoulders", "quads", "glutes"] },
         { name: "Dumbbell Thrusters", equipment: ["dumbbell"], focus: ["Full Body", "Squat", "Press", "shoulders", "quads"] },
@@ -518,11 +528,7 @@
     const mealListPlaceholder = document.getElementById('meal-list-placeholder');
 
     // Body Metrics Tracker Elements
-    const statusMessageEl = document.getElementById('status-message');
-    const loadingStateMetricsEl = document.getElementById('loading-state-metrics');
     const measurementsContainer = document.getElementById('measurements-container');
-    const userIdDisplay = document.getElementById('user-id-display');
-    const addMeasurementBtnMetrics = document.getElementById('add-measurement-btn-metrics');
     const modalMetricsEl = document.getElementById('measurement-modal');
     const modalMetricsContentEl = modalMetricsEl.querySelector('.transform');
     const areaSelectEl = document.getElementById('area-select');
@@ -530,8 +536,86 @@
     const unitSelectEl = document.getElementById('unit-select');
     const measurementForm = document.getElementById('measurement-form');
 
+    // --- LOCAL STORAGE FUNCTIONS ---
+    
+    /** Saves the core state (gym name/setup/history) to localStorage */
+    function saveCoreState() {
+        const coreState = {
+            gymName: state.gymName,
+            gymSetup: state.gymSetup,
+            exerciseHistory: state.exerciseHistory,
+            userName: state.userName,
+            goal: state.goal
+        };
+        localStorage.setItem(LS_KEY_STATE, JSON.stringify(coreState));
+    }
 
-    // --- UTILITY & NAVIGATION FUNCTIONS (Combined) ---
+    /** Loads the core state from localStorage */
+    function loadCoreState() {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_KEY_STATE));
+            if (data) {
+                state.gymName = data.gymName || state.gymName;
+                state.gymSetup = data.gymSetup || state.gymSetup;
+                state.exerciseHistory = data.exerciseHistory || state.exerciseHistory;
+                state.userName = data.userName || state.userName;
+                state.goal = data.goal || state.goal;
+            }
+        } catch (e) {
+            console.error("Error loading core state from local storage:", e);
+        }
+    }
+
+    /** Saves the meal log to localStorage */
+    function saveMealLog() {
+        localStorage.setItem(LS_KEY_MEALS, JSON.stringify(state.mealLog));
+    }
+
+    /** Loads the meal log from localStorage */
+    function loadMealLog() {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_KEY_MEALS));
+            state.mealLog = data || [];
+        } catch (e) {
+            console.error("Error loading meal log from local storage:", e);
+        }
+    }
+    
+    /** Saves the workout log to localStorage */
+    function saveWorkoutLog() {
+        localStorage.setItem(LS_KEY_WORKOUTS, JSON.stringify(state.workoutLog));
+    }
+
+    /** Loads the workout log from localStorage */
+    function loadWorkoutLog() {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_KEY_WORKOUTS));
+            state.workoutLog = data || [];
+        } catch (e) {
+            console.error("Error loading workout log from local storage:", e);
+        }
+    }
+    
+    /** Saves the body metrics array to localStorage */
+    function saveMetrics(metrics) {
+        localStorage.setItem(LS_KEY_METRICS, JSON.stringify(metrics));
+    }
+
+    /** Loads the body metrics array from localStorage */
+    function loadMetrics() {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_KEY_METRICS));
+            // Ensure timestamps are converted back to Date objects if needed, 
+            // but since we store ISO strings this is handled by Date constructor in rendering.
+            return data || [];
+        } catch (e) {
+            console.error("Error loading metrics from local storage:", e);
+            return [];
+        }
+    }
+
+
+    // --- UTILITY & NAVIGATION FUNCTIONS (Simplified) ---
     
     /** Manages the visibility of the application views. */
     window.showView = function(viewName, updateHistory = true) {
@@ -546,7 +630,7 @@
 
         views.forEach(id => {
             const element = viewElements[id];
-            if (element) { // Check if element exists before accessing classList
+            if (element) {
                 element.classList.add('hidden');
                 element.classList.remove('block');
             }
@@ -570,13 +654,7 @@
         } else if (viewName === 'meal-log') {
             renderMealLogSummary();
         } else if (viewName === 'body-metrics') {
-            // Ensure the listener is active when this view is opened
-            if (isAuthReady) {
-                 loadingStateMetricsEl.classList.add('hidden');
-                 startRealtimeListener(); 
-            } else {
-                loadingStateMetricsEl.classList.remove('hidden');
-            }
+            loadAndRenderMetrics(); // Load and render metrics immediately
         }
 
         updateDashboardStatus();
@@ -590,7 +668,7 @@
          return true;
     }
 
-    /** Shows a temporary message in the custom box (Advanced Dashboard style). */
+    /** Shows a temporary message in the custom box. */
     function showMessage(message, type = 'success', duration = 3000) {
         let bgColor, borderColor, textColor;
         if (type === 'success') {
@@ -605,7 +683,7 @@
             bgColor = 'bg-blue-100';
             borderColor = 'border-blue-500';
             textColor = 'text-blue-800';
-        } else if (type === 'metrics-error') { // New type for Firebase-related errors
+        } else if (type === 'metrics-error') { 
              bgColor = 'bg-purple-100';
             borderColor = 'border-purple-500';
             textColor = 'text-purple-800';
@@ -620,19 +698,6 @@
             messageBox.classList.remove('opacity-100');
             setTimeout(() => messageBox.classList.add('hidden'), 300);
         }, duration);
-    }
-
-    /** Displays a message in the status bar (Error or Success - Body Metrics style) */
-    function displayStatus(message, isError = false) {
-         // Use the main status box for Firebase specific errors to match the original style
-        statusMessageEl.classList.remove('hidden', 'bg-red-100', 'bg-green-100', 'border-red-400', 'border-green-400', 'text-red-700', 'text-green-700');
-        statusMessageEl.innerHTML = `<i class="mr-2 fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
-        
-        if (isError) {
-            statusMessageEl.classList.add('bg-red-100', 'border', 'border-red-400', 'text-red-700', 'px-4', 'py-3', 'rounded', 'relative');
-        } else {
-            statusMessageEl.classList.add('bg-green-100', 'border', 'border-green-400', 'text-green-700', 'px-4', 'py-3', 'rounded', 'relative');
-        }
     }
     
     /** Formats a number to 1 decimal place if it has a decimal, otherwise an integer. */
@@ -659,8 +724,9 @@
     }
     
     /** Formats a Date object into a readable string (for Metrics Tracker) */
-    function formatDateMetrics(date) {
-        if (!date) return 'N/A';
+    function formatDateMetrics(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -670,25 +736,20 @@
         });
     }
     
-    // --- BODY METRICS MODAL LOGIC (Adapted) ---
+    // --- BODY METRICS MODAL LOGIC ---
     
     window.openMetricsModal = function() {
-        // Populate the area dropdown
         areaSelectEl.innerHTML = BODY_AREAS.map(area => `<option value="${area}"> ${area}</option>`).join('');
-        
-        // Reset form inputs
         valueInputEl.value = '';
         areaSelectEl.value = BODY_AREAS[0];
         unitSelectEl.value = 'inches';
 
-        // Show modal
         modalMetricsEl.classList.remove('pointer-events-none', 'opacity-0');
         modalMetricsContentEl.classList.remove('fade-out');
         modalMetricsContentEl.classList.add('fade-in');
     }
 
     window.closeMetricsModal = function() {
-        // Hide modal
         modalMetricsContentEl.classList.remove('fade-in');
         modalMetricsContentEl.classList.add('fade-out');
         setTimeout(() => {
@@ -696,100 +757,17 @@
         }, 300); 
     }
 
-    // --- FIREBASE INITIALIZATION & AUTHENTICATION (Merged) ---
+    // --- LOCAL STORAGE DATA LOGIC (Body Metrics) ---
 
-    async function initializeFirebase() {
-        // Note: Firebase configuration is expected to be provided by the environment via __firebase_config.
-        
-        try {
-            setLogLevel('debug');
-
-            // Attempt to initialize app using the global configuration
-            const app = initializeApp(JSON.parse(__firebase_config));
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            const handleAuth = async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (e) {
-                    console.error("Firebase Auth Error:", e);
-                    displayStatus("Failed to authenticate with Firebase.", true);
-                }
-            };
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    userIdDisplay.innerHTML = `Firebase User ID: <span class="font-mono text-indigo-300">${userId}</span>`;
-                    isAuthReady = true;
-                    // Only start the listener if the user is in the metrics view
-                    if (state.currentView === 'body-metrics') {
-                         loadingStateMetricsEl.classList.add('hidden');
-                         startRealtimeListener();
-                    }
-                } else {
-                    handleAuth();
-                }
-            });
-
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            displayStatus("Failed to initialize Firebase services. Check if __firebase_config is valid.", true);
-            loadingStateMetricsEl.classList.add('hidden');
-            addMeasurementBtnMetrics.disabled = true;
-        }
-    }
-
-    // --- FIRESTORE DATA LOGIC (Body Metrics) ---
-
-    /** Sets up the real-time listener for measurements */
-    function startRealtimeListener() {
-        if (!isAuthReady || !db || !userId) {
-            return;
-        }
-
-        const collectionPath = `artifacts/${appId}/users/${userId}/measurements`;
-        const measurementsRef = collection(db, collectionPath);
-        // Use client-side sorting as per instruction to avoid index issues
-        // However, we still use orderBy('timestamp', 'desc') here to get the latest data first from Firestore
-        // and apply any required client-side sorting on the fetched data array.
-        const q = query(measurementsRef, orderBy('timestamp', 'desc'));
-
-        onSnapshot(q, (snapshot) => {
-            const fetchedMeasurements = snapshot.docs.map(doc => {
-                const data = doc.data();
-                // Ensure that the timestamp exists before calling toDate()
-                const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
-                return {
-                    id: doc.id,
-                    area: data.area,
-                    value: data.value,
-                    unit: data.unit,
-                    timestamp: timestamp,
-                };
-            });
-            
-            // Client-side sorting is not necessary here since the grouping naturally handles order
-            // and Firestore query handles the timestamp order for fetching.
-            
-            renderMeasurements(fetchedMeasurements);
-            loadingStateMetricsEl.classList.add('hidden');
-            addMeasurementBtnMetrics.disabled = false;
-
-        }, (err) => {
-            console.error("Firestore onSnapshot error:", err);
-            displayStatus("Failed to load measurements in real-time.", true);
-            loadingStateMetricsEl.classList.add('hidden');
-        });
+    /** Loads and renders metrics from local storage */
+    function loadAndRenderMetrics() {
+        const metrics = loadMetrics();
+        // Since we loaded everything, we just pass it to the renderer
+        renderMeasurements(metrics);
     }
 
     /** Handles saving a new measurement from the modal form */
-    async function handleSaveMeasurement(e) {
+    function handleSaveMeasurement(e) {
         e.preventDefault();
 
         const area = areaSelectEl.value;
@@ -801,33 +779,35 @@
             return;
         }
 
-        if (!db || !userId) {
-            showMessage("Metrics Tracker not ready. Please wait for initialization.", 'metrics-error');
-            return;
-        }
-
         const saveBtn = document.getElementById('save-measurement-btn-metrics');
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
 
         try {
-            const collectionPath = `artifacts/${appId}/users/${userId}/measurements`;
-            const measurementsRef = collection(db, collectionPath);
-
-            await addDoc(measurementsRef, {
-                userId,
+            const currentMetrics = loadMetrics();
+            const newMeasurement = {
+                id: Date.now().toString(), // Simple unique ID
                 area,
                 value,
                 unit,
-                timestamp: serverTimestamp(),
-            });
-
+                timestamp: new Date().toISOString(),
+            };
+            
+            // Add the new measurement to the array
+            currentMetrics.push(newMeasurement);
+            
+            // Sort by timestamp descending before saving to keep it consistent
+            currentMetrics.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            saveMetrics(currentMetrics);
+            loadAndRenderMetrics(); // Re-render the metrics view
+            
             closeMetricsModal();
             showMessage(`Successfully recorded ${area} measurement!`, 'success');
 
         } catch (e) {
-            console.error("Error adding document: ", e);
-            showMessage("Failed to save the measurement.", 'metrics-error');
+            console.error("Error adding measurement: ", e);
+            showMessage("Failed to save the measurement to local storage.", 'metrics-error');
         } finally {
             saveBtn.disabled = false;
             saveBtn.innerHTML = 'Save Measurement';
@@ -840,14 +820,15 @@
     function renderMeasurements(measurements) {
         measurementsContainer.innerHTML = '';
         
-        // 1. Group measurements by area
-        // Since Firestore query is ordered by timestamp descending, the first element [0] in the array for each area will always be the latest.
+        // 1. Group measurements by area and sort by time (latest first in each array)
         const measurementsByArea = measurements.reduce((acc, current) => {
             const area = current.area;
             if (!acc[area]) { acc[area] = []; }
             acc[area].push(current);
             return acc;
         }, {});
+        
+        // The loadMetrics function sorts the main array, so individual area arrays are already sorted descending by timestamp.
 
         const areasMeasured = Object.keys(measurementsByArea).sort();
 
@@ -916,7 +897,7 @@
         });
     }
     
-    // --- OTHER RENDER & LOGIC FUNCTIONS (Unchanged from Advanced Dashboard) ---
+    // --- OTHER RENDER & LOGIC FUNCTIONS (Adapted for Local Storage) ---
     
     function renderGymSetupCheckboxes(weightsContainer, cardioContainer, floorContainer) {
         const currentSetup = state.gymSetup;
@@ -1048,6 +1029,9 @@
         state.gymSetup.weights = formData.getAll('weights');
         state.gymSetup.cardio = formData.getAll('cardio');
         state.gymSetup.floor = formData.getAll('floor');
+        
+        saveCoreState(); // Save state to local storage
+
         if (isModal) {
             equipmentModal.classList.add('hidden');
             renderExerciseDropdown();
@@ -1119,10 +1103,18 @@
         if (validSets.length === 0) { showMessage("Cannot save: No sets recorded positive reps or weight.", 'error'); return; }
         const volume = calculateVolume(validSets);
         const maxWeight = validSets.filter(s => s.reps > 0).reduce((max, s) => Math.max(max, s.weight), 0);
+        
+        // Update History in state
         if (!state.exerciseHistory[exercise.name] || maxWeight > state.exerciseHistory[exercise.name].bestWeight) {
-            state.exerciseHistory[exercise.name] = { bestWeight: maxWeight, bestReps: validSets.find(s => s.weight === maxWeight)?.reps || 0, lastDate: new Date().toLocaleDateString(), };
+            state.exerciseHistory[exercise.name] = { 
+                bestWeight: maxWeight, 
+                bestReps: validSets.find(s => s.weight === maxWeight)?.reps || 0, 
+                lastDate: new Date().toLocaleDateString(), 
+            };
             if (maxWeight > 0) { showMessage(`New PB for ${exercise.name}: ${formatWeight(maxWeight)}kg!`, 'success'); }
+            saveCoreState(); // Save history update
         }
+
         state.currentWorkout.exercises.push({ ...exercise, setsData: validSets, volume: volume, });
         setsTrackingContainer.innerHTML = '';
         exerciseSelect.value = '';
@@ -1133,14 +1125,24 @@
         showMessage(`${exercise.name} logged successfully! Total volume: ${formatWeight(volume)}kg.`, 'success');
     }
 
-    window.saveWorkout = function() {
+    window.saveWorkout = function(isFinishBtn) {
         if (state.currentWorkout?.currentExercise) {
             if (state.currentWorkout.currentExercise.setsData.some(s => s.weight > 0 || s.reps > 0)) { saveExercise(); } 
             else { state.currentWorkout.currentExercise = null; showMessage("Empty sets were discarded.", 'info'); }
         }
-        if (!state.currentWorkout || state.currentWorkout.exercises.length === 0) { showMessage("The workout is empty. No session saved.", 'error'); state.currentWorkout = null; return; }
+        if (!state.currentWorkout || state.currentWorkout.exercises.length === 0) { 
+            if (isFinishBtn) {
+                 showMessage("The workout is empty. No session saved.", 'error');
+            }
+            state.currentWorkout = null; 
+            return; 
+        }
+        
         const totalVolume = state.currentWorkout.exercises.reduce((total, ex) => total + ex.volume, 0);
         state.workoutLog.push({ ...state.currentWorkout, totalVolume: totalVolume, duration: 'Simulated 45 min', });
+        
+        saveWorkoutLog(); // Save workout log to local storage
+
         state.currentWorkout = null;
         showMessage(`Workout finished! Total volume lifted: ${formatWeight(totalVolume)}kg. Great job!`, 'success', 6000);
     }
@@ -1152,7 +1154,10 @@
         const mealName = nameInput.value.trim();
         const mealDetails = detailsInput.value.trim();
         if (mealName.length === 0) { showMessage("Please enter a name for the meal.", 'error'); return; }
+        
         state.mealLog.push({ name: mealName, details: mealDetails, date: new Date().toISOString() });
+        saveMealLog(); // Save meal log to local storage
+
         showMessage(`Meal "${mealName}" logged successfully!`, 'success');
         e.target.reset();
         renderMealLogSummary();
@@ -1170,25 +1175,27 @@
     }
 
 
-    // --- INITIALIZATION & EVENT LISTENERS (Merged) ---
+    // --- INITIALIZATION & EVENT LISTENERS ---
 
     function initApp() {
-        // Load user info (currently hardcoded)
+        // 1. Load all data from local storage
+        loadCoreState();
+        loadMealLog();
+        loadWorkoutLog();
+        
+        // 2. Load user info from state
         document.getElementById('user-name').textContent = state.userName;
         document.getElementById('user-goal').textContent = state.goal;
 
-        // Render initial controls
+        // 3. Render initial controls
         renderMuscleCheckboxes();
         renderWorkoutFocus();
         updateDashboardStatus();
         
-        // Setup default view
+        // 4. Setup default view
         showView('dashboard', false); 
 
-        // Firebase Initialization must happen once on load
-        initializeFirebase(); 
-
-        // Event Listeners for forms
+        // 5. Event Listeners for forms
         gymSetupForm.addEventListener('submit', handleGymSetupSave);
         activeGymSetupForm.addEventListener('submit', handleGymSetupSave);
         workoutFocusSelect.addEventListener('change', handleFocusChange);
@@ -1201,7 +1208,7 @@
         // Active Workout Listeners
         document.getElementById('start-sets-btn').addEventListener('click', renderSetsTracking);
         document.getElementById('finish-workout-btn').addEventListener('click', () => {
-            saveWorkout();
+            saveWorkout(true);
             showView('dashboard');
         });
 
@@ -1235,17 +1242,6 @@
     window.onload = initApp;
 
 </script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        fontFamily: {
-          sans: ['Inter', 'sans-serif'],
-        },
-      }
-    }
-  }
-</script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
 
