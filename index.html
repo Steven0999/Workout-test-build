@@ -65,8 +65,7 @@
                 <p class="text-lg text-gray-600">
                     <span class="font-bold text-indigo-600">Goal:</span> <span id="user-goal"></span>
                 </p>
-                <!-- Removed Firebase User ID Display -->
-            </div>
+                </div>
         </header>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -256,8 +255,7 @@
         <div id="measurements-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             </div>
 
-        <!-- Removed Firebase loading state -->
-    </div>
+        </div>
 
     <div id="history-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
@@ -430,8 +428,7 @@
         { name: "Barbell Back Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes", "hamstrings"] },
         { name: "Barbell Front Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
         { name: "Dumbbell Split Squat", equipment: ["dumbbell"], focus: ["Lower Body", "Squat", "quads"] },
-        { name: "Belt Machine Squat", equipment: ["weighted machines"], focus: ["Lower Body", "Squat", "glutes"] },
-   
+
         { name: "Dumbbell Goblet Squat", equipment: ["dumbbell", "floor"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
         { name: "Leg Extension (Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Squat", "quads"] },
         { name: "Leg Press (Machine)", equipment: ["weighted machines"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
@@ -449,8 +446,8 @@
         { name: "Barbell Hip Thrusts", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "glutes"] },
         { name: "Smith Machine Reverse Lunges", equipment: ["smith machine"], focus: ["Lower Body", "Hinge", "glutes","quads"] },
         { name: "Dumbbell Reverse Lunges", equipment: ["dumbbell"], focus: ["Lower Body","Hinge", "glutes", "quads"] },
-        { name: "Hip Thrusts (Plate Machine) ", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
-        { name: "Hip Thrusts (Pin Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Hip Thrusts (Plate Machine) ", equipment: ["weighted machine"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Hip Thrusts (Pin Machine)", equipment: ["pinstack machine"], focus: ["Lower Body", "Hinge", "glutes"] },
         { name: "Single Leg Hip Thrusts (Dumbbell)", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "glutes"] },
         { name: "45 degree hip extenstions", equipment: ["back extension"], focus: ["Hinge", "glutes"] },
 
@@ -471,7 +468,7 @@
      
         //Glutes
         { name: "Seated Machine Hip Abduction", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
-        { name: "Cable Machine Single Leg Abduction", equipment: ["cables"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Cable Machine Single Leg Abduction", equipment: ["cable machines"], focus: ["Lower Body", "Hinge", "glutes"] },
     
 
         //Abs
@@ -606,9 +603,11 @@
     function loadMetrics() {
         try {
             const data = JSON.parse(localStorage.getItem(LS_KEY_METRICS));
-            // Ensure timestamps are converted back to Date objects if needed, 
-            // but since we store ISO strings this is handled by Date constructor in rendering.
-            return data || [];
+            // Sort by timestamp descending so the latest is always first
+            if (data) {
+                 return data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+            return [];
         } catch (e) {
             console.error("Error loading metrics from local storage:", e);
             return [];
@@ -797,7 +796,7 @@
             // Add the new measurement to the array
             currentMetrics.push(newMeasurement);
             
-            // Sort by timestamp descending before saving to keep it consistent
+            // Re-sort by timestamp descending after adding to keep it consistent before saving
             currentMetrics.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
             saveMetrics(currentMetrics);
@@ -821,7 +820,7 @@
     function renderMeasurements(measurements) {
         measurementsContainer.innerHTML = '';
         
-        // 1. Group measurements by area and sort by time (latest first in each array)
+        // 1. Group measurements by area (They are already sorted descending by timestamp from loadMetrics)
         const measurementsByArea = measurements.reduce((acc, current) => {
             const area = current.area;
             if (!acc[area]) { acc[area] = []; }
@@ -829,8 +828,6 @@
             return acc;
         }, {});
         
-        // The loadMetrics function sorts the main array, so individual area arrays are already sorted descending by timestamp.
-
         const areasMeasured = Object.keys(measurementsByArea).sort();
 
         if (areasMeasured.length === 0) {
@@ -1245,4 +1242,3 @@
 </script>
 </body>
 </html>
-
