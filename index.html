@@ -254,16 +254,73 @@
         floor: ["TRX", "bands", "floor", "medicine ball"]
     };
 
-    const FOCUS_OPTIONS = ["Full Body", "Upper Body", "Lower Body", "Push", "Pull", "Legs"];
+    const FOCUS_OPTIONS = ["Full Body", "Upper Body", "Lower Body", "Push", "Pull", "Squat", "Hinge"];
 
+    const EQUIPMENT_MAP = {
+        weights: ["barbell", "dumbbell", "pinstack machines", "weighted machines", "cables machine", "smith machine", "back extension"],
+        cardio: ["treadmill", "bike", "rower", "cross trainer", "assault bike", "ski erg", "step machine"],
+        floor: ["TRX", "Ropes", "sandbag", "medicine ball", "slam ball", "floor"],
+    };
+    // ... (FOCUS_OPTIONS, MUSCLE_GROUPS, CIRCUMFERENCE_AREAS, EXERCISE_LIBRARY remain the same)
+    const FOCUS_OPTIONS = ["Full Body", "Upper Body", "Lower Body", "Press", "Pull", "Squat", "Hinge", "Specific Muscles", "Cardio"];
+    const MUSCLE_GROUPS = ["biceps", "triceps", "shoulders", "quads", "hamstrings", "abs", "chest", "lats", "upper back", "glutes", "calves"];
+    const CIRCUMFERENCE_AREAS = ['Chest', 'Waist', 'Hips', 'Right Bicep', 'Left Bicep', 'Right Thigh', 'Left Thigh', 'Right Calf', 'Left Calf', 'Shoulders'];
     const EXERCISE_LIBRARY = [
-        { name: "Bench Press", equipment: ["barbell", "machines"], focus: ["Upper Body", "Push"] },
-        { name: "Dumbbell Press", equipment: ["dumbbell"], focus: ["Upper Body", "Push"] },
-        { name: "Squat", equipment: ["barbell", "machines"], focus: ["Lower Body", "Legs"] },
-        { name: "Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Full Body"] },
-        { name: "Lat Pulldown", equipment: ["machines", "cables"], focus: ["Upper Body", "Pull"] },
-        { name: "Bicep Curls", equipment: ["dumbbell", "barbell", "cables"], focus: ["Upper Body", "Pull"] },
-        { name: "Treadmill Run", equipment: ["treadmill"], focus: ["Full Body"] }
+        { name: "Barbell Clean & Press", equipment: ["barbell"], focus: ["Full Body", "Press", "shoulders", "quads", "glutes"] },
+        { name: "Dumbbell Thrusters", equipment: ["dumbbell"], focus: ["Full Body", "Squat", "Press", "shoulders", "quads"] },
+        { name: "Sandbag Get-Ups", equipment: ["sandbag", "floor"], focus: ["Full Body", "abs", "shoulders"] },
+        { name: "Medicine Ball Slams", equipment: ["medicine ball", "slam ball"], focus: ["Full Body", "abs"] },
+        { name: "Barbell Bench Press", equipment: ["bench", "barbell"], focus: ["Upper Body", "Press", "chest", "triceps", "shoulders"] },
+        { name: "Dumbbell Overhead Press", equipment: ["dumbbell"], focus: ["Upper Body", "Press", "shoulders", "triceps"] },
+        { name: "Machine Chest Press", equipment: ["weighted machines", "pinstack machines"], focus: ["Upper Body", "Press", "chest", "triceps"] },
+        { name: "Cable Crossover (High)", equipment: ["cables machine"], focus: ["Upper Body", "Press", "chest"] },
+        { name: "Dumbbell Incline Press", equipment: ["bench", "dumbbell"], focus: ["Upper Body", "Press", "chest", "shoulders"] },
+        { name: "Pinstack Shoulder Press", equipment: ["pinstack machines"], focus: ["Press", "shoulders", "triceps"] },
+        { name: "Barbell Bent-Over Row", equipment: ["barbell"], focus: ["Upper Body", "Pull", "lats", "upper back", "biceps"] },
+        { name: "Dumbbell Single-Arm Row", equipment: ["dumbbell", "bench"], focus: ["Upper Body", "Pull", "lats", "upper back"] },
+        { name: "Cable Face Pulls", equipment: ["cables machine"], focus: ["Upper Body", "Pull", "upper back", "shoulders"] },
+        { name: "Lat Pulldown (Machine)", equipment: ["pinstack machines"], focus: ["Upper Body", "Pull", "lats", "biceps"] },
+        { name: "TRX Inverted Row", equipment: ["TRX"], focus: ["Upper Body", "Pull", "upper back", "biceps"] },
+        { name: "Seated Cable Row", equipment: ["cables machine"], focus: ["Pull", "upper back", "lats", "biceps"] },
+        { name: "Barbell Back Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes", "hamstrings"] },
+        { name: "Barbell Front Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+        { name: "Dumbbell Split Squat", equipment: ["dumbbell"], focus: ["Lower Body", "Squat", "quads"] },
+        { name: "Dumbbell Goblet Squat", equipment: ["dumbbell", "floor"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+        { name: "Leg Extension (Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Squat", "quads"] },
+        { name: "Leg Press (Machine)", equipment: ["weighted machines"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+        { name: "Dumbbell Bulgarian Split Squat", equipment: ["dumbbell", "bench"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
+        { name: "Dumbbell B stance Squat", equipment: ["dumbbell"], focus: ["Lower Body", "Squat", "glutes"] },
+        { name: "Barbell Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes", "Full Body", "lats"] },
+        { name: "Dumbbell Romanian Deadlift", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes"] },
+        { name: "Barbell Romanian Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Cable Pull-Through", equipment: ["cables machine"], focus: ["Lower Body", "Hinge", "glutes", "hamstrings"] },
+        { name: "Leg Curl (Machine)", equipment: ["pinstack machines", "weighted machines"], focus: ["Lower Body", "hamstrings"] },
+        { name: "Glute-Ham Raise (Floor)", equipment: ["floor"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes"] },
+        { name: "Barbell Hip Thrusts", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Smith Machine Reverse Lunges", equipment: ["smith machine"], focus: ["Lower Body", "Hinge", "glutes","quads"] },
+        { name: "Dumbbell Reverse Lunges", equipment: ["dumbbell"], focus: ["Lower Body","Hinge", "glutes", "quads"] },
+        { name: "Hip Thrusts (Plate Machine) ", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Hip Thrusts (Pin Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Single Leg Hip Thrusts (Dumbbell)", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "45 degree hip extenstions", equipment: ["back extension"], focus: ["Hinge", "glutes"] },
+        { name: "Dumbbell Hammer Curl", equipment: ["dumbbell"], focus: ["biceps"] },
+        { name: "Barbell Bicep Curl", equipment: ["barbell"], focus: ["biceps"] },
+        { name: "Cable Rope Tricep Pushdown", equipment: ["cables machine"], focus: ["triceps"] },
+        { name: "Dumbbell Skullcrushers", equipment: ["dumbbell", "bench"], focus: ["triceps"] },
+        { name: "Dumbbell Lateral Raise", equipment: ["dumbbell"], focus: ["shoulders"] },
+        { name: "Cable Rear Delt Fly", equipment: ["cables machine"], focus: ["shoulders", "upper back"] },
+        { name: "Seated Machine Hip Abduction", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Cable Machine Single Leg Abduction", equipment: ["cables machine"], focus: ["Lower Body", "Hinge", "glutes"] },
+        { name: "Hanging Leg Raise", equipment: ["floor"], focus: ["abs"] },
+        { name: "Weighted Machine Crunch", equipment: ["weighted machines"], focus: ["abs"] },
+        { name: "Dumbbell Calf Raise", equipment: ["dumbbell"], focus: ["calves"] },
+        { name: "Hyperextension (Floor)", equipment: ["floor"], focus: ["hamstrings", "glutes"] },
+        { name: "Treadmill 5K Run", equipment: ["treadmill"], focus: ["Cardio", "Full Body"] },
+        { name: "Rower 2000m Sprint", equipment: ["rower"], focus: ["Cardio", "Full Body"] },
+        { name: "Assault Bike Interval", equipment: ["assault bike"], focus: ["Cardio", "Full Body"] },
+        { name: "Cross Trainer Endurance", equipment: ["cross trainer"], focus: ["Cardio", "Full Body"] },
+        { name: "Ski Erg 10 Minute Challenge", equipment: ["ski erg"], focus: ["Cardio", "Full Body", "Upper Body", "Pull"] },
+        { name: "Step Machine Climb", equipment: ["step machine"], focus: ["Cardio", "Lower Body"] },
     ];
 
     /* --- APP STATE & LOCAL STORAGE --- */
