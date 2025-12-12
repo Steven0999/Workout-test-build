@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fitness Dashboard - Local Edition</title>
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -24,82 +25,129 @@
             --text-gray: #4b5563;
             --white: #ffffff;
             --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-dark); line-height: 1.5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; background-color: var(--bg); color: var(--text-dark); line-height: 1.6; }
 
         /* --- LAYOUT --- */
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
         .hidden { display: none !important; }
-        header { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 30px; }
-        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 15px; }
-        .user-info { display: flex; gap: 20px; flex-wrap: wrap; }
-        .info-tag { font-size: 0.9rem; color: var(--text-gray); }
+        
+        header { 
+            background: var(--white); padding: 25px; border-radius: var(--radius); 
+            box-shadow: var(--shadow); margin-bottom: 30px; 
+            border-left: 6px solid var(--primary);
+        }
+        h1 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: var(--text-dark); }
+        h2 { margin-bottom: 15px; font-size: 1.5rem; }
+        h3 { margin-bottom: 10px; font-size: 1.1rem; color: var(--text-gray); }
+
+        .user-info { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+        .info-tag { 
+            font-size: 0.9rem; background: #eef2ff; padding: 5px 12px; 
+            border-radius: 20px; color: var(--text-gray); border: 1px solid #e0e7ff;
+        }
         .info-tag span { font-weight: bold; color: var(--primary); }
 
         /* --- DASHBOARD GRID --- */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        
         .btn-card { 
-            padding: 25px; border: none; border-radius: 16px; color: white; font-size: 1.2rem; 
-            font-weight: bold; cursor: pointer; transition: transform 0.2s, background 0.2s;
-            text-align: left; box-shadow: var(--shadow);
+            padding: 25px; border: none; border-radius: var(--radius); color: white; font-size: 1.3rem; 
+            font-weight: bold; cursor: pointer; transition: transform 0.2s, filter 0.2s;
+            text-align: left; box-shadow: var(--shadow); display: flex; flex-direction: column;
+            justify-content: space-between; min-height: 140px; position: relative; overflow: hidden;
         }
-        .btn-card:hover { transform: translateY(-3px); }
-        .btn-card p { font-size: 0.8rem; font-weight: normal; opacity: 0.8; margin-top: 5px; }
+        .btn-card i { font-size: 2rem; margin-bottom: 10px; opacity: 0.8; }
+        .btn-card:hover { transform: translateY(-3px); filter: brightness(110%); }
+        .btn-card p { font-size: 0.85rem; font-weight: normal; opacity: 0.9; margin-top: auto; }
 
+        /* Color Utilities */
         .bg-indigo { background: var(--primary); }
-        .bg-indigo:hover { background: var(--primary-hover); }
         .bg-green { background: var(--success); }
-        .bg-green:hover { background: var(--success-hover); }
         .bg-yellow { background: var(--warning); }
-        .bg-yellow:hover { background: var(--warning-hover); }
         .bg-purple { background: var(--purple); }
-        .bg-purple:hover { background: var(--purple-hover); }
         .bg-gray { background: #6b7280; }
+        .bg-red { background: var(--danger); }
 
-        /* --- FORMS & INPUTS --- */
-        .view-card { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: var(--shadow); }
-        .view-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px; margin-bottom: 20px; }
+        /* --- FORMS & VIEWS --- */
+        .view-card { background: var(--white); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .view-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 2px solid #f3f4f6; padding-bottom: 15px; margin-bottom: 20px; 
+        }
+        
+        .back-btn {
+            background: #f3f4f6; border: none; padding: 8px 16px; border-radius: 8px;
+            cursor: pointer; font-weight: 600; color: var(--text-gray); transition: background 0.2s;
+        }
+        .back-btn:hover { background: #e5e7eb; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; font-size: 0.9rem; color: var(--text-gray); margin-bottom: 5px; }
         
         input, select, textarea { 
-            width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #d1d5db; 
-            border-radius: 10px; font-size: 1rem;
+            width: 100%; padding: 12px; border: 2px solid #e5e7eb; 
+            border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;
         }
-        label { font-weight: bold; font-size: 0.9rem; color: var(--text-gray); }
-        .form-group { margin-bottom: 20px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
         .submit-btn { 
-            width: 100%; padding: 15px; border-radius: 12px; border: none; color: white; 
-            font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px;
+            width: 100%; padding: 15px; border-radius: 8px; border: none; color: white; 
+            font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
-        /* --- UTILS --- */
-        .equipment-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .option-box { background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #e5e7eb; }
-        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; margin-bottom: 5px; }
-        .checkbox-item input { width: auto; margin: 0; }
+        /* --- CONFIG SECTION --- */
+        .equipment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .option-box { background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
+        
+        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 8px; cursor: pointer; }
+        .checkbox-item input { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--primary); }
+
+        /* --- TRACKING UI --- */
+        .set-row { 
+            display: grid; grid-template-columns: 80px 1fr 1fr; gap: 10px; align-items: center; 
+            margin-bottom: 10px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;
+        }
+        .set-row span { font-weight: bold; color: var(--text-gray); font-size: 0.9rem; }
+        .set-row input { padding: 8px; margin: 0; font-size: 0.9rem; }
+
+        .logged-item { 
+            border-left: 5px solid var(--success); background: #f0fdf4; padding: 15px; 
+            border-radius: 8px; margin-bottom: 10px; border: 1px solid #dcfce7;
+        }
+        .logged-item strong { color: var(--text-dark); }
+        .logged-item small { color: #6b7280; }
 
         /* --- MODALS --- */
         .modal-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
             display: flex; align-items: center; justify-content: center; z-index: 100;
         }
         .modal-content { 
-            background: white; width: 90%; max-width: 600px; max-height: 80vh; 
-            overflow-y: auto; border-radius: 20px; padding: 25px; 
+            background: white; width: 95%; max-width: 600px; max-height: 85vh; 
+            overflow-y: auto; border-radius: 20px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
 
         /* --- MESSAGE BOX --- */
         #message-box {
             position: fixed; top: 20px; right: 20px; padding: 15px 25px; 
             border-radius: 8px; color: white; font-weight: bold; z-index: 1000;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* --- TRACKING ROWS --- */
-        .set-row { display: grid; grid-template-columns: 1fr 2fr 2fr; gap: 10px; align-items: center; margin-bottom: 10px; padding: 10px; background: #f3f4f6; border-radius: 8px; }
-        .logged-item { border-left: 5px solid var(--success); background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        /* --- RESPONSIVE --- */
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            h1 { font-size: 1.5rem; }
+            .grid { grid-template-columns: 1fr; }
+            .set-row { grid-template-columns: 60px 1fr 1fr; gap: 5px; }
+        }
     </style>
 </head>
 <body>
@@ -107,62 +155,73 @@
 <div class="container">
     <div id="message-box" class="hidden"></div>
 
+    <!-- MAIN DASHBOARD -->
     <div id="view-dashboard" class="view">
         <header>
-            <h1>Integrated Fitness</h1>
+            <h1><i class="fas fa-dumbbell" style="color: var(--primary);"></i> Integrated Fitness</h1>
             <div class="user-info">
                 <div class="info-tag">Name: <span id="user-name-display">Guest User</span></div>
-                <div class="info-tag">Goal: <span id="user-goal-display">Maintenance</span></div>
+                <div class="info-tag">Gym: <span id="gym-name-display">Not Set</span></div>
             </div>
         </header>
 
         <div class="grid">
             <button class="btn-card bg-indigo" onclick="showView('gym-config')">
-                <i class="fas fa-dumbbell"></i> Configure Gym
-                <p id="gym-status">Loading equipment...</p>
+                <i class="fas fa-cogs"></i>
+                <span>Configure Gym</span>
+                <p id="gym-status">Loading items...</p>
             </button>
             <button class="btn-card bg-green" onclick="showView('plan-workout')">
-                <i class="fas fa-running"></i> Plan Workout
+                <i class="fas fa-running"></i>
+                <span>Start Workout</span>
+                <p>Plan & Track Session</p>
             </button>
             <button class="btn-card bg-yellow" onclick="showView('meal-log')">
-                <i class="fas fa-utensils"></i> Log Meal
+                <i class="fas fa-utensils"></i>
+                <span>Log Meal</span>
+                <p>Track nutrition</p>
             </button>
             <button class="btn-card bg-purple" onclick="showView('body-metrics')">
-                <i class="fas fa-ruler"></i> Body Metrics
+                <i class="fas fa-weight"></i>
+                <span>Body Metrics</span>
+                <p>Log weight & progress</p>
             </button>
-            <button class="btn-card bg-gray" id="view-history-btn">
-                <i class="fas fa-chart-line"></i> View History
+            <button class="btn-card bg-gray" onclick="openHistory()">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+                <p>View Charts & Logs</p>
             </button>
         </div>
         
-        <div style="text-align: center; margin-top: 40px;">
-            <button onclick="resetAppData()" style="color: var(--danger); background: none; border: none; text-decoration: underline; cursor: pointer;">
-                Reset All Local Data
+        <div style="text-align: center; margin-top: 50px; opacity: 0.7;">
+            <button onclick="resetAppData()" style="color: var(--danger); background: none; border: none; text-decoration: underline; cursor: pointer; font-size: 0.9rem;">
+                <i class="fas fa-trash"></i> Reset All Local Data
             </button>
         </div>
     </div>
 
+    <!-- GYM CONFIGURATION -->
     <div id="view-gym-config" class="view-card hidden">
         <div class="view-header">
             <h2>Gym Configuration</h2>
-            <button onclick="showView('dashboard')">Back</button>
+            <button class="back-btn" onclick="showView('dashboard')">Back</button>
         </div>
         <form id="gym-setup-form">
             <div class="form-group">
                 <label>Gym Name</label>
-                <input type="text" id="gym-name-input" value="My Local Gym">
+                <input type="text" id="gym-name-input" value="My Local Gym" placeholder="e.g. Garage Gym">
             </div>
             <div class="equipment-grid">
                 <div class="option-box">
-                    <h3>Weights</h3>
+                    <h3><i class="fas fa-dumbbell"></i> Weights</h3>
                     <div id="weights-options"></div>
                 </div>
                 <div class="option-box">
-                    <h3>Cardio</h3>
+                    <h3><i class="fas fa-bicycle"></i> Cardio</h3>
                     <div id="cardio-options"></div>
                 </div>
                 <div class="option-box">
-                    <h3>Floor</h3>
+                    <h3><i class="fas fa-child"></i> Floor/Other</h3>
                     <div id="floor-options"></div>
                 </div>
             </div>
@@ -170,76 +229,104 @@
         </form>
     </div>
 
+    <!-- MEAL LOG -->
     <div id="view-meal-log" class="view-card hidden">
         <div class="view-header">
             <h2>Log Meal</h2>
-            <button onclick="showView('dashboard')">Back</button>
+            <button class="back-btn" onclick="showView('dashboard')">Back</button>
         </div>
         <form id="meal-form">
-            <input type="text" id="meal-name" placeholder="Meal Name" required>
-            <textarea id="meal-details" placeholder="Details (Calories, protein, etc)"></textarea>
+            <div class="form-group">
+                <label>Meal Name</label>
+                <input type="text" id="meal-name" placeholder="e.g. Breakfast Oatmeal" required>
+            </div>
+            <div class="form-group">
+                <label>Details</label>
+                <textarea id="meal-details" rows="3" placeholder="Calories, protein, macros..."></textarea>
+            </div>
             <button type="submit" class="submit-btn bg-yellow">Log Meal</button>
         </form>
-        <div id="todays-meals" style="margin-top: 20px;"></div>
+        <div id="todays-meals" style="margin-top: 30px;"></div>
     </div>
 
+    <!-- PLAN WORKOUT -->
     <div id="view-plan-workout" class="view-card hidden">
         <div class="view-header">
-            <h2>Start Workout</h2>
-            <button onclick="showView('dashboard')">Back</button>
+            <h2>Workout Focus</h2>
+            <button class="back-btn" onclick="showView('dashboard')">Back</button>
         </div>
         <form id="plan-form">
             <div class="form-group">
-                <label>Focus</label>
+                <label>Select Primary Focus</label>
                 <select id="workout-focus"></select>
             </div>
             <button type="submit" class="submit-btn bg-green">Start Session</button>
         </form>
     </div>
 
+    <!-- TRACK ACTIVE WORKOUT -->
     <div id="view-track-workout" class="view-card hidden">
         <div class="view-header">
-            <h2 id="active-workout-title">Active Session</h2>
-            <button onclick="finishWorkout()">Finish</button>
+            <div>
+                <h2 id="active-workout-title">Active Session</h2>
+                <small id="active-date" style="color: #6b7280;"></small>
+            </div>
+            <button class="back-btn" onclick="finishWorkout()">Finish & Save</button>
         </div>
         
-        <div id="exercise-adder" class="option-box" style="margin-bottom: 20px;">
-            <label>Select Exercise</label>
-            <select id="exercise-select"></select>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="number" id="input-sets" value="3" placeholder="Sets">
-                <input type="number" id="input-reps" value="10" placeholder="Reps">
+        <div id="exercise-adder" class="option-box" style="margin-bottom: 25px; border-color: var(--primary);">
+            <label>Add Exercise</label>
+            <select id="exercise-select" style="margin-bottom: 10px;"></select>
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="input-sets" value="3" placeholder="Sets" style="width: 80px;">
+                <input type="number" id="input-reps" value="10" placeholder="Reps" style="width: 80px;">
+                <button onclick="startTrackingExercise()" class="submit-btn bg-indigo" style="margin: 0; padding: 10px;">Add</button>
             </div>
-            <button onclick="startTrackingExercise()" class="submit-btn bg-indigo" style="padding: 10px;">Setup Sets</button>
         </div>
 
         <div id="active-sets-area"></div>
-        <div id="logged-exercises-list"></div>
+        
+        <div style="margin-top: 30px; border-top: 2px solid #f3f4f6; padding-top: 20px;">
+            <h3>Completed in this session:</h3>
+            <div id="logged-exercises-list">
+                <p style="color: #9ca3af; font-style: italic;">No exercises completed yet.</p>
+            </div>
+        </div>
     </div>
 
+    <!-- BODY METRICS -->
     <div id="view-body-metrics" class="view-card hidden">
         <div class="view-header">
             <h2>Body Progress</h2>
-            <button onclick="showView('dashboard')">Back</button>
+            <button class="back-btn" onclick="showView('dashboard')">Back</button>
         </div>
         <form id="metrics-form" class="option-box">
-            <div style="display: flex; gap: 10px;">
-                <input type="number" id="metric-weight" step="0.1" placeholder="Weight (kg)">
-                <button type="submit" class="submit-btn bg-purple" style="margin: 0; width: auto;">Log</button>
+            <div class="form-group">
+                <label>Current Weight</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="metric-weight" step="0.1" placeholder="Weight (kg)">
+                    <button type="submit" class="submit-btn bg-purple" style="margin: 0; width: auto; padding-left: 30px; padding-right: 30px;">Log</button>
+                </div>
             </div>
         </form>
         <div id="metrics-history" style="margin-top: 20px;"></div>
     </div>
 
+    <!-- HISTORY MODAL -->
     <div id="history-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="view-header">
-                <h2>Workout History</h2>
-                <button onclick="closeModal()">Close</button>
+                <h2>History & Trends</h2>
+                <button class="back-btn" onclick="closeModal()">Close</button>
             </div>
-            <div id="history-list"></div>
-            <div id="chart-section" class="hidden">
-                <canvas id="historyChart" style="height: 250px;"></canvas>
+            
+            <div style="margin-bottom: 20px;">
+                <canvas id="historyChart" style="height: 250px; width: 100%;"></canvas>
+            </div>
+
+            <div style="max-height: 300px; overflow-y: auto;">
+                <h3>Past Workouts</h3>
+                <div id="history-list"></div>
             </div>
         </div>
     </div>
@@ -247,24 +334,18 @@
 </div>
 
 <script>
-    /* --- DATA DEFAULTS --- */
-    const EQUIPMENT_MAP = {
-        weights: ["barbell", "dumbbell", "machines", "cables", "smith machine"],
-        cardio: ["treadmill", "bike", "rower", "elliptical"],
-        floor: ["TRX", "bands", "floor", "medicine ball"]
-    };
-
-    const FOCUS_OPTIONS = ["Full Body", "Upper Body", "Lower Body", "Push", "Pull", "Squat", "Hinge"];
-
+    /* --- DATA CONSTANTS --- */
+    // Merged and cleaned up equipment list
     const EQUIPMENT_MAP = {
         weights: ["barbell", "dumbbell", "pinstack machines", "weighted machines", "cables machine", "smith machine", "back extension"],
         cardio: ["treadmill", "bike", "rower", "cross trainer", "assault bike", "ski erg", "step machine"],
         floor: ["TRX", "Ropes", "sandbag", "medicine ball", "slam ball", "floor"],
     };
-    // ... (FOCUS_OPTIONS, MUSCLE_GROUPS, CIRCUMFERENCE_AREAS, EXERCISE_LIBRARY remain the same)
+
+    // Merged focus options
     const FOCUS_OPTIONS = ["Full Body", "Upper Body", "Lower Body", "Press", "Pull", "Squat", "Hinge", "Specific Muscles", "Cardio"];
-    const MUSCLE_GROUPS = ["biceps", "triceps", "shoulders", "quads", "hamstrings", "abs", "chest", "lats", "upper back", "glutes", "calves"];
-    const CIRCUMFERENCE_AREAS = ['Chest', 'Waist', 'Hips', 'Right Bicep', 'Left Bicep', 'Right Thigh', 'Left Thigh', 'Right Calf', 'Left Calf', 'Shoulders'];
+
+    // Full Exercise Library
     const EXERCISE_LIBRARY = [
         { name: "Barbell Clean & Press", equipment: ["barbell"], focus: ["Full Body", "Press", "shoulders", "quads", "glutes"] },
         { name: "Dumbbell Thrusters", equipment: ["dumbbell"], focus: ["Full Body", "Squat", "Press", "shoulders", "quads"] },
@@ -326,27 +407,24 @@
     /* --- APP STATE & LOCAL STORAGE --- */
     let state = JSON.parse(localStorage.getItem('fitnessAppState')) || {
         userName: "Local User",
-        goal: "Strength",
-        gymName: "My Local Gym",
-        gymSetup: { weights: ["barbell", "dumbbell"], cardio: ["treadmill"], floor: ["floor"] },
+        goal: "Maintenance",
+        gymName: "My Gym",
+        // Default to a basic setup if first time
+        gymSetup: { weights: ["dumbbell"], cardio: ["treadmill"], floor: ["floor"] },
         workoutLog: [],
         mealLog: [],
         metrics: [],
-        exerciseHistory: {}
+        exerciseHistory: {} // Stores max weight for specific exercises
     };
 
     let currentSession = null;
     let chartInstance = null;
 
-    function saveState() {
-        localStorage.setItem('fitnessAppState', JSON.stringify(state));
-        updateDashboardUI();
-    }
-
     /* --- NAVIGATION --- */
     function showView(viewId) {
         document.querySelectorAll('.view, .view-card').forEach(v => v.classList.add('hidden'));
         document.getElementById(`view-${viewId}`).classList.remove('hidden');
+        window.scrollTo(0,0);
         
         if(viewId === 'gym-config') renderGymConfig();
         if(viewId === 'plan-workout') renderWorkoutPlanner();
@@ -354,24 +432,33 @@
         if(viewId === 'body-metrics') renderMetrics();
     }
 
-    /* --- UTILITIES --- */
+    function saveState() {
+        localStorage.setItem('fitnessAppState', JSON.stringify(state));
+        updateDashboardUI();
+    }
+
     function showMsg(text, type='success') {
         const box = document.getElementById('message-box');
         box.textContent = text;
         box.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
         box.classList.remove('hidden');
-        setTimeout(() => box.classList.add('hidden'), 3000);
+        box.style.opacity = '1';
+        setTimeout(() => {
+            box.style.opacity = '0';
+            setTimeout(() => box.classList.add('hidden'), 300);
+        }, 3000);
     }
 
-    /* --- GYM CONFIG LOGIC --- */
+    /* --- GYM CONFIGURATION --- */
     function renderGymConfig() {
         const renderOpts = (id, key) => {
             const container = document.getElementById(id);
             container.innerHTML = EQUIPMENT_MAP[key].map(item => `
-                <div class="checkbox-item">
-                    <input type="checkbox" name="${key}" value="${item}" ${state.gymSetup[key].includes(item) ? 'checked' : ''}>
-                    ${item}
-                </div>
+                <label class="checkbox-item">
+                    <input type="checkbox" name="${key}" value="${item}" 
+                    ${state.gymSetup[key].includes(item) ? 'checked' : ''}>
+                    ${item.charAt(0).toUpperCase() + item.slice(1)}
+                </label>
             `).join('');
         };
         renderOpts('weights-options', 'weights');
@@ -382,16 +469,17 @@
 
     document.getElementById('gym-setup-form').onsubmit = (e) => {
         e.preventDefault();
-        state.gymName = document.getElementById('gym-name-input').value;
+        state.gymName = document.getElementById('gym-name-input').value || "My Gym";
         ['weights', 'cardio', 'floor'].forEach(key => {
-            state.gymSetup[key] = Array.from(document.querySelectorAll(`input[name="${key}"]:checked`)).map(i => i.value);
+            const checked = Array.from(document.querySelectorAll(`input[name="${key}"]:checked`));
+            state.gymSetup[key] = checked.map(i => i.value);
         });
         saveState();
-        showMsg("Gym Setup Saved!");
+        showMsg("Configuration Saved!");
         showView('dashboard');
     };
 
-    /* --- MEAL LOGIC --- */
+    /* --- MEALS --- */
     document.getElementById('meal-form').onsubmit = (e) => {
         e.preventDefault();
         const meal = {
@@ -410,6 +498,12 @@
         const container = document.getElementById('todays-meals');
         const today = new Date().toLocaleDateString();
         const meals = state.mealLog.filter(m => m.date === today);
+        
+        if (meals.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-gray); font-style:italic;">No meals logged today.</p>`;
+            return;
+        }
+
         container.innerHTML = `<h3>Today's Meals</h3>` + meals.map(m => `
             <div class="logged-item" style="border-left-color: var(--warning)">
                 <strong>${m.name}</strong><br><small>${m.details}</small>
@@ -417,7 +511,7 @@
         `).join('');
     }
 
-    /* --- WORKOUT LOGIC --- */
+    /* --- WORKOUT PLANNER --- */
     function renderWorkoutPlanner() {
         const sel = document.getElementById('workout-focus');
         sel.innerHTML = FOCUS_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('');
@@ -426,23 +520,65 @@
     document.getElementById('plan-form').onsubmit = (e) => {
         e.preventDefault();
         const focus = document.getElementById('workout-focus').value;
-        currentSession = { title: focus, date: new Date().toISOString(), exercises: [] };
+        const now = new Date();
         
-        // Filter exercises by equipment
+        currentSession = { 
+            title: focus, 
+            date: now.toISOString(), 
+            displayDate: now.toLocaleString(),
+            exercises: [] 
+        };
+        
+        // Filter exercises based on configured equipment
         const myEquip = [...state.gymSetup.weights, ...state.gymSetup.cardio, ...state.gymSetup.floor];
-        const filtered = EXERCISE_LIBRARY.filter(ex => ex.equipment.some(e => myEquip.includes(e)));
         
-        document.getElementById('exercise-select').innerHTML = filtered.map(ex => `<option value="${ex.name}">${ex.name}</option>`).join('');
+        // Logic: exercise is available if ALL its equipment requirements are in myEquip
+        // OR if it has multiple options and we have at least one (simplified here to: if any equipment matches)
+        const filtered = EXERCISE_LIBRARY.filter(ex => {
+            // Check if user has at least one of the required pieces of equipment for this exercise
+            // Note: EXERCISE_LIBRARY defines 'equipment' array as alternatives usually, or specific needs.
+            // Simplified logic: If exercise needs 'barbell', user must have 'barbell'.
+            return ex.equipment.some(req => myEquip.includes(req));
+        });
+
+        // Further sort by focus if possible, but for now just show all valid equipment exercises
+        // To make it better, we put matching focus at top
+        filtered.sort((a, b) => {
+            const aMatch = a.focus.includes(focus) ? 1 : 0;
+            const bMatch = b.focus.includes(focus) ? 1 : 0;
+            return bMatch - aMatch;
+        });
+        
+        const select = document.getElementById('exercise-select');
+        select.innerHTML = filtered.map(ex => {
+            const isFocus = ex.focus.includes(focus) ? "★ " : "";
+            return `<option value="${ex.name}">${isFocus}${ex.name}</option>`
+        }).join('');
+
         document.getElementById('active-workout-title').textContent = focus + " Session";
+        document.getElementById('active-date').textContent = currentSession.displayDate;
+        
+        // Clear previous session UI
+        document.getElementById('active-sets-area').innerHTML = "";
+        document.getElementById('logged-exercises-list').innerHTML = "<p style='color: #9ca3af;'>No exercises completed yet.</p>";
+
         showView('track-workout');
     };
 
+    /* --- TRACKING --- */
     function startTrackingExercise() {
         const name = document.getElementById('exercise-select').value;
-        const setsCount = parseInt(document.getElementById('input-sets').value);
-        const repsCount = parseInt(document.getElementById('input-reps').value);
+        if (!name) return;
 
-        let html = `<h4>Tracking: ${name}</h4>`;
+        const setsCount = parseInt(document.getElementById('input-sets').value) || 3;
+        const repsCount = parseInt(document.getElementById('input-reps').value) || 10;
+
+        let html = `
+            <div style="background: white; padding: 15px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 20px;">
+            <h4><i class="fas fa-running"></i> ${name}</h4>
+            <div style="margin-top:10px;">
+        `;
+        
         for(let i=1; i<=setsCount; i++) {
             html += `
                 <div class="set-row" data-ex="${name}">
@@ -452,8 +588,20 @@
                 </div>
             `;
         }
-        html += `<button onclick="logExerciseToSession('${name}')" class="submit-btn bg-indigo">Save Exercise</button>`;
+        
+        html += `
+            </div>
+            <button onclick="logExerciseToSession('${name}')" class="submit-btn bg-indigo" style="margin-top:10px;">
+                Complete & Save ${name}
+            </button>
+            <button onclick="document.getElementById('active-sets-area').innerHTML=''" class="submit-btn bg-red" style="margin-top:5px; background:white; color:var(--danger); border:1px solid var(--danger);">
+                Cancel
+            </button>
+            </div>
+        `;
         document.getElementById('active-sets-area').innerHTML = html;
+        // Scroll to area
+        document.getElementById('active-sets-area').scrollIntoView({behavior: 'smooth'});
     }
 
     function logExerciseToSession(name) {
@@ -472,21 +620,33 @@
         }
 
         document.getElementById('active-sets-area').innerHTML = "";
-        renderLoggedSession();
-        showMsg(`${name} Logged`);
+        renderLoggedSessionList();
+        showMsg(`${name} Saved`);
     }
 
-    function renderLoggedSession() {
-        document.getElementById('logged-exercises-list').innerHTML = `<h3>Logged:</h3>` + 
-            currentSession.exercises.map(ex => `<div class="logged-item">${ex.name} - ${ex.sets.length} sets</div>`).join('');
+    function renderLoggedSessionList() {
+        if(currentSession.exercises.length === 0) return;
+        
+        document.getElementById('logged-exercises-list').innerHTML = currentSession.exercises.map(ex => {
+            const bestSet = Math.max(...ex.sets.map(s => s.weight));
+            return `<div class="logged-item">
+                <strong>${ex.name}</strong>
+                <br><small>${ex.sets.length} sets completed. Max: ${bestSet}kg</small>
+            </div>`
+        }).join('');
     }
 
     function finishWorkout() {
-        if(currentSession.exercises.length > 0) {
-            state.workoutLog.push(currentSession);
-            saveState();
-            showMsg("Workout Saved to Local Storage!");
+        if(!currentSession || currentSession.exercises.length === 0) {
+            if(confirm("No exercises logged. Discard session?")) {
+                showView('dashboard');
+            }
+            return;
         }
+        
+        state.workoutLog.push(currentSession);
+        saveState();
+        showMsg("Workout Saved to History!");
         currentSession = null;
         showView('dashboard');
     }
@@ -500,10 +660,15 @@
         saveState();
         renderMetrics();
         e.target.reset();
+        showMsg("Weight Logged");
     };
 
     function renderMetrics() {
         const container = document.getElementById('metrics-history');
+        if(state.metrics.length === 0) {
+            container.innerHTML = "<p>No metrics logged yet.</p>";
+            return;
+        }
         container.innerHTML = state.metrics.slice().reverse().map(m => `
             <div class="logged-item" style="border-left-color: var(--purple)">
                 <strong>${m.weight} kg</strong> - ${m.date}
@@ -511,13 +676,16 @@
         `).join('');
     }
 
-    /* --- HISTORY & CHARTING --- */
-    document.getElementById('view-history-btn').onclick = () => {
+    /* --- HISTORY & CHART --- */
+    function openHistory() {
         document.getElementById('history-modal').classList.remove('hidden');
         renderHistoryList();
-    };
+        renderChart();
+    }
 
-    function closeModal() { document.getElementById('history-modal').classList.add('hidden'); }
+    function closeModal() {
+        document.getElementById('history-modal').classList.add('hidden');
+    }
 
     function renderHistoryList() {
         const list = document.getElementById('history-list');
@@ -526,30 +694,90 @@
             return;
         }
         list.innerHTML = state.workoutLog.slice().reverse().map((w, idx) => `
-            <div class="logged-item">
-                <strong>${w.title}</strong> (${new Date(w.date).toLocaleDateString()})
-                <br>${w.exercises.length} exercises logged.
+            <div class="logged-item" style="background: #f9fafb; border-left-color: var(--primary);">
+                <strong>${w.title}</strong>
+                <span style="float:right; font-size:0.8rem; color:#6b7280;">${new Date(w.date).toLocaleDateString()}</span>
+                <br><small>${w.exercises.length} Exercises: ${w.exercises.map(e => e.name).join(', ')}</small>
             </div>
         `).join('');
     }
 
-    /* --- APP INIT --- */
+    function renderChart() {
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        
+        // Destroy prev instance
+        if(chartInstance) chartInstance.destroy();
+
+        // Prepare data: Let's graph Weight metrics if exist, else workouts per week
+        let chartData, chartLabels, chartLabel;
+
+        if (state.metrics.length > 1) {
+            // Sort by date usually implied by push order but let's be safe if we had true dates
+            // Here just take last 10
+            const recent = state.metrics.slice(-10);
+            chartLabels = recent.map(m => m.date.slice(0, 5)); // DD/MM
+            chartData = recent.map(m => m.weight);
+            chartLabel = 'Body Weight (kg)';
+        } else {
+            // Graph workout frequency or dummy data
+            // Let's do a simple bar of workouts stored
+            chartLabels = state.workoutLog.map(w => new Date(w.date).toLocaleDateString().slice(0,5));
+            chartData = state.workoutLog.map(w => w.exercises.length);
+            chartLabel = 'Exercises per Session';
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: chartLabel,
+                    data: chartData,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+    }
+
+    /* --- INITIALIZATION --- */
     function updateDashboardUI() {
         document.getElementById('user-name-display').textContent = state.userName;
-        document.getElementById('user-goal-display').textContent = state.goal;
-        document.getElementById('gym-status').textContent = state.gymName + " | " + 
-            (state.gymSetup.weights.length + state.gymSetup.cardio.length + state.gymSetup.floor.length) + " items";
+        document.getElementById('gym-name-display').textContent = state.gymName;
+        
+        const count = state.gymSetup.weights.length + state.gymSetup.cardio.length + state.gymSetup.floor.length;
+        document.getElementById('gym-status').textContent = `${count} equipment items available`;
     }
 
     function resetAppData() {
-        if(confirm("Are you sure? This will wipe your local history.")) {
+        if(confirm("Are you sure? This will delete all logs and settings permanently.")) {
             localStorage.removeItem('fitnessAppState');
             location.reload();
         }
     }
 
-    window.onload = updateDashboardUI;
+    window.onload = () => {
+        updateDashboardUI();
+        // Check if gym setup is empty (new user)
+        if(state.gymSetup.weights.length === 1 && state.gymSetup.weights[0] === 'dumbbell' 
+           && state.gymSetup.cardio.length === 1) {
+            // Maybe prompt to setup gym, or just let them explore
+        }
+    };
 </script>
 
 </body>
 </html>
+
