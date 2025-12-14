@@ -87,7 +87,9 @@
         .cal-day {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
             background: #f3f4f6; border-radius: 6px; font-size: 0.8rem; color: #9ca3af;
+            cursor: pointer; transition: transform 0.1s;
         }
+        .cal-day:hover { transform: scale(1.05); background: #e5e7eb; }
         .cal-day.active { background: var(--success); color: white; font-weight: bold; }
         
         .volume-bar-container { margin-bottom: 15px; }
@@ -110,7 +112,7 @@
         .set-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 8px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
 
         /* Message Box */
-        #message-box { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; color: white; font-weight: bold; z-index: 1000; transition: opacity 0.3s; }
+        #message-box { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; color: white; font-weight: bold; z-index: 2000; transition: opacity 0.3s; }
 
         /* Focus Selection Grid */
         .focus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -123,6 +125,16 @@
         /* Checkbox Grid for Specific Muscles */
         .muscle-checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; background: #f9fafb; padding: 15px; border-radius: 8px; }
         .muscle-check { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; width: 95%; max-width: 600px; max-height: 90vh;
+            border-radius: 12px; padding: 25px; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
 
         @media (max-width: 600px) {
             .filter-container { flex-direction: column; }
@@ -233,13 +245,14 @@
             <div style="display: flex; gap: 10px;">
                 <input type="number" id="input-sets" value="3" placeholder="Sets" style="flex:1;">
                 <input type="number" id="input-reps" value="10" placeholder="Reps" style="flex:1;">
-                <button onclick="addToSession()" class="submit-btn bg-green" style="margin-top:0; flex:2;">Add</button>
+                <button onclick="addToSession()" class="submit-btn bg-green" style="margin-top:0; flex:2;">Add to Session</button>
             </div>
         </div>
 
         <!-- Active Session Preview -->
         <div id="active-session-ui" class="hidden" style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;">
             <h3>Active Session</h3>
+            <p style="color: var(--text-gray); font-size: 0.9rem; margin-bottom: 10px;">Add as many exercises as you like, then finish.</p>
             <div id="session-exercises"></div>
             <button onclick="finishSession()" class="submit-btn bg-indigo">Finish & Save Workout</button>
         </div>
@@ -300,7 +313,7 @@
 
         <div style="margin-bottom: 30px;">
             <h3><i class="fas fa-calendar-alt"></i> Workout Streak</h3>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">Days worked out this month</p>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">Click on a highlighted day to view/edit workout.</p>
             <div id="calendar-heatmap" class="calendar-grid"></div>
         </div>
 
@@ -321,6 +334,28 @@
         </div>
     </div>
 
+    <!-- DAY DETAILS MODAL -->
+    <div id="day-details-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="view-header">
+                <h2 id="modal-date-title">Workout Details</h2>
+                <button class="back-btn" onclick="closeDayModal()">Close</button>
+            </div>
+            <div id="modal-workout-content"></div>
+            
+            <!-- Add Exercise to Past Workout Section -->
+            <div style="margin-top: 20px; border-top: 2px solid #f3f4f6; padding-top: 20px;">
+                <h4>Add Exercise to this Day</h4>
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <select id="modal-exercise-add" style="flex: 2;"></select>
+                    <button onclick="addExerciseToPastWorkout()" class="submit-btn bg-indigo" style="flex: 1; margin: 0; padding: 5px;">Add</button>
+                </div>
+            </div>
+
+            <button onclick="saveDayChanges()" class="submit-btn bg-green" style="margin-top: 20px;">Save Changes</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -335,19 +370,17 @@
     
     const FOCUS_TYPES = ["Push", "Pull", "Squat", "Hinge", "Full Body", "Upper Body", "Lower Body", "Specific Muscles"];
 
-    // Mapping Focus to Muscles for auto-filtering
     const FOCUS_MAP = {
         "Push": ["Chest", "Shoulders", "Triceps"],
-        "Pull": ["Back", "Biceps", "Glutes"], // Rear delts usually in Back/Shoulder overlap
+        "Pull": ["Back", "Biceps", "Glutes"], 
         "Squat": ["Quads", "Glutes", "Calves"],
         "Hinge": ["Hamstrings", "Glutes", "Back"],
         "Upper Body": ["Chest", "Back", "Shoulders", "Biceps", "Triceps"],
         "Lower Body": ["Quads", "Hamstrings", "Glutes", "Calves"],
         "Full Body": MUSCLES_LIST,
-        "Specific Muscles": [] // Handled manually
+        "Specific Muscles": [] 
     };
     
-    // Expanded Library
     const EXERCISE_LIBRARY = [
         // SHOULDERS
         { name: "Shoulder Machine Raises", muscle: "Shoulders", equipment: ["machines"] },
@@ -406,8 +439,9 @@
 
     let currentSession = { exercises: [] };
     let currentFocus = "";
-    let selectedMuscles = []; // Only used if focus is "Specific Muscles"
+    let selectedMuscles = [];
     let strengthChartInstance = null;
+    let editingWorkoutDate = null; // Stores ISO date string when editing
 
     /* --- VIEW NAVIGATION --- */
     function showView(viewId) {
@@ -473,12 +507,10 @@
             </div>
         `).join('');
         
-        // Reset selections
         currentFocus = "";
         selectedMuscles = [];
         document.getElementById('specific-muscle-selector').classList.add('hidden');
         
-        // Render muscle checkboxes just in case
         const muscleContainer = document.getElementById('muscle-checkboxes');
         muscleContainer.innerHTML = MUSCLES_LIST.map(m => `
             <label class="muscle-check">
@@ -506,19 +538,12 @@
     }
 
     function goToWorkoutSelection() {
-        if(!currentFocus) {
-            alert("Please select a workout focus first.");
-            return;
-        }
-        if(currentFocus === "Specific Muscles" && selectedMuscles.length === 0) {
-            alert("Please select at least one muscle group.");
-            return;
-        }
+        if(!currentFocus) return alert("Please select a workout focus first.");
+        if(currentFocus === "Specific Muscles" && selectedMuscles.length === 0) return alert("Please select at least one muscle group.");
 
         document.getElementById('active-focus-display').textContent = 
             currentFocus === "Specific Muscles" ? selectedMuscles.join(", ") : currentFocus;
         
-        // Clear search and reset list
         document.getElementById('exercise-search').value = "";
         filterExerciseList();
         renderSessionPreview();
@@ -530,32 +555,19 @@
         const search = document.getElementById('exercise-search').value.toLowerCase();
         const select = document.getElementById('exercise-select');
         
-        // 1. Determine allowed muscles based on focus
-        let allowedMuscles = [];
-        if (currentFocus === "Specific Muscles") {
-            allowedMuscles = selectedMuscles;
-        } else {
-            allowedMuscles = FOCUS_MAP[currentFocus];
-        }
+        let allowedMuscles = currentFocus === "Specific Muscles" ? selectedMuscles : FOCUS_MAP[currentFocus];
 
-        // 2. Filter by Equipment Availability
-        const available = EXERCISE_LIBRARY.filter(ex => 
-            ex.equipment.some(eq => appState.equipment.includes(eq))
-        );
+        const available = EXERCISE_LIBRARY.filter(ex => ex.equipment.some(eq => appState.equipment.includes(eq)));
 
-        // 3. Filter by Muscle Focus AND Search Term
         const filtered = available.filter(ex => {
             const matchesFocus = allowedMuscles.includes(ex.muscle);
             const matchesSearch = ex.name.toLowerCase().includes(search);
             return matchesFocus && matchesSearch;
         });
 
-        // Populate Dropdown
-        if (filtered.length === 0) {
-            select.innerHTML = '<option disabled>No exercises found matching criteria</option>';
-        } else {
-            select.innerHTML = filtered.map(ex => `<option value="${ex.name}">${ex.name} (${ex.muscle})</option>`).join('');
-        }
+        select.innerHTML = filtered.length === 0 
+            ? '<option disabled>No exercises found matching criteria</option>' 
+            : filtered.map(ex => `<option value="${ex.name}">${ex.name} (${ex.muscle})</option>`).join('');
     }
 
     function addToSession() {
@@ -565,11 +577,7 @@
         const sets = parseInt(document.getElementById('input-sets').value);
         const reps = parseInt(document.getElementById('input-reps').value);
 
-        const existing = currentSession.exercises.find(e => e.name === name);
-        if(existing) {
-            alert("Exercise already in session.");
-            return;
-        }
+        if(currentSession.exercises.find(e => e.name === name)) return alert("Exercise already in session.");
 
         currentSession.exercises.push({
             name: name,
@@ -749,19 +757,129 @@
         const now = new Date();
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         
-        const workoutDates = appState.workouts
-            .map(w => new Date(w.date))
-            .filter(d => d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear())
-            .map(d => d.getDate());
+        const workoutMap = {}; // Key: day (int), Value: workout object
+        
+        appState.workouts.forEach(w => {
+            const d = new Date(w.date);
+            if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                workoutMap[d.getDate()] = w;
+            }
+        });
 
         for(let i=1; i<=daysInMonth; i++) {
             const dayEl = document.createElement('div');
-            dayEl.className = `cal-day ${workoutDates.includes(i) ? 'active' : ''}`;
+            const hasWorkout = !!workoutMap[i];
+            dayEl.className = `cal-day ${hasWorkout ? 'active' : ''}`;
             dayEl.textContent = i;
+            if(hasWorkout) {
+                dayEl.onclick = () => openDayDetails(workoutMap[i]);
+                dayEl.title = "View/Edit Workout";
+            }
             container.appendChild(dayEl);
         }
     }
 
+    /* --- HISTORY EDITING (MODAL) --- */
+    function openDayDetails(workout) {
+        editingWorkoutDate = workout.date;
+        document.getElementById('day-details-modal').classList.remove('hidden');
+        document.getElementById('modal-date-title').textContent = new Date(workout.date).toDateString();
+        
+        renderModalContent(workout);
+        populateModalExerciseSelect();
+    }
+
+    function renderModalContent(workout) {
+        const container = document.getElementById('modal-workout-content');
+        container.innerHTML = workout.exercises.map((ex, exIdx) => `
+            <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>${ex.name}</strong>
+                    <button onclick="deleteExerciseFromHistory(${exIdx})" style="color:red; background:none; border:none; cursor:pointer;">&times;</button>
+                </div>
+                <div style="margin-top:5px;">
+                    ${ex.sets.map((set, sIdx) => `
+                        <div style="display:grid; grid-template-columns: 50px 1fr 1fr; gap:5px; margin-bottom:5px; align-items:center;">
+                            <small>Set ${sIdx+1}</small>
+                            <input type="number" class="edit-reps" data-ex="${exIdx}" data-set="${sIdx}" value="${set.reps}" style="padding:5px;">
+                            <input type="number" class="edit-weight" data-ex="${exIdx}" data-set="${sIdx}" value="${set.weight}" style="padding:5px;">
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function populateModalExerciseSelect() {
+        const select = document.getElementById('modal-exercise-add');
+        // Filter to available equipment
+        const available = EXERCISE_LIBRARY.filter(ex => ex.equipment.some(eq => appState.equipment.includes(eq)));
+        select.innerHTML = available.map(ex => `<option value="${ex.name}">${ex.name}</option>`).join('');
+    }
+
+    function addExerciseToPastWorkout() {
+        const name = document.getElementById('modal-exercise-add').value;
+        const workout = appState.workouts.find(w => w.date === editingWorkoutDate);
+        if(!workout || !name) return;
+
+        // Add with default 3 sets 10 reps placeholders
+        workout.exercises.push({
+            name: name,
+            sets: [{reps:10, weight:10}, {reps:10, weight:10}, {reps:10, weight:10}],
+            maxWeight: 10,
+            muscle: EXERCISE_LIBRARY.find(lib => lib.name === name)?.muscle || "Other"
+        });
+        
+        renderModalContent(workout);
+    }
+
+    function deleteExerciseFromHistory(index) {
+        if(!confirm("Remove this exercise?")) return;
+        const workout = appState.workouts.find(w => w.date === editingWorkoutDate);
+        if(workout) {
+            workout.exercises.splice(index, 1);
+            renderModalContent(workout);
+        }
+    }
+
+    function saveDayChanges() {
+        const workout = appState.workouts.find(w => w.date === editingWorkoutDate);
+        if(!workout) return;
+
+        // Harvest data from modal inputs
+        const repInputs = document.querySelectorAll('.edit-reps');
+        const weightInputs = document.querySelectorAll('.edit-weight');
+
+        // Loop through inputs and update data structure in place
+        // Note: The UI is rendered index-sequentially, so we can trust order
+        let inputCounter = 0;
+        workout.exercises.forEach(ex => {
+            let maxW = 0;
+            ex.sets.forEach(set => {
+                const r = parseFloat(repInputs[inputCounter].value);
+                const w = parseFloat(weightInputs[inputCounter].value);
+                set.reps = r;
+                set.weight = w;
+                if(w > maxW) maxW = w;
+                inputCounter++;
+            });
+            ex.maxWeight = maxW;
+        });
+
+        // Filter out exercises that might have become empty sets if logic changed (not really possible here but good practice)
+        saveState();
+        closeDayModal();
+        showMsg("History Updated");
+        renderStrengthChart(); // Refresh chart if needed
+        renderVolumeAnalysis();
+    }
+
+    function closeDayModal() {
+        document.getElementById('day-details-modal').classList.add('hidden');
+        editingWorkoutDate = null;
+    }
+
+    /* --- CHARTING --- */
     function renderVolumeAnalysis() {
         const container = document.getElementById('volume-bars');
         container.innerHTML = "";
@@ -781,7 +899,7 @@
         });
 
         MUSCLES_LIST.forEach(m => {
-            if(m === "Cardio") return; // Skip cardio in set volume
+            if(m === "Cardio") return; 
             const sets = weeklySets[m] || 0;
             const percentage = Math.min((sets / 25) * 100, 100);
             
