@@ -361,7 +361,7 @@
 <script>
     /* --- DATA & CONFIG --- */
     const EQUIPMENT_CATEGORIES = {
-        weights: ["barbell", "dumbbell", "cables", "machines", "smith machine"],
+        weights: ["barbell", "dumbbell", "cables", "weight machines", "pin machines", "smith machine"],
         cardio: ["treadmill", "bike", "rower", "elliptical", "stairmaster"],
         functional: ["bodyweight", "bands", "trx", "kettlebell", "medicine ball", "box"]
     };
@@ -386,16 +386,26 @@
      //UPPER BODY   
         // SHOULDERS
             //PIN MACHINES
-        { name: "Shoulder Machine Raises", muscle: "Shoulders", equipment: ["machines"] },
-        { name: "Pin Machine Rear Delt Flies", muscle: "Shoulders", equipment: ["machines"] },
+        { name: "Shoulder Machine Raises", muscle: "Shoulders", equipment: ["pin machines"] },
+        { name: "Pin Machine Rear Delt Flies", muscle: "Shoulders", equipment: ["pin machines"] },
+        { name: "Shoulder Machne Press", muscle: "Shoulders", equipment: ["pin machines"] },
             //CABLE MACHINES
         { name: "Lateral Cable Shoulder Raises", muscle: "Shoulders", equipment: ["cables"] },
+        { name: "Rear Delt Flies", muscle: "Shoulders", equipment: ["cables"] },
+        { name: "Face Pulls", muscle: "Shoulders", equipment: ["cables"] },
+        { name: "Seated Shoulder Press, muscle: "Shoulders", equipment: ["cables"] },
+        { name: "Upright Wide Rows, muscle: "Shoulders", equipment: ["cables"] },
             //DUMBBELL
         { name: "Dumbbell Shoulder Press", muscle: "Shoulders", equipment: ["dumbbell"] },
         { name: "Dumbbell Lateral Raise", muscle: "Shoulders", equipment: ["dumbbell"] },
+        { name: "Rear Delt Flies", muscle: "Shoulders", equipment: ["dumbbell"] },
+        { name: "Upright Wide Rows", muscle: "Shoulders", equipment: ["dumbbell"] },
             //BARBELL
         { name: "Barbell Shoulder Press", muscle: "Shoulders", equipment: ["barbell"] },
+        { name: "Upright Wide Rows", muscle: "Shoulders", equipment: ["barbell"] },
             //SMITHMACHINE
+        { name: "Smith Machine Shoulder Press", muscle: "Shoulders", equipment: ["smith machine"] },
+        { name: "Upright Rows", muscle: "Shoulders", equipment: ["smith machine"] },
             //TRX
             //BANDS
             //KETTLEBELL
@@ -405,19 +415,24 @@
         
         // BACK
             //PIN MACHINES
-        { name: "Pin Machine Back Rows", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
+        { name: "Pin Machine Lat Rows", muscle: "Back", equipment: ["pin machines"] },
+        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["pin machines"] },
+        { name: "Pin Machine Upper Back Rows", muscle: "Back", equipment: ["pin machines"] },
+
             //WEIGHT MACHINES
         { name: "Weight Machine Back Rows", muscle: "Back", equipment: ["machines"] },
             //DUMBBELL
         { name: "Dumbbell Back Rows", muscle: "Back", equipment: ["dumbbell"] },
+        { name: "Single Arm Back Rows", muscle: "Back", equipment: ["dumbbell"] },
+        { name: "Upper Back Rows", muscle: "Back", equipment: ["dumbbell"] },
             //BARBELL
         { name: "Barbell Back Rows", muscle: "Back", equipment: ["barbell"] },
+        { name: "Barbell Upper Back Rows", muscle: "Back", equipment: ["barbell"] },
+            //CABLES
+        { name: "Single Arm Lat Pull Downs", muscle: "Back", equipment: ["cables"] },
+        { name: "Straight Arm Pull Downs", muscle: "Back", equipment: ["dumbbell"] },
+        { name: "Upper Back Cable Rows", muscle: "Back", equipment: ["dumbbell"] },
+        { name: "Upper Back Cable Flies", muscle: "Back", equipment: ["dumbbell"] },
             //BODYWEIGHT
         { name: "Pull Ups", muscle: "Back", equipment: ["bodyweight"] },
             //SMITHMACHINE
@@ -449,14 +464,43 @@
             //BOX
 
         
-        // ARMS
+        // ARMS (Biceps)
             //BARBELL
         { name: "Barbell Curl", muscle: "Biceps", equipment: ["barbell"] },
-        { name: "Skullcrushers", muscle: "Triceps", equipment: ["barbell", "dumbbell", "kettlebell"] },
+        { name: "Preacher Curl", muscle: "Biceps", equipment: ["barbell"] },
+        
             //DUMBBELL
         { name: "Dumbbell Hammer Curl", muscle: "Biceps", equipment: ["dumbbell"] },
+        { name: "Dumbbell Curls", muscle: "Biceps", equipment: ["dumbbell"] },
+            //CABLE MACHINES
+        { name: "Bayesian Curl", muscle: "Biceps", equipment: ["barbell"] },
+        { name: "Standing Bicep Curls", muscle: "Biceps", equipment: ["barbell"] },
+        { name: "Standng Hammer Curls", muscle: "Biceps", equipment: ["barbell"] },
+            //PIN MACHINES
+        { name: "Machine Bicep Pull Downs", muscle: "Biceps", equipment: ["pin machine"] },
+        { name: "Machine Preacher Curls", muscle: "Biceps", equipment: ["pin machine"] }, 
+        { name: "Machine Hammer Curls ", muscle: "Biceps", equipment: ["pin machine"] },
+            //WEIGHT MACHINES
+            //SMITHMACHINE
+            //TRX
+            //BANDS
+            //KETTLEBELL
+            //MEDICINE BALL
+            //BOX
+        //ARMS (Triceps)
+            //BARBELL
+        { name: "Skullcrushers", muscle: "Triceps", equipment: ["barbell", "dumbbell", "kettlebell"] },
+        { name: "Overhead Tricep Extensions", muscle: "Triceps", equipment: ["barbell"] },
+        
+
+            //DUMBBELL
+        { name: "Tricep Kickbacks", muscle: "Triceps", equipment: ["dumbbell"] },
+
             //CABLE MACHINES
         { name: "Cable Tricep Pushdown", muscle: "Triceps", equipment: ["cables"] },
+        { name: "Cable Tricep Extensions", muscle: "Triceps", equipment: ["cables"] },
+        { name: "Cable Overhead Tricep Extensions", muscle: "Triceps", equipment: ["cables"] },
+        { name: "Cable Tricep Kickbacks", muscle: "Triceps", equipment: ["cables"] },
             //PIN MACHINES
             //WEIGHT MACHINES
             //SMITHMACHINE
@@ -465,7 +509,6 @@
             //KETTLEBELL
             //MEDICINE BALL
             //BOX
-        
         
     //LOWER BODY
         // QUADRICEPS 
@@ -498,14 +541,31 @@
         
         //GLUTES
             //Barbell
-        { name: "Glute Bridges", muscle: "Glutes", equipment: ["bodyweight", "barbell"] },
+        { name: "Glute Bridges (Barbell)", muscle: "Glutes", equipment: ["bodyweight", "barbell"] },
         { name: "Barbell Hip Thrusts", muscle: "Glutes", equipment: ["barbell"] },
+        { name: "Romanian Deadlift (Barbell)", muscle: "Glutes", equipment: ["barbell"] },
+        { name: "Reverse Lunges (Barbell)", muscle: "Glutes", equipment: ["barbell"] },
             //DUMBBELL
-        { name: "Romanian Deadlift", muscle: "Glutes", equipment: ["barbell", "dumbbell"] },
+        { name: "Romanian Deadlift(Dumbbell)", muscle: "Glutes", equipment: ["dumbbell"] },
+        { name: "Reverse Lunges (Dumbbell)", muscle: "Glutes", equipment: ["dumbbell"] },
+        { name: "Bulgarian Split Squats", muscle: "Glutes", equipment: ["dumbbell"] },
+        { name: "Weight Plate Later Kickouts", muscle: "Glutes", equipment: ["dumbbell"] },
             //PIN MACHINES
+        { name: "Pin Machine Hip Thrusts", muscle: "Glutes", equipment: ["pin machine"] },
+        { name: "Seated Hip Abduction", muscle: "Glutes", equipment: ["pin machine"] },
+        { name: "Leg Press (Pin Machine)", muscle: "Glutes", equipment: ["pin machine"] },
             //WEIGHT MACHINES
+        { name: "Weight Machine Machine Hip Thrusts", muscle: "Glutes", equipment: ["weight machine"] },
+        { name: "Leg Press (Weight Machine)", muscle: "Glutes", equipment: ["weight machine"] },
             //CABLE MACHINES
+        { name: "Lateral Kickouts", muscle: "Glutes", equipment: ["cables"] },
+        { name: "Kickbacks", muscle: "Glutes", equipment: ["cables"] },
             //SMITHMACHINE
+        { name: "Romanian Deadlift (Smith Machine)", muscle: "Glutes", equipment: ["smith machine"] },
+        { name: "Reverse Lunges (Smith Machine)", muscle: "Glutes", equipment: ["smith machine"] },
+        { name: "Hip Thrust (Smith Machine)", muscle: "Glutes", equipment: ["smith machine"] },
+        { name: "Bulgarian Split Squats (Smith Machine)", muscle: "Glutes", equipment: ["smith machine"] },
+        
             //TRX
             //BANDS
             //KETTLEBELL
