@@ -374,73 +374,64 @@
         "Push": ["Chest", "Shoulders", "Triceps"],
         "Pull": ["Back", "Biceps", "Glutes"], 
         "Squat": ["Quads", "Glutes", "Calves"],
-        "Hinge": ["Hamstrings", "Glutes"],
+        "Hinge": ["Hamstrings", "Glutes", "Back"],
         "Upper Body": ["Chest", "Back", "Shoulders", "Biceps", "Triceps"],
         "Lower Body": ["Quads", "Hamstrings", "Glutes", "Calves"],
         "Full Body": MUSCLES_LIST,
         "Specific Muscles": [] 
     };
     
+    // Updated EXERCISE_LIBRARY: 
+    // Compound lifts now use an array 'muscles' instead of a single 'muscle' property.
+    // The filtering logic below has been updated to check against this array.
     const EXERCISE_LIBRARY = [
-       
-     //UPPER BODY   
         // SHOULDERS
-        { name: "Shoulder Machine Raises", muscle: "Shoulders", equipment: ["machines"] },
-        { name: "Lateral Cable Shoulder Raises", muscle: "Shoulders", equipment: ["cables"] },
-        { name: "Dumbbell Shoulder Press", muscle: "Shoulders", equipment: ["dumbbell"] },
-        { name: "Barbell Shoulder Press", muscle: "Shoulders", equipment: ["barbell"] },
-        { name: "Pin Machine Rear Delt Flies", muscle: "Shoulders", equipment: ["machines"] },
-        { name: "Dumbbell Lateral Raise", muscle: "Shoulders", equipment: ["dumbbell"] },
+        { name: "Shoulder Machine Raises", muscles: ["Shoulders"], equipment: ["machines"] },
+        { name: "Lateral Cable Shoulder Raises", muscles: ["Shoulders"], equipment: ["cables"] },
+        { name: "Dumbbell Shoulder Press", muscles: ["Shoulders"], equipment: ["dumbbell"] },
+        { name: "Barbell Shoulder Press", muscles: ["Shoulders"], equipment: ["barbell"] },
+        { name: "Pin Machine Rear Delt Flies", muscles: ["Shoulders"], equipment: ["machines"] },
+        { name: "Dumbbell Lateral Raise", muscles: ["Shoulders"], equipment: ["dumbbell"] },
         
         // BACK
-        { name: "Pin Machine Back Rows", muscle: "Back", equipment: ["machines"] },
-        { name: "Pin Machine Pull Downs", muscle: "Back", equipment: ["machines"] },
-        { name: "Weight Machine Back Rows", muscle: "Back", equipment: ["machines"] },
-        { name: "Dumbbell Back Rows", muscle: "Back", equipment: ["dumbbell"] },
-        { name: "Barbell Back Rows", muscle: "Back", equipment: ["barbell"] },
-        { name: "Pull Ups", muscle: "Back", equipment: ["bodyweight"] },
+        { name: "Pin Machine Back Rows", muscles: ["Back"], equipment: ["machines"] },
+        { name: "Pin Machine Pull Downs", muscles: ["Back"], equipment: ["machines"] },
+        { name: "Weight Machine Back Rows", muscles: ["Back"], equipment: ["machines"] },
+        { name: "Dumbbell Back Rows", muscles: ["Back"], equipment: ["dumbbell"] },
+        { name: "Barbell Back Rows", muscles: ["Back"], equipment: ["barbell"] },
+        { name: "Pull Ups", muscles: ["Back"], equipment: ["bodyweight"] },
         
         // CHEST
-        { name: "Barbell Bench Press", muscle: "Chest", equipment: ["barbell"] },
-        { name: "Dumbbell Incline Press", muscle: "Chest", equipment: ["dumbbell"] },
-        { name: "Machine Chest Press", muscle: "Chest", equipment: ["machines"] },
-        { name: "Cable Flys", muscle: "Chest", equipment: ["cables"] },
-        { name: "Push Ups", muscle: "Chest", equipment: ["bodyweight"] },
-
+        { name: "Barbell Bench Press", muscles: ["Chest"], equipment: ["barbell"] },
+        { name: "Dumbbell Incline Press", muscles: ["Chest"], equipment: ["dumbbell"] },
+        { name: "Machine Chest Press", muscles: ["Chest"], equipment: ["machines"] },
+        { name: "Cable Flys", muscles: ["Chest"], equipment: ["cables"] },
+        { name: "Push Ups", muscles: ["Chest"], equipment: ["bodyweight"] },
+        
+        // LEGS (Quads/Hams/Glutes)
+        // ** MODIFIED HERE to include both Quads and Glutes **
+        { name: "Barbell Squat", muscles: ["Quads", "Glutes"], equipment: ["barbell"] },
+        { name: "Leg Press", muscles: ["Quads", "Glutes"], equipment: ["machines"] }, // Also a compound
+        { name: "Leg Extension", muscles: ["Quads"], equipment: ["machines"] },
+        { name: "Romanian Deadlift", muscles: ["Hamstrings", "Glutes"], equipment: ["barbell", "dumbbell"] },
+        { name: "Lying Leg Curl", muscles: ["Hamstrings"], equipment: ["machines"] },
+        { name: "Glute Bridges", muscles: ["Glutes"], equipment: ["bodyweight", "barbell"] },
+        { name: "Calf Raises", muscles: ["Calves"], equipment: ["machines", "dumbbell", "bodyweight"] },
+        { name: "Box Jumps", muscles: ["Quads", "Glutes"], equipment: ["box", "functional"] },
+        
         // ARMS
-        { name: "Barbell Curl", muscle: "Biceps", equipment: ["barbell"] },
-        { name: "Dumbbell Hammer Curl", muscle: "Biceps", equipment: ["dumbbell"] },
-        { name: "Cable Tricep Pushdown", muscle: "Triceps", equipment: ["cables"] },
-        { name: "Skullcrushers", muscle: "Triceps", equipment: ["barbell", "dumbbell"] },
-        
-    //LOWER BODY
-        // QUADRICEPS 
-        { name: "Barbell Squat", muscle: ["Quads", "Glutes"], equipment: ["barbell"] },
-        { name: "Leg Press", muscle: "Quads", equipment: ["machines"] },
-        { name: "Leg Extension", muscle: "Quads", equipment: ["machines"] },
-        { name: "Box Jumps", muscle: "Quads", equipment: ["box", "functional"] },
-
-        { name: "Calf Raises", muscle: "Calves", equipment: ["machines", "dumbbell", "bodyweight"] },
-        
-        //HAMSTRINGS
-        { name: "Straight Leg Deadlift", muscle: "Hamstrings", equipment: ["barbell", "dumbbell"] },
-        { name: "Lying Leg Curl", muscle: "Hamstrings", equipment: ["machines"] },
-        { name: "Straight Leg Deadlift", muscle: "Hamstrings", equipment: ["barbell", "dumbbell"] },
-
-        
-        //GLUTES
-        { name: "Glute Bridges", muscle: "Glutes", equipment: ["bodyweight", "barbell"] },
-        { name: "Romanian Deadlift", muscle: "Glutes", equipment: ["barbell", "dumbbell"] },
-
-        
+        { name: "Barbell Curl", muscles: ["Biceps"], equipment: ["barbell"] },
+        { name: "Dumbbell Hammer Curl", muscles: ["Biceps"], equipment: ["dumbbell"] },
+        { name: "Cable Tricep Pushdown", muscles: ["Triceps"], equipment: ["cables"] },
+        { name: "Skullcrushers", muscles: ["Triceps"], equipment: ["barbell", "dumbbell"] },
         
         // CARDIO & FUNCTIONAL
-        { name: "Treadmill Run", muscle: "Cardio", equipment: ["treadmill"] },
-        { name: "Stationary Bike", muscle: "Cardio", equipment: ["bike"] },
-        { name: "Rowing Machine", muscle: "Cardio", equipment: ["rower"] },
-        { name: "Kettlebell Swing", muscle: "Hamstrings", equipment: ["kettlebell"] },
-        { name: "Medicine Ball Slam", muscle: "Abs", equipment: ["medicine ball"] },
-        { name: "Burpees", muscle: "Cardio", equipment: ["bodyweight"] }
+        { name: "Treadmill Run", muscles: ["Cardio"], equipment: ["treadmill"] },
+        { name: "Stationary Bike", muscles: ["Cardio"], equipment: ["bike"] },
+        { name: "Rowing Machine", muscles: ["Cardio"], equipment: ["rower"] },
+        { name: "Kettlebell Swing", muscles: ["Hamstrings", "Glutes"], equipment: ["kettlebell"] },
+        { name: "Medicine Ball Slam", muscles: ["Abs"], equipment: ["medicine ball"] },
+        { name: "Burpees", muscles: ["Cardio"], equipment: ["bodyweight"] }
     ];
 
     // Initial State
@@ -573,14 +564,16 @@
         const available = EXERCISE_LIBRARY.filter(ex => ex.equipment.some(eq => appState.equipment.includes(eq)));
 
         const filtered = available.filter(ex => {
-            const matchesFocus = allowedMuscles.includes(ex.muscle);
+            // Updated filtering logic: Check if ANY of the exercise's target muscles
+            // are included in the currently allowed focus muscles.
+            const matchesFocus = ex.muscles.some(m => allowedMuscles.includes(m));
             const matchesSearch = ex.name.toLowerCase().includes(search);
             return matchesFocus && matchesSearch;
         });
 
         select.innerHTML = filtered.length === 0 
             ? '<option disabled>No exercises found matching criteria</option>' 
-            : filtered.map(ex => `<option value="${ex.name}">${ex.name} (${ex.muscle})</option>`).join('');
+            : filtered.map(ex => `<option value="${ex.name}">${ex.name} (${ex.muscles.join('/')})</option>`).join('');
     }
 
     function addToSession() {
@@ -665,13 +658,16 @@
                     if(w > maxWeight) maxWeight = w;
                 }
             }
+            
+            // Get the primary muscle for the set/volume calculation
+            const primaryMuscle = EXERCISE_LIBRARY.find(lib => lib.name === ex.name)?.muscles[0] || "Other";
 
             if(setsData.length > 0) {
                 finalizedSession.exercises.push({
                     name: ex.name,
                     sets: setsData,
                     maxWeight: maxWeight,
-                    muscle: EXERCISE_LIBRARY.find(lib => lib.name === ex.name)?.muscle || "Other"
+                    muscle: primaryMuscle // Use the primary muscle for volume calculation
                 });
             }
         });
@@ -834,13 +830,17 @@
         const name = document.getElementById('modal-exercise-add').value;
         const workout = appState.workouts.find(w => w.date === editingWorkoutDate);
         if(!workout || !name) return;
+        
+        const exerciseData = EXERCISE_LIBRARY.find(lib => lib.name === name);
+        if(!exerciseData) return;
 
         // Add with default 3 sets 10 reps placeholders
         workout.exercises.push({
             name: name,
             sets: [{reps:10, weight:10}, {reps:10, weight:10}, {reps:10, weight:10}],
             maxWeight: 10,
-            muscle: EXERCISE_LIBRARY.find(lib => lib.name === name)?.muscle || "Other"
+            // Use the first muscle in the array for backward compatibility with volume tracking
+            muscle: exerciseData.muscles[0] || "Other"
         });
         
         renderModalContent(workout);
@@ -868,18 +868,29 @@
         let inputCounter = 0;
         workout.exercises.forEach(ex => {
             let maxW = 0;
-            ex.sets.forEach(set => {
+            // Need to create a new array of sets in case the user deletes an empty row later
+            const newSets = [];
+            
+            // Loop through existing sets data structure to know how many sets we are looking for
+            // We use the inputCounter to map the UI inputs back to the data structure
+            for(let i = 0; i < ex.sets.length; i++) {
                 const r = parseFloat(repInputs[inputCounter].value);
                 const w = parseFloat(weightInputs[inputCounter].value);
-                set.reps = r;
-                set.weight = w;
-                if(w > maxW) maxW = w;
+                
+                // Only save the set if it has weight or reps recorded
+                if (!isNaN(r) && !isNaN(w) && (r > 0 || w > 0)) {
+                    newSets.push({ reps: r, weight: w });
+                    if(w > maxW) maxW = w;
+                }
                 inputCounter++;
-            });
+            }
+            ex.sets = newSets;
             ex.maxWeight = maxW;
         });
 
-        // Filter out exercises that might have become empty sets if logic changed (not really possible here but good practice)
+        // Remove exercises that now have zero sets after editing
+        workout.exercises = workout.exercises.filter(ex => ex.sets.length > 0);
+
         saveState();
         closeDayModal();
         showMsg("History Updated");
@@ -905,6 +916,7 @@
         appState.workouts.forEach(w => {
             if(new Date(w.date) >= oneWeekAgo) {
                 w.exercises.forEach(ex => {
+                    // ex.muscle is the primary muscle group stored during save (Quads for squat)
                     if(!weeklySets[ex.muscle]) weeklySets[ex.muscle] = 0;
                     weeklySets[ex.muscle] += ex.sets.length;
                 });
@@ -995,4 +1007,3 @@
 </script>
 </body>
 </html>
-
