@@ -316,94 +316,35 @@
 
       <input type="text" id="searchInput" placeholder="Search food..." oninput="searchFood()">
       <div id="searchResults"></div>
+      <input type="number" id="goalCaloriesInput" placeholder="e.g. 2000">
+      <label>Daily Protein Goal (g):</label>
+      <input type="number" id="goalProteinInput" placeholder="e.g. 150">
+      <button onclick="saveGoals()">Save Goals</button>
+    </div>
 
+    <!-- History Tab -->
+    <div id="historyTab" class="tab-content">
+      <h2>History</h2>
+      <div class="history-tabs">
+        <button id="btnDaily" onclick="switchHistoryView('daily')" class="active">Daily</button>
+        <button id="btnWeekly" onclick="switchHistoryView('weekly')">Weekly</button>
+        <button id="btnMonthly" onclick="switchHistoryView('monthly')">Monthly</button>
+      </div>
 
-        //OLD CODE BELOW
-        
-        
-        <div id="view-meal-log" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
-            <div class="flex justify-between items-center border-b pb-4">
-                <h2 class="text-2xl font-bold text-yellow-600">Nutrition</h2>
-                <button onclick="showView('dashboard')" class="bg-gray-100 px-4 py-2 rounded-lg">Back</button>
-            </div>
-            
-            <div class="flex gap-4 border-b overflow-x-auto pb-2 mb-4">
-                <button class="tab-btn active px-4 py-2 font-bold" onclick="switchNutritionTab('log')">Log</button>
-                <button class="tab-btn px-4 py-2 font-bold" onclick="switchNutritionTab('database')">Database</button>
-                <button class="tab-btn px-4 py-2 font-bold" onclick="switchNutritionTab('goals')">Goals</button>
-            </div>
+      <div id="dailyView" class="history-view active">
+        <p>Your saved daily summaries will appear here.</p>
+      </div>
+      <div id="weeklyView" class="history-view">
+        <p>Weekly trends and summaries.</p>
+      </div>
+      <div id="monthlyView" class="history-view">
+        <p>Monthly overview.</p>
+      </div>
+    </div>
+  </div>
 
-            <div id="nutrition-log-section">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <input type="text" id="food-search" oninput="searchFood()" placeholder="Search food database..." class="w-full p-4 border rounded-xl bg-gray-50">
-                            <div id="search-results" class="absolute z-10 w-full bg-white border rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto hidden"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="number" id="meal-qty" placeholder="Qty (units)" class="p-3 border rounded-xl">
-                            <select id="meal-type" class="p-3 border rounded-xl">
-                                <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
-                            </select>
-                        </div>
-                        <button onclick="addFoodEntry()" class="w-full py-3 bg-yellow-500 text-white font-bold rounded-xl">Add to Today's Log</button>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-4 rounded-xl border">
-                        <h3 class="font-bold text-lg mb-2">Today's Summary</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-white p-3 rounded shadow-sm text-center">
-                                <p class="text-xs text-gray-500 uppercase">Calories</p>
-                                <p class="text-xl font-black text-yellow-600"><span id="total-cal">0</span> / <span id="goal-cal-display">0</span></p>
-                            </div>
-                            <div class="bg-white p-3 rounded shadow-sm text-center">
-                                <p class="text-xs text-gray-500 uppercase">Protein (g)</p>
-                                <p class="text-xl font-black text-blue-600"><span id="total-prot">0</span> / <span id="goal-prot-display">0</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <footer>&copy; 2025 VFit Nutrition Tracker</footer>
 
-                <div class="mt-8">
-                    <h3 class="font-bold text-lg border-b pb-2 mb-4">Entries</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="text-xs text-gray-400 uppercase">
-                                <tr><th>Food</th><th>Meal</th><th>Cals</th><th>Prot</th><th></th></tr>
-                            </thead>
-                            <tbody id="nutrition-table-body" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="nutrition-db-section" class="hidden">
-                <form id="new-food-form" class="space-y-4 p-4 bg-gray-50 rounded-xl mb-6">
-                    <h3 class="font-bold">Add New Food to DB (per 100g)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" id="new-food-name" placeholder="Food Name" class="p-2 border rounded">
-                        <input type="number" id="new-food-cal" placeholder="Cals" class="p-2 border rounded">
-                        <input type="number" id="new-food-prot" placeholder="Protein" class="p-2 border rounded">
-                    </div>
-                    <button type="button" onclick="addNewFoodToDB()" class="w-full bg-blue-500 text-white py-2 rounded">Add Food</button>
-                </form>
-                <div id="db-list" class="space-y-2"></div>
-            </div>
-            
-            <div id="nutrition-goals-section" class="hidden">
-                <div class="space-y-4 max-w-sm mx-auto">
-                    <div>
-                        <label class="text-sm font-bold">Daily Calorie Goal</label>
-                        <input type="number" id="goal-calories-input" class="w-full p-3 border rounded">
-                    </div>
-                    <div>
-                        <label class="text-sm font-bold">Daily Protein Goal (g)</label>
-                        <input type="number" id="goal-protein-input" class="w-full p-3 border rounded">
-                    </div>
-                    <button onclick="saveNutritionGoals()" class="w-full py-3 bg-indigo-600 text-white font-bold rounded">Update Goals</button>
-                </div>
-            </div>
-        </div>
 
         <!-- WORKOUT PLANNING -->
         <div id="view-plan-workout" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
