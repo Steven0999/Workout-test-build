@@ -55,6 +55,99 @@
       display: block;
       animation: fadeIn 0.3s ease-in;
     }
+         /* Inputs and Forms */
+    input,
+    select,
+    textarea,
+    button {
+      padding: 0.6rem;
+      margin: 0.5rem 0;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    select {
+      background-color: white;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    th,
+    td {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #0066cc;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    /* Search Results & Food Database */
+    #searchResults,
+    #databaseResults {
+      background-color: white;
+      border: 1px solid #ccc;
+      margin-top: 0.5rem;
+      border-radius: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    #searchResults:empty,
+    #databaseResults:empty {
+      display: none;
+    }
+
+    #searchResults div,
+    #databaseResults div {
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    #searchResults div:hover,
+    #databaseResults div:hover {
+      background-color: #f0f8ff;
+    }
+
+    /* Log Summary */
+    .total-section {
+      background-color: #eef7ff;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+
+    .total-section strong {
+      display: inline-block;
+      width: 160px;
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
