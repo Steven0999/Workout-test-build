@@ -196,6 +196,10 @@
                         <option value="full-body">Full Body</option>
                         <option value="upper-body">Upper Body</option>
                         <option value="lower-body">Lower Body</option>
+                        <option value="push">Push</option>
+                        <option value="pull">Pull</option>
+                        <option value="hinge">Hinge</option>
+                        <option value="squat">Squat</option>
                         <option value="specific-muscles">Specific Muscle Group</option>
                     </select>
                 </div>
@@ -282,10 +286,13 @@
 
         let state = {
             currentView: 'dashboard',
-            userName: "Guest User",
+            userName: "Steven",
             goal: "Gain Muscle",
             gymName: "Home Gym",
-            gymSetup: { weights: ["dumbbell", "barbell"], cardio: ["treadmill"], floor: ["floor"] },
+            gymSetup: { 
+                weights: ["dumbbell", "barbell", "pin machine", "weight machine", "cables"], 
+                cardio: ["treadmill"], 
+                floor: ["floor"] },
             exerciseHistory: {},
             currentWorkout: null,
             mealGoals: { calories: 2500, protein: 150 },
