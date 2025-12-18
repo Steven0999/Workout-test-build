@@ -294,6 +294,33 @@
         </div>
 
         <!-- NUTRITION TRACKER -->
+        <div class="container">
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'trackerTab')" data-tab="trackerTab">Tracker</button>
+      <button class="tab-btn" onclick="switchTab(event, 'createTab')" data-tab="createTab">Add Food</button>
+      <button class="tab-btn" onclick="switchTab(event, 'databaseTab')" data-tab="databaseTab">Food Database</button>
+      <button class="tab-btn" onclick="switchTab(event, 'goalsTab')" data-tab="goalsTab">Set Goals</button>
+      <button class="tab-btn" onclick="switchTab(event, 'historyTab')" data-tab="historyTab">History</button>
+    </div>
+
+    <!-- Tracker Tab -->
+    <div id="trackerTab" class="tab-content active">
+      <h2>Log Food</h2>
+      
+      <div style="background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
+        <p style="font-weight: bold; margin-bottom: 5px;">Scan Barcode</p>
+        <div id="reader"></div>
+        <button onclick="startScanner()">Start Camera Scanner</button>
+      </div>
+
+      <input type="text" id="searchInput" placeholder="Search food..." oninput="searchFood()">
+      <div id="searchResults"></div>
+
+
+        //OLD CODE BELOW
+        
+        
         <div id="view-meal-log" class="view-container p-6 bg-white rounded-2xl shadow-xl space-y-6 hidden">
             <div class="flex justify-between items-center border-b pb-4">
                 <h2 class="text-2xl font-bold text-yellow-600">Nutrition</h2>
