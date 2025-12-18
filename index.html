@@ -148,6 +148,71 @@
     .total-section strong {
       display: inline-block;
       width: 160px;
+        .history-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .history-tabs button {
+      background-color: #cccccc;
+      color: black;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+    }
+
+    .history-tabs button.active {
+      background-color: #0066cc;
+      color: white;
+    }
+
+    .history-view {
+      display: none;
+    }
+
+    .history-view.active {
+      display: block;
+    }
+
+    /* Scanner */
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 10px auto;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Mobile Responsiveness */
+    @media screen and (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+
+      th, td {
+        font-size: 0.8rem;
+        padding: 0.4rem;
+      }
+    }
+
+    #customWeight {
+      display: none;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-bottom: 2rem;
+      text-align: center;
+      color: #666;
+      font-size: 0.85rem;
+    }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
