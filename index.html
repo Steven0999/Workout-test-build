@@ -660,115 +660,27 @@
         }
 
         // --- NUTRITION LOGIC ---
-        function switchNutritionTab(tab) {
-            document.querySelectorAll('#view-meal-log .tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`#view-meal-log .tab-btn[onclick*="${tab}"]`).classList.add('active');
-            
-            ['log', 'database', 'goals'].forEach(t => {
-                document.getElementById(`nutrition-${t}-section`).classList.toggle('hidden', t !== tab);
-            });
-            if(tab === 'database') renderFoodDB();
-        }
+   // Global Data
+    let foodDatabase = [
+      { name: "Chicken Breast", calories: 165, protein: 31 },
+      { name: "White Rice", calories: 130, protein: 2.7 },
+      { name: "Egg", calories: 155, protein: 13 },
+      { name: "Peanut Butter", calories: 588, protein: 25 }
+    ];
+    let log = [];
+    let goals = { calories: 0, protein: 0 };
+    let history = [];
+    let scanner;
 
-        function searchFood() {
-            const query = document.getElementById('food-search').value.toLowerCase();
-            const results = document.getElementById('search-results');
-            if(!query) { results.classList.add('hidden'); return; }
-            
-            const filtered = state.foodDatabase.filter(f => f.name.toLowerCase().includes(query));
-            results.innerHTML = filtered.map(f => `
-                <div class="p-3 hover:bg-gray-100 cursor-pointer border-b text-sm" onclick="selectFood('${f.name}')">
-                    <span class="font-bold">${f.name}</span> - ${f.calories} cal | ${f.protein}g prot
-                </div>
-            `).join('');
-            results.classList.toggle('hidden', filtered.length === 0);
-        }
+    // Tab switching
+    function switchTab(evt, tabName) {
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      
 
-        function selectFood(name) {
-            document.getElementById('food-search').value = name;
-            document.getElementById('search-results').classList.add('hidden');
-        }
-
-        function addFoodEntry() {
-            const name = document.getElementById('food-search').value;
-            const qty = parseFloat(document.getElementById('meal-qty').value) || 1;
-            const type = document.getElementById('meal-type').value;
-            const food = state.foodDatabase.find(f => f.name === name);
-            
-            if(!food) return showMessage("Select food from list", "error");
-            
-            const entry = {
-                id: Date.now(),
-                date: new Date().toISOString().split('T')[0],
-                name,
-                type,
-                calories: food.calories * qty,
-                protein: food.protein * qty
-            };
-            
-            const meals = JSON.parse(localStorage.getItem(LS_KEYS.MEALS) || '[]');
-            meals.push(entry);
-            localStorage.setItem(LS_KEYS.MEALS, JSON.stringify(meals));
-            renderMealLog();
-            showMessage("Food Added");
-        }
-
-        function renderMealLog() {
-            const meals = JSON.parse(localStorage.getItem(LS_KEYS.MEALS) || '[]');
-            const today = new Date().toISOString().split('T')[0];
-            const filtered = meals.filter(m => m.date === today);
-            
-            let tCal = 0, tProt = 0;
-            document.getElementById('nutrition-table-body').innerHTML = filtered.map(m => {
-                tCal += m.calories; tProt += m.protein;
-                return `<tr>
-                    <td class="py-2 font-bold">${m.name}</td>
-                    <td>${m.type}</td>
-                    <td>${m.calories.toFixed(0)}</td>
-                    <td>${m.protein.toFixed(1)}g</td>
-                    <td class="text-right"><button onclick="deleteMeal(${m.id})" class="text-red-400">&times;</button></td>
-                </tr>`;
-            }).join('');
-            
-            document.getElementById('total-cal').textContent = tCal.toFixed(0);
-            document.getElementById('total-prot').textContent = tProt.toFixed(1);
-        }
-
-        function deleteMeal(id) {
-            const meals = JSON.parse(localStorage.getItem(LS_KEYS.MEALS) || '[]').filter(m => m.id !== id);
-            localStorage.setItem(LS_KEYS.MEALS, JSON.stringify(meals));
-            renderMealLog();
-        }
-
-        function addNewFoodToDB() {
-            const name = document.getElementById('new-food-name').value;
-            const cal = parseFloat(document.getElementById('new-food-cal').value);
-            const prot = parseFloat(document.getElementById('new-food-prot').value);
-            if(name && cal) {
-                state.foodDatabase.push({ name, calories: cal, protein: prot });
-                saveState();
-                renderFoodDB();
-                showMessage("Food added to DB");
-            }
-        }
-
-        function renderFoodDB() {
-            document.getElementById('db-list').innerHTML = state.foodDatabase.map((f, i) => `
-                <div class="flex justify-between items-center bg-white p-2 rounded border text-sm">
-                    <span>${f.name} (${f.calories} cal)</span>
-                    <button onclick="state.foodDatabase.splice(${i},1); saveState(); renderFoodDB();" class="text-red-500">Delete</button>
-                </div>
-            `).join('');
-        }
-
-        function saveNutritionGoals() {
-            state.mealGoals.calories = parseInt(document.getElementById('goal-calories-input').value) || 2000;
-            state.mealGoals.protein = parseInt(document.getElementById('goal-protein-input').value) || 150;
-            saveState();
-            updateUI();
-            showMessage("Goals Updated");
-        }
-
+        
+        //OLD CODE
+        
         // --- BODY METRICS ---
         function openSnapshotModal() { document.getElementById('snapshot-modal').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
