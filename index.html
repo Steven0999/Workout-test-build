@@ -176,7 +176,7 @@ sans: ['Inter', 'sans-serif'],
 
 <i class="fas fa-utensils text-3xl mb-2"></i>
 
-<span>Log Meal</span>
+<span>Nutrition Tracker</span>
 
 </button>
 
@@ -815,37 +815,25 @@ let historyChartInstance = null;
 // --- DATA CONSTANTS ---
 
 const EQUIPMENT_MAP = {
-
 weights: ["barbell", "dumbbell", "pinstack machines", "weighted machines", "cables machine", "smith machine", "back extension"],
-
 cardio: ["treadmill", "bike", "rower", "cross trainer", "assault bike", "ski erg", "step machine"],
-
 floor: ["TRX", "Ropes", "sandbag", "medicine ball", "slam ball", "floor"],
-
 };
 
 
 
 const FOCUS_OPTIONS = [
-
 "Full Body", "Upper Body", "Lower Body", "Press", "Pull", "Squat", "Hinge", "Specific Muscles", "Cardio"
-
 ];
 
 
 const MUSCLE_GROUPS = [
-
 "biceps", "triceps", "shoulders", "quads", "hamstrings", "abs", "chest", "lats", "upper back", "glutes", "calves"
-
 ];
 
 
 const CIRCUMFERENCE_AREAS = [
-
-'Chest', 'Waist', 'Hips', 'Right Bicep', 'Left Bicep', 'Right Thigh', 'Left Thigh',
-
-'Right Calf', 'Left Calf', 'Shoulders',
-
+'Chest', 'Waist', 'Hips', 'Right Bicep', 'Left Bicep', 'Right Thigh', 'Left Thigh','Right Calf', 'Left Calf', 'Shoulders',
 ];
 
 
@@ -853,113 +841,59 @@ const CIRCUMFERENCE_AREAS = [
 const EXERCISE_LIBRARY = [
 
 { name: "Barbell Clean & Press", equipment: ["barbell"], focus: ["Full Body", "Press", "shoulders", "quads", "glutes"] },
-
 { name: "Dumbbell Thrusters", equipment: ["dumbbell"], focus: ["Full Body", "Squat", "Press", "shoulders", "quads"] },
-
 { name: "Sandbag Get-Ups", equipment: ["sandbag", "floor"], focus: ["Full Body", "abs", "shoulders"] },
-
 { name: "Medicine Ball Slams", equipment: ["medicine ball", "slam ball"], focus: ["Full Body", "abs"] },
-
 { name: "Barbell Bench Press", equipment: ["bench", "barbell"], focus: ["Upper Body", "Press", "chest", "triceps", "shoulders"] },
-
 { name: "Dumbbell Overhead Press", equipment: ["dumbbell"], focus: ["Upper Body", "Press", "shoulders", "triceps"] },
-
 { name: "Machine Chest Press", equipment: ["weighted machines", "pinstack machines"], focus: ["Upper Body", "Press", "chest", "triceps"] },
-
 { name: "Cable Crossover (High)", equipment: ["cables machine"], focus: ["Upper Body", "Press", "chest"] },
-
 { name: "Dumbbell Incline Press", equipment: ["bench", "dumbbell"], focus: ["Upper Body", "Press", "chest", "shoulders"] },
-
 { name: "Pinstack Shoulder Press", equipment: ["pinstack machines"], focus: ["Press", "shoulders", "triceps"] },
-
 { name: "Barbell Bent-Over Row", equipment: ["barbell"], focus: ["Upper Body", "Pull", "lats", "upper back", "biceps"] },
-
 { name: "Dumbbell Single-Arm Row", equipment: ["dumbbell", "bench"], focus: ["Upper Body", "Pull", "lats", "upper back"] },
-
 { name: "Cable Face Pulls", equipment: ["cables machine"], focus: ["Upper Body", "Pull", "upper back", "shoulders"] },
-
 { name: "Lat Pulldown (Machine)", equipment: ["pinstack machines"], focus: ["Upper Body", "Pull", "lats", "biceps"] },
-
 { name: "TRX Inverted Row", equipment: ["TRX"], focus: ["Upper Body", "Pull", "upper back", "biceps"] },
-
 { name: "Seated Cable Row", equipment: ["cables machine"], focus: ["Pull", "upper back", "lats", "biceps"] },
-
 { name: "Barbell Back Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes", "hamstrings"] },
-
 { name: "Barbell Front Squat", equipment: ["barbell"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
-
 { name: "Dumbbell Split Squat", equipment: ["dumbbell"], focus: ["Lower Body", "Squat", "quads"] },
-
 { name: "Dumbbell Goblet Squat", equipment: ["dumbbell", "floor"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
-
 { name: "Leg Extension (Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Squat", "quads"] },
-
 { name: "Leg Press (Machine)", equipment: ["weighted machines"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
-
 { name: "Dumbbell Bulgarian Split Squat", equipment: ["dumbbell", "bench"], focus: ["Lower Body", "Squat", "quads", "glutes"] },
-
 { name: "Dumbbell B stance Squat", equipment: ["dumbbell"], focus: ["Lower Body", "Squat", "glutes"] },
-
 { name: "Barbell Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes", "Full Body", "lats"] },
-
 { name: "Dumbbell Romanian Deadlift", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes"] },
-
 { name: "Barbell Romanian Deadlift", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Cable Pull-Through", equipment: ["cables machine"], focus: ["Lower Body", "Hinge", "glutes", "hamstrings"] },
-
 { name: "Leg Curl (Machine)", equipment: ["pinstack machines", "weighted machines"], focus: ["Lower Body", "hamstrings"] },
-
 { name: "Glute-Ham Raise (Floor)", equipment: ["floor"], focus: ["Lower Body", "Hinge", "hamstrings", "glutes"] },
-
 { name: "Barbell Hip Thrusts", equipment: ["barbell"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Smith Machine Reverse Lunges", equipment: ["smith machine"], focus: ["Lower Body", "Hinge", "glutes","quads"] },
-
 { name: "Dumbbell Reverse Lunges", equipment: ["dumbbell"], focus: ["Lower Body","Hinge", "glutes", "quads"] },
-
 { name: "Hip Thrusts (Plate Machine) ", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Hip Thrusts (Pin Machine)", equipment: ["pinstack machines"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Single Leg Hip Thrusts (Dumbbell)", equipment: ["dumbbell"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "45 degree hip extenstions", equipment: ["back extension"], focus: ["Hinge", "glutes"] },
-
 { name: "Dumbbell Hammer Curl", equipment: ["dumbbell"], focus: ["biceps"] },
-
 { name: "Barbell Bicep Curl", equipment: ["barbell"], focus: ["biceps"] },
-
 { name: "Cable Rope Tricep Pushdown", equipment: ["cables machine"], focus: ["triceps"] },
-
 { name: "Dumbbell Skullcrushers", equipment: ["dumbbell", "bench"], focus: ["triceps"] },
-
 { name: "Dumbbell Lateral Raise", equipment: ["dumbbell"], focus: ["shoulders"] },
-
 { name: "Cable Rear Delt Fly", equipment: ["cables machine"], focus: ["shoulders", "upper back"] },
-
 { name: "Seated Machine Hip Abduction", equipment: ["weighted machines"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Cable Machine Single Leg Abduction", equipment: ["cables machine"], focus: ["Lower Body", "Hinge", "glutes"] },
-
 { name: "Hanging Leg Raise", equipment: ["floor"], focus: ["abs"] },
-
 { name: "Weighted Machine Crunch", equipment: ["weighted machines"], focus: ["abs"] },
-
 { name: "Dumbbell Calf Raise", equipment: ["dumbbell"], focus: ["calves"] },
-
 { name: "Hyperextension (Floor)", equipment: ["floor"], focus: ["hamstrings", "glutes"] },
-
 { name: "Treadmill 5K Run", equipment: ["treadmill"], focus: ["Cardio", "Full Body"] },
-
 { name: "Rower 2000m Sprint", equipment: ["rower"], focus: ["Cardio", "Full Body"] },
-
 { name: "Assault Bike Interval", equipment: ["assault bike"], focus: ["Cardio", "Full Body"] },
-
 { name: "Cross Trainer Endurance", equipment: ["cross trainer"], focus: ["Cardio", "Full Body"] },
-
 { name: "Ski Erg 10 Minute Challenge", equipment: ["ski erg"], focus: ["Cardio", "Full Body", "Upper Body", "Pull"] },
-
 { name: "Step Machine Climb", equipment: ["step machine"], focus: ["Cardio", "Lower Body"] },
 
 ];
@@ -1211,9 +1145,812 @@ showMessage("Active equipment updated!", 'info');
 }
 
 }
+<div class="container">
+
+<!-- Tabs Navigation -->
+
+<div class="tabs">
+
+<button class="tab-btn active" onclick="switchTab(event, 'trackerTab')" data-tab="trackerTab">Tracker</button>
+
+<button class="tab-btn" onclick="switchTab(event, 'createTab')" data-tab="createTab">Add Food</button>
+
+<button class="tab-btn" onclick="switchTab(event, 'databaseTab')" data-tab="databaseTab">Food Database</button>
+
+<button class="tab-btn" onclick="switchTab(event, 'goalsTab')" data-tab="goalsTab">Set Goals</button>
+
+<button class="tab-btn" onclick="switchTab(event, 'historyTab')" data-tab="historyTab">History</button>
+
+</div>
+
+  <!-- Tracker Tab -->
+
+<div id="trackerTab" class="tab-content active">
+
+<h2>Log Food</h2>
+
+
+<div style="background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
+
+<p style="font-weight: bold; margin-bottom: 5px;">Scan Barcode</p>
+
+<div id="reader"></div>
+
+<button onclick="startScanner()">Start Camera Scanner</button>
+
+</div>
+
+  <input type="text" id="searchInput" placeholder="Search food..." oninput="searchFood()">
+
+<div id="searchResults"></div>
 
 
 
+<select id="mealType">
+
+<option value="Breakfast">Breakfast</option>
+
+<option value="Lunch">Lunch</option>
+
+<option value="Dinner">Dinner</option>
+
+<option value="Snack">Snack</option>
+
+</select>
+
+  <input type="number" id="quantity" placeholder="Quantity">
+
+
+<select id="servingType" onchange="toggleCustomWeight()">
+
+<option value="default">Per 100g (Quantity * 100g)</option>
+
+<option value="custom">Custom Weight (Specify grams)</option>
+
+</select>
+
+<input type="number" id="customWeight" placeholder="Enter weight in grams (g)">
+
+
+
+<button onclick="addEntry()">Add Entry</button>
+
+<button onclick="resetLog()">Reset Log</button>
+
+<button onclick="saveDay()">Save Day</button>
+
+  <h3>Daily Log</h3>
+
+<div style="overflow-x: auto;">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Food</th>
+
+<th>Meal</th>
+
+<th>Calories</th>
+
+<th>Protein</th>
+
+<th>Qty</th>
+
+<th>Prot%</th>
+
+<th>Remove</th>
+
+</tr>
+
+</thead>
+
+<tbody id="logBody"></tbody>
+
+</table>
+
+</div>
+
+<div class="total-section">
+
+<strong>Total Calories:</strong> <span id="totalCalories">0</span> kcal<br>
+
+<strong>Total Protein:</strong> <span id="totalProtein">0</span> g<br>
+
+<strong>Goal Calories:</strong> <span id="goalCalories">0</span> kcal<br>
+
+<strong>Goal Protein:</strong> <span id="goalProtein">0</span> g<br>
+
+<hr style="margin: 0.5rem 0; border: 0; border-top: 1px solid #ccc;">
+
+<strong>Remaining Calories:</strong> <span id="remainingCalories">0</span> kcal<br>
+
+<strong>Remaining Protein:</strong> <span id="remainingProtein">0</span> g
+
+</div>
+
+</div>
+
+  
+<!-- Create Food Tab -->
+
+<div id="createTab" class="tab-content">
+
+<h2>Add New Food</h2>
+
+<p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Values are per 100g</p>
+
+<input type="text" id="newFoodName" placeholder="Food name">
+
+<input type="number" id="newCalories" placeholder="Calories per 100g">
+
+<input type="number" id="newProtein" placeholder="Protein per 100g">
+
+<button onclick="addFoodAndReturn()">Add Food</button>
+
+</div>
+
+<!-- Food Database Tab -->
+
+<div id="databaseTab" class="tab-content">
+
+<h2>Food Database</h2>
+
+<input type="text" id="dbSearch" placeholder="Search database..." oninput="searchDatabase()">
+
+<div id="databaseResults"></div>
+
+
+<div style="overflow-x: auto; margin-top: 1rem;">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Name</th>
+
+<th>Cals/100g</th>
+<th>Prot/100g</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="foodDatabaseBody"></tbody>
+
+</table>
+
+</div>
+
+  </div>
+
+
+
+<!-- Goals Tab -->
+
+<div id="goalsTab" class="tab-content">
+
+<h2>Set Daily Goals</h2>
+
+<label>Daily Calorie Goal:</label>
+
+<input type="number" id="goalCaloriesInput" placeholder="e.g. 2000">
+
+<label>Daily Protein Goal (g):</label>
+
+<input type="number" id="goalProteinInput" placeholder="e.g. 150">
+
+<button onclick="saveGoals()">Save Goals</button>
+
+</div>
+
+  <!-- History Tab -->
+
+<div id="historyTab" class="tab-content">
+
+<h2>History</h2>
+
+<div class="history-tabs">
+
+<button id="btnDaily" onclick="switchHistoryView('daily')" class="active">Daily</button>
+
+<button id="btnWeekly" onclick="switchHistoryView('weekly')">Weekly</button>
+
+<button id="btnMonthly" onclick="switchHistoryView('monthly')">Monthly</button>
+
+</div>
+<div id="dailyView" class="history-view active">
+
+<p>Your saved daily summaries will appear here.</p>
+
+</div>
+
+<div id="weeklyView" class="history-view">
+
+<p>Weekly trends and summaries.</p>
+
+</div>
+
+<div id="monthlyView" class="history-view">
+
+<p>Monthly overview.</p>
+
+</div>
+
+</div>
+
+</div>
+  <footer>&copy; 2025 Nutrition Tracker</footer>
+
+
+
+<script>
+
+// Global Data
+
+let foodDatabase = [
+
+{ name: "Chicken Breast", calories: 165, protein: 31 },
+
+{ name: "White Rice", calories: 130, protein: 2.7 },
+
+{ name: "Egg", calories: 155, protein: 13 },
+
+{ name: "Peanut Butter", calories: 588, protein: 25 }
+
+];
+
+let log = [];
+  let goals = { calories: 0, protein: 0 };
+
+let history = [];
+
+let scanner;
+
+
+
+// Tab switching
+
+function switchTab(evt, tabName) {
+
+document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+
+document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+
+
+const targetTab = document.getElementById(tabName);
+
+if (targetTab) {
+
+targetTab.classList.add("active");
+if (evt && evt.currentTarget) {
+
+evt.currentTarget.classList.add("active");
+
+} else {
+
+const btn = document.querySelector(`[data-tab="${tabName}"]`);
+
+if (btn) btn.classList.add("active");
+
+}
+
+}
+
+// Stop scanner if switching away from Tracker
+
+if (tabName !== 'trackerTab' && scanner) {
+
+scanner.stop().catch(err => console.warn("Scanner stop error", err));
+
+}
+  }
+
+
+
+// Scanner logic
+
+function startScanner() {
+
+const readerDiv = document.getElementById("reader");
+
+readerDiv.innerHTML = "";
+
+scanner = new Html5Qrcode("reader");
+
+
+Html5Qrcode.getCameras().then(devices => {
+
+if (devices && devices.length > 0) {
+
+// Prefer back camera
+
+const backCam = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+scanner.start(
+
+backCam.id,
+
+{ fps: 10, qrbox: 250 },
+
+(decodedText) => {
+
+scanner.stop();
+
+fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
+
+.then(res => res.json())
+
+.then(data => {
+
+const prod = data.product;
+
+if (!prod) return alert("Product not found in Open Food Facts database.");
+  const name = prod.product_name || "Unknown Scanned Item";
+
+const cal = prod.nutriments["energy-kcal_100g"] || prod.nutriments["energy-kcal_serving"];
+
+const prot = prod.nutriments["proteins_100g"] || prod.nutriments["proteins_serving"];
+
+
+if (!cal || !prot) {
+
+alert(`Found "${name}" but nutritional data is incomplete.`);
+
+}
+
+
+// Populate create tab or database automatically
+
+document.getElementById("newFoodName").value = name;
+
+document.getElementById("newCalories").value = cal || 0;
+
+document.getElementById("newProtein").value = prot || 0;
+  alert(`Scanned: ${name}. Please review and add to database.`);
+
+switchTab(null, "createTab");
+
+})
+
+.catch(err => alert("Error fetching product data."));
+
+},
+
+(errorMessage) => { /* scanning */ }
+
+).catch(err => alert("Camera permission or access error."));
+
+} else {
+
+alert("No cameras found.");
+
+}
+
+});
+
+}
+  // Custom weight toggle
+
+function toggleCustomWeight() {
+
+const type = document.getElementById("servingType").value;
+
+const customInput = document.getElementById("customWeight");
+
+customInput.style.display = (type === "custom") ? "block" : "none";
+
+}
+
+
+
+// Save food to database
+
+function addFoodAndReturn() {
+
+const name = document.getElementById("newFoodName").value;
+
+const calories = parseFloat(document.getElementById("newCalories").value);
+  const protein = parseFloat(document.getElementById("newProtein").value);
+
+
+if (!name || isNaN(calories) || isNaN(protein)) {
+
+return alert("Please fill out all fields with valid numbers.");
+
+}
+
+
+
+foodDatabase.push({ name, calories, protein });
+
+updateFoodDatabaseTable();
+
+
+document.getElementById("newFoodName").value = "";
+
+document.getElementById("newCalories").value = "";
+
+document.getElementById("newProtein").value = "";
+  alert("Food saved to database!");
+
+switchTab(null, "trackerTab");
+
+}
+
+
+
+// Update database table
+
+function updateFoodDatabaseTable() {
+
+const tbody = document.getElementById("foodDatabaseBody");
+
+tbody.innerHTML = "";
+
+foodDatabase.forEach((f, i) => {
+
+const row = tbody.insertRow();
+
+row.insertCell(0).innerText = f.name;
+
+  row.insertCell(1).innerText = f.calories;
+
+row.insertCell(2).innerText = f.protein;
+
+const delBtn = document.createElement("button");
+
+delBtn.textContent = "Remove";
+
+delBtn.style.padding = "2px 5px";
+
+delBtn.style.fontSize = "0.8rem";
+
+delBtn.style.backgroundColor = "#dc3545";
+
+delBtn.onclick = () => {
+
+foodDatabase.splice(i, 1);
+
+updateFoodDatabaseTable();
+
+};
+  row.insertCell(3).appendChild(delBtn);
+
+});
+
+}
+
+
+
+// Add entry to daily log
+
+function addEntry() {
+
+const foodName = document.getElementById("searchInput").value;
+
+const qtyInput = parseFloat(document.getElementById("quantity").value);
+
+const meal = document.getElementById("mealType").value;
+
+const servingType = document.getElementById("servingType").value;
+
+const customW = parseFloat(document.getElementById("customWeight").value);
+  const food = foodDatabase.find(f => f.name.toLowerCase() === foodName.toLowerCase());
+
+
+
+if (!food) return alert("Select a valid food from the database search.");
+
+if (isNaN(qtyInput)) return alert("Please enter a valid quantity.");
+
+
+
+let multiplier;
+
+if (servingType === "custom") {
+
+if (isNaN(customW)) return alert("Enter custom weight in grams.");
+
+multiplier = (customW * qtyInput) / 100;
+
+} else {
+
+multiplier = qtyInput;
+  }
+
+
+
+const calculatedCals = food.calories * multiplier;
+
+const calculatedProt = food.protein * multiplier;
+
+
+
+const entry = {
+
+name: food.name,
+
+calories: calculatedCals,
+
+protein: calculatedProt,
+
+qty: qtyInput + (servingType === "custom" ? ` (${customW}g)` : " (100g units)"),
+
+meal: meal,
+
+proteinPct: calculatedCals > 0 ? ((calculatedProt * 4) / calculatedCals * 100).toFixed(1) : 0
+
+};
+
+
+
+log.push(entry);
+
+updateLogTable();
+
+
+document.getElementById("searchInput").value = "";
+
+document.getElementById("quantity").value = "";
+
+document.getElementById("customWeight").value = "";
+}
+
+
+
+// Reset log
+
+function resetLog() {
+
+if (confirm("Clear all current entries for today?")) {
+
+log = [];
+
+updateLogTable();
+
+}
+
+}
+  // Update log UI
+
+function updateLogTable() {
+
+const tbody = document.getElementById("logBody");
+
+tbody.innerHTML = "";
+
+let totalCals = 0, totalProt = 0;
+
+
+
+log.forEach((e, i) => {
+
+totalCals += e.calories;
+
+totalProt += e.protein;
+
+const row = tbody.insertRow();
+
+row.insertCell(0).innerText = e.name;
+  row.insertCell(1).innerText = e.meal;
+
+row.insertCell(2).innerText = e.calories.toFixed(1);
+
+row.insertCell(3).innerText = e.protein.toFixed(1);
+
+row.insertCell(4).innerText = e.qty;
+
+row.insertCell(5).innerText = `${e.proteinPct}%`;
+
+
+const removeCell = row.insertCell(6);
+
+const btn = document.createElement("button");
+
+btn.textContent = "X";
+
+btn.style.width = "auto";
+
+btn.style.padding = "2px 8px";
+
+btn.style.backgroundColor = "#dc3545";
+  btn.onclick = () => { log.splice(i, 1); updateLogTable(); };
+
+removeCell.appendChild(btn);
+
+});
+
+
+
+document.getElementById("totalCalories").innerText = totalCals.toFixed(1);
+
+document.getElementById("totalProtein").innerText = totalProt.toFixed(1);
+
+document.getElementById("goalCalories").innerText = goals.calories;
+
+document.getElementById("goalProtein").innerText = goals.protein;
+
+document.getElementById("remainingCalories").innerText = (goals.calories - totalCals).toFixed(1);
+
+document.getElementById("remainingProtein").innerText = (goals.protein - totalProt).toFixed(1);
+
+}
+  // Save goals
+
+function saveGoals() {
+
+goals.calories = parseFloat(document.getElementById("goalCaloriesInput").value) || 0;
+
+goals.protein = parseFloat(document.getElementById("goalProteinInput").value) || 0;
+
+alert("Daily goals updated!");
+
+updateLogTable();
+
+}
+  // Search logic for logging
+
+function searchFood() {
+
+const query = document.getElementById("searchInput").value.toLowerCase();
+
+const container = document.getElementById("searchResults");
+
+container.innerHTML = "";
+
+
+if (query.length < 1) return;
+
+
+
+const results = foodDatabase.filter(f => f.name.toLowerCase().includes(query));
+
+
+results.forEach(food => {
+  const div = document.createElement("div");
+
+div.textContent = `${food.name} (${food.calories} cal, ${food.protein}g protein per 100g)`;
+
+div.onclick = () => {
+
+document.getElementById("searchInput").value = food.name;
+
+container.innerHTML = "";
+
+};
+
+container.appendChild(div);
+
+});
+
+
+
+if (!results.length && query.length > 2) {
+
+const div = document.createElement("div");
+  div.innerHTML = `<em>"${query}"</em> not found. <strong>Click to create.</strong>`;
+
+div.onclick = () => {
+
+document.getElementById("newFoodName").value = query;
+
+switchTab(null, "createTab");
+
+};
+
+container.appendChild(div);
+
+}
+
+}
+  // Database Search
+
+function searchDatabase() {
+
+const query = document.getElementById("dbSearch").value.toLowerCase();
+
+const rows = document.querySelectorAll("#foodDatabaseBody tr");
+
+rows.forEach(row => {
+
+const name = row.cells[0].innerText.toLowerCase();
+
+row.style.display = name.includes(query) ? "" : "none";
+
+});
+
+}
+
+  // History functionality
+
+function saveDay() {
+
+if (log.length === 0) return alert("Log is empty.");
+
+const date = new Date().toLocaleDateString();
+
+const totalCals = log.reduce((sum, e) => sum + e.calories, 0);
+
+const totalProt = log.reduce((sum, e) => sum + e.protein, 0);
+
+
+const daySummary = {
+
+date,
+
+calories: totalCals.toFixed(1),
+
+protein: totalProt.toFixed(1),
+  entries: [...log]
+
+};
+
+
+history.push(daySummary);
+
+alert(`Day saved for ${date}!`);
+
+renderHistory();
+
+}
+
+
+
+function switchHistoryView(view) {
+
+document.querySelectorAll(".history-view").forEach(v => v.classList.remove("active"));
+
+document.querySelectorAll(".history-tabs button").forEach(b => b.classList.remove("active"));
+
+  document.getElementById(view + "View").classList.add("active");
+
+document.getElementById("btn" + view.charAt(0).toUpperCase() + view.slice(1)).classList.add("active");
+
+}
+
+
+
+function renderHistory() {
+
+const dailyView = document.getElementById("dailyView");
+
+if (history.length === 0) {
+
+dailyView.innerHTML = "<p>No history records yet.</p>";
+
+return;
+
+}
+  let html = "<table><thead><tr><th>Date</th><th>Calories</th><th>Protein</th></tr></thead><tbody>";
+
+history.forEach(day => {
+
+html += `<tr><td>${day.date}</td><td>${day.calories}</td><td>${day.protein}</td></tr>`;
+
+});
+
+html += "</tbody></table>";
+
+dailyView.innerHTML = html;
+
+}
+
+
+
+window.onload = () => {
+
+updateFoodDatabaseTable();
+
+updateLogTable();
+
+  };
+  
 function handleMealLogSave(e) {
 
 e.preventDefault();
