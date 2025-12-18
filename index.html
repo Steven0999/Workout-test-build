@@ -677,7 +677,49 @@
       document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
       document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
       
+if (targetTab) {
+        targetTab.classList.add("active");
+        if (evt && evt.currentTarget) {
+          evt.currentTarget.classList.add("active");
+        } else {
+          const btn = document.querySelector(`[data-tab="${tabName}"]`);
+          if (btn) btn.classList.add("active");
+        }
+      }
+      // Stop scanner if switching away from Tracker
+      if (tabName !== 'trackerTab' && scanner) {
+        scanner.stop().catch(err => console.warn("Scanner stop error", err));
+      }
+    }
 
+    // Scanner logic
+    function startScanner() {
+      const readerDiv = document.getElementById("reader");
+      readerDiv.innerHTML = "";
+      scanner = new Html5Qrcode("reader");
+      
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length > 0) {
+          // Prefer back camera
+          const backCam = devices.find(d => d.label.toLowerCase().includes("back")) || devices[0];
+          scanner.start(
+            backCam.id,
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+              scanner.stop();
+              fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
+                .then(res => res.json())
+                .then(data => {
+                  const prod = data.product;
+                  if (!prod) return alert("Product not found in Open Food Facts database.");
+                  
+                  const name = prod.product_name || "Unknown Scanned Item";
+                  const cal = prod.nutriments["energy-kcal_100g"] || prod.nutriments["energy-kcal_serving"];
+                  const prot = prod.nutriments["proteins_100g"] || prod.nutriments["proteins_serving"];
+                  
+                  if (!cal || !prot) {
+                    alert(`Found "${name}" but nutritional data is incomplete.`);
+                  }
         
         //OLD CODE
         
