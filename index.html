@@ -3,189 +3,720 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitness Tracker Dashboard</title>
+    <title>Full Training System</title>
+
+    <!-- PWA / Offline -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-<!-- Offline Notice -->
-<div id="offline-notice">You are currently offline. Some features may not be available.</div>
+<!-- ================= BURGER MENU ================= -->
+<button id="burger-btn" class="burger-btn">
+    ☰
+</button>
 
-<!-- Burger Menu -->
-<div id="burger-menu">&#9776;</div>
-<nav id="side-menu">
-    <a href="#" class="menu-link active-link" data-section="dashboard">Dashboard</a>
-    <a href="#" class="menu-link" data-section="gym-config">Gym Config</a>
-    <a href="#" class="menu-link" data-section="training">Training</a>
-    <a href="#" class="menu-link" data-section="nutrition">Nutrition</a>
-    <a href="#" class="menu-link" data-section="body-metrics">Body Measurements</a>
-    <a href="#" class="menu-link" data-section="history">History</a>
+<nav id="side-menu" class="side-menu">
+    <h2>Navigation</h2>
+    <ul>
+        <li data-target="dashboard">Dashboard</li>
+        <li data-target="gym-config">Gym Config</li>
+        <li data-target="training">Training</li>
+        <li data-target="nutrition">Nutrition</li>
+        <li data-target="body-metrics">Body Metrics</li>
+        <li data-target="history">History</li>
+    </ul>
 </nav>
 
-<!-- Main Content -->
-<div class="view-container">
+<!-- ================= THUMB NAV ================= -->
+<nav class="thumb-nav">
+    <button data-target="dashboard">🏠</button>
+    <button data-target="training">🏋️</button>
+    <button data-target="nutrition">🍽</button>
+    <button data-target="body-metrics">📏</button>
+    <button data-target="history">📊</button>
+</nav>
 
-    <!-- Dashboard Section -->
-    <section id="dashboard" class="tab-content active">
-        <h1>Dashboard Overview</h1>
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>Workouts Completed Today</h3>
-                <p id="workouts-today">0</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Nutrition Today</h3>
-                <p>Calories: <span id="calories-today">0</span> / <span id="calories-goal">0</span></p>
-                <p>Protein: <span id="protein-today">0</span> / <span id="protein-goal">0</span> g</p>
-                <p>Carbs: <span id="carbs-today">0</span> / <span id="carbs-goal">0</span> g</p>
-                <p>Fats: <span id="fats-today">0</span> / <span id="fats-goal">0</span> g</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Body Measurements</h3>
-                <p>Weight: <span id="weight-today">0</span> kg</p>
-                <p>Body Fat: <span id="bodyfat-today">0</span> %</p>
-                <p>Muscle Mass: <span id="muscle-today">0</span> kg</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>History Overview</h3>
-                <p>Total Workouts: <span id="total-workouts">0</span></p>
-                <p>Total Calories Logged: <span id="total-calories">0</span></p>
-            </div>
-        </div>
-    </section>
+<!-- ================= MAIN APP ================= -->
+<main id="app">
 
-    <!-- Gym Config Section -->
-    <section id="gym-config" class="tab-content">
-        <h1>Gym Configuration</h1>
-        <div class="form-group">
-            <label for="gym-name">Gym Name</label>
-            <input type="text" id="gym-name" placeholder="Enter gym name">
-        </div>
-        <div class="form-group">
-            <label for="membership-type">Membership Type</label>
-            <select id="membership-type">
-                <option value="basic">Basic</option>
-                <option value="premium">Premium</option>
-                <option value="vip">VIP</option>
-            </select>
-        </div>
-        <button class="std-btn" id="save-gym">Save Gym Config</button>
-    </section>
+<!-- ================= DASHBOARD ================= -->
+<section id="dashboard" class="view active">
 
-    <!-- Training Section -->
-    <section id="training" class="tab-content">
-        <h1>Training</h1>
-        <div class="form-group">
-            <label for="exercise-name">Exercise Name</label>
-            <input type="text" id="exercise-name">
-        </div>
-        <div class="form-group">
-            <label for="sets">Sets</label>
-            <input type="number" id="sets">
-        </div>
-        <div class="form-group">
-            <label for="reps">Reps</label>
-            <input type="number" id="reps">
-        </div>
-        <button class="std-btn" id="add-exercise">Add Exercise</button>
+    <h1>Dashboard</h1>
 
-        <h2>Today's Exercises</h2>
-        <table id="exercise-table">
+    <div class="dashboard-grid">
+
+        <div class="dashboard-card">
+            <h3>Workouts Today</h3>
+            <p id="workouts-today">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Calories</h3>
+            <p>
+                <span id="calories-consumed">0</span> /
+                <span id="calories-target">2000</span>
+            </p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Macros</h3>
+            <p>
+                P: <span id="macro-protein">0</span>g |
+                C: <span id="macro-carbs">0</span>g |
+                F: <span id="macro-fat">0</span>g
+            </p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Readiness</h3>
+            <p id="readiness-score">--</p>
+        </div>
+
+    </div>
+
+    <div class="dashboard-actions">
+        <button data-target="training">Start Workout</button>
+        <button data-target="nutrition">Log Meal</button>
+        <button data-target="body-metrics">Add Metrics</button>
+    </div>
+
+    <div class="reload-controls">
+        <button id="deload-btn">Deload Week</button>
+        <button id="reload-btn">Reload / Push</button>
+    </div>
+
+</section>
+
+<!-- ================= GYM CONFIG ================= -->
+<section id="gym-config" class="view">
+
+    <h1>Gym Configuration</h1>
+
+    <div class="config-section">
+        <h2>Available Equipment</h2>
+
+        <label><input type="checkbox" value="Barbell"> Barbell</label>
+        <label><input type="checkbox" value="Dumbbell"> Dumbbell</label>
+        <label><input type="checkbox" value="Kettlebell"> Kettlebell</label>
+        <label><input type="checkbox" value="Cable"> Cable</label>
+        <label><input type="checkbox" value="Machine"> Machine</label>
+        <label><input type="checkbox" value="Bands"> Resistance Bands</label>
+        <label><input type="checkbox" value="Bodyweight"> Bodyweight</label>
+
+        <button id="save-gym-config">Save Gym Setup</button>
+    </div>
+
+</section>
+
+<!-- ================= TRAINING ================= -->
+<section id="training" class="view">
+
+    <h1>Training</h1>
+
+    <div class="training-controls">
+
+        <label>Workout Focus</label>
+        <select id="workout-focus">
+            <option value="full">Full Body</option>
+            <option value="upper">Upper Body</option>
+            <option value="lower">Lower Body</option>
+            <option value="push">Push</option>
+            <option value="pull">Pull</option>
+            <option value="hinge">Hinge</option>
+            <option value="squat">Squat</option>
+            <option value="chest">Chest</option>
+            <option value="back">Back</option>
+            <option value="legs">Legs</option>
+            <option value="arms">Arms</option>
+            <option value="shoulders">Shoulders</option>
+        </select>
+
+        <button id="generate-workout">Generate Workout</button>
+    </div>
+
+    <div id="workout-plan"></div>
+
+</section>
+
+<!-- ================= NUTRITION ================= -->
+<section id="nutrition" class="view">
+
+    <h1>Nutrition</h1>
+
+    <div class="meal-form">
+        <input id="food-name" placeholder="Food name">
+        <input id="food-calories" type="number" placeholder="Calories">
+        <input id="food-protein" type="number" placeholder="Protein (g)">
+        <input id="food-carbs" type="number" placeholder="Carbs (g)">
+        <input id="food-fat" type="number" placeholder="Fat (g)">
+
+        <select id="meal-type">
+            <option>Breakfast</option>
+            <option>Lunch</option>
+            <option>Dinner</option>
+            <option>Snack</option>
+        </select>
+
+        <button id="add-food">Add Food</button>
+    </div>
+
+    <table id="nutrition-table">
+        <thead>
+            <tr>
+                <th>Meal</th>
+                <th>Food</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Carbs</th>
+                <th>Fat</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <canvas id="macro-chart"></canvas>
+
+</section>
+
+<!-- ================= BODY METRICS ================= -->
+<section id="body-metrics" class="view">
+
+    <h1>Body Metrics</h1>
+
+    <div class="metrics-form">
+
+        <input id="weight" type="number" placeholder="Weight (kg)">
+        <input id="shoulders" type="number" placeholder="Shoulders (cm)">
+        <input id="chest" type="number" placeholder="Chest (cm)">
+        <input id="waist" type="number" placeholder="Waist (cm)">
+        <input id="glutes" type="number" placeholder="Glutes (cm)">
+        <input id="arms" type="number" placeholder="Arms (cm)">
+        <input id="legs" type="number" placeholder="Legs (cm)">
+
+        <input id="progress-photos" type="file" multiple accept="image/*">
+
+        <button id="save-metrics">Save Metrics</button>
+    </div>
+
+    <canvas id="measurement-chart"></canvas>
+
+    <div id="photo-timeline"></div>
+
+</section>
+
+<!-- ================= HISTORY ================= -->
+<section id="history" class="view">
+
+    <h1>History</h1>
+
+    <div id="workout-history"></div>
+    <div id="nutrition-history"></div>
+    <div id="metrics-history"></div>
+
+</section>
+<!-- ================= TRAINING DETAILS EXTENSION ================= -->
+<section id="training-details" class="view">
+
+    <h2>Active Workout</h2>
+
+    <div id="workout-meta">
+        <p>Focus: <span id="active-focus">—</span></p>
+        <p>Readiness: <span id="active-readiness">—</span></p>
+        <p>Mode: <span id="training-mode">Normal</span></p>
+    </div>
+
+    <div id="exercise-list">
+
+        <!-- Dynamically injected exercises -->
+
+    </div>
+
+    <div class="workout-actions">
+        <button id="complete-workout">Complete Workout</button>
+        <button id="cancel-workout">Cancel</button>
+    </div>
+
+</section>
+
+<!-- ================= EXERCISE ROW TEMPLATE ================= -->
+<template id="exercise-template">
+    <div class="exercise-card">
+
+        <div class="exercise-header">
+            <h3 class="exercise-name"></h3>
+            <span class="exercise-equipment"></span>
+        </div>
+
+        <div class="exercise-substitution hidden">
+            <p>Substituted due to unavailable equipment</p>
+        </div>
+
+        <table class="set-table">
             <thead>
                 <tr>
-                    <th>Exercise</th>
-                    <th>Sets</th>
+                    <th>Set</th>
+                    <th>Weight</th>
                     <th>Reps</th>
+                    <th>Done</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody class="set-body"></tbody>
         </table>
-    </section>
 
-    <!-- Nutrition Section -->
-    <section id="nutrition" class="tab-content">
-        <h1>Nutrition</h1>
-        <div class="form-group">
-            <label for="meal-type">Meal Type</label>
-            <select id="meal-type">
-                <option value="Breakfast">Breakfast</option>
-                <option value="Lunch">Lunch</option>
-                <option value="Dinner">Dinner</option>
-                <option value="Snack">Snack</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="food-name">Food Name</label>
-            <input type="text" id="food-name">
-        </div>
-        <div class="form-group">
-            <label for="food-calories">Calories</label>
-            <input type="number" id="food-calories">
-        </div>
-        <div class="form-group">
-            <label for="food-protein">Protein (g)</label>
-            <input type="number" id="food-protein">
-        </div>
-        <div class="form-group">
-            <label for="food-carbs">Carbs (g)</label>
-            <input type="number" id="food-carbs">
-        </div>
-        <div class="form-group">
-            <label for="food-fats">Fats (g)</label>
-            <input type="number" id="food-fats">
-        </div>
-        <button class="std-btn" id="add-food">Add Food</button>
+    </div>
+</template>
 
-        <h2>Nutrition Log</h2>
-        <table id="nutrition-table">
-            <thead>
-                <tr>
-                    <th>Meal</th>
-                    <th>Food</th>
-                    <th>Calories</th>
-                    <th>Protein</th>
-                    <th>Carbs</th>
-                    <th>Fats</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
+<!-- ================= WEEKLY TRAINING VIEW ================= -->
+<section id="weekly-view" class="view">
 
-    <!-- Body Metrics Section -->
-    <section id="body-metrics" class="tab-content">
-        <h1>Body Measurements</h1>
-        <div class="form-group">
-            <label for="weight">Weight (kg)</label>
-            <input type="number" id="weight">
-        </div>
-        <div class="form-group">
-            <label for="bodyfat">Body Fat (%)</label>
-            <input type="number" id="bodyfat">
-        </div>
-        <div class="form-group">
-            <label for="muscle-mass">Muscle Mass (kg)</label>
-            <input type="number" id="muscle-mass">
-        </div>
-        <button class="std-btn" id="save-metrics">Save Metrics</button>
-    </section>
+    <h1>Weekly Overview</h1>
 
-    <!-- History Section -->
-    <section id="history" class="tab-content">
-        <h1>History</h1>
-        <div class="history-tabs">
-            <button class="history-tab active" data-tab="workouts-history">Workouts</button>
-            <button class="history-tab" data-tab="nutrition-history">Nutrition</button>
-            <button class="history-tab" data-tab="metrics-history">Body Metrics</button>
-        </div>
+    <div class="week-grid">
+        <div class="day-card">Mon</div>
+        <div class="day-card">Tue</div>
+        <div class="day-card">Wed</div>
+        <div class="day-card">Thu</div>
+        <div class="day-card">Fri</div>
+        <div class="day-card">Sat</div>
+        <div class="day-card">Sun</div>
+    </div>
 
-        <div id="workouts-history" class="history-view active"></div>
-        <div id="nutrition-history" class="history-view"></div>
-        <div id="metrics-history" class="history-view"></div>
-    </section>
+    <canvas id="weekly-volume-chart"></canvas>
 
+</section>
+
+<!-- ================= BARCODE SCANNER ================= -->
+<section id="barcode-scanner" class="view">
+
+    <h1>Barcode Scanner</h1>
+
+    <p>Scan packaged foods to auto-fill nutrition</p>
+
+    <video id="barcode-video" autoplay playsinline></video>
+
+    <button id="start-scan">Start Scan</button>
+    <button id="stop-scan">Stop Scan</button>
+
+    <div id="scan-result"></div>
+
+</section>
+
+<!-- ================= OFFLINE / SYNC STATUS ================= -->
+<div id="offline-banner" class="hidden">
+    <p>You are offline. Data will sync when connection returns.</p>
 </div>
 
+<!-- ================= SWIPE NAVIGATION HELPERS ================= -->
+<div id="swipe-overlay-left" class="swipe-zone"></div>
+<div id="swipe-overlay-right" class="swipe-zone"></div>
+
+<!-- ================= ANALYTICS SECTION ================= -->
+<section id="analytics" class="view">
+
+    <h1>Analytics</h1>
+
+    <div class="analytics-grid">
+
+        <div class="analytics-card">
+            <h3>Training Volume</h3>
+            <canvas id="volume-chart"></canvas>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Strength Progress</h3>
+            <canvas id="strength-chart"></canvas>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Body Measurements</h3>
+            <canvas id="body-chart"></canvas>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Nutrition Trends</h3>
+            <canvas id="nutrition-chart"></canvas>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ================= PHOTO TIMELINE EXTENSION ================= -->
+<section id="photo-gallery" class="view">
+
+    <h1>Progress Photos</h1>
+
+    <input type="range" id="photo-slider" min="0" max="0" value="0">
+
+    <div id="photo-viewer">
+        <img id="active-photo" src="" alt="Progress Photo">
+    </div>
+
+</section>
+
+<!-- ================= PWA INSTALL PROMPT ================= -->
+<div id="install-prompt" class="hidden">
+    <p>Install this app for offline access</p>
+    <button id="install-btn">Install</button>
+</div>
+
+<!-- ================= DEBUG / DEV PANEL (SAFE TO IGNORE) ================= -->
+<section id="dev-panel" class="view">
+
+    <h1>System State</h1>
+
+    <pre id="app-state-dump"></pre>
+
+                                     </section>
+    <!-- ================= NUTRITION TARGETS ================= -->
+<section id="nutrition-targets" class="view">
+
+    <h1>Nutrition Targets</h1>
+
+    <div class="targets-form">
+
+        <label>
+            Daily Calories
+            <input id="target-calories" type="number" value="2000">
+        </label>
+
+        <label>
+            Protein (g)
+            <input id="target-protein" type="number" value="150">
+        </label>
+
+        <label>
+            Carbs (g)
+            <input id="target-carbs" type="number" value="250">
+        </label>
+
+        <label>
+            Fat (g)
+            <input id="target-fat" type="number" value="70">
+        </label>
+
+        <button id="save-nutrition-targets">Save Targets</button>
+
+    </div>
+
+</section>
+
+<!-- ================= NUTRITION WEEKLY VIEW ================= -->
+<section id="nutrition-weekly" class="view">
+
+    <h1>Weekly Nutrition Overview</h1>
+
+    <div class="week-grid nutrition-week">
+
+        <div class="day-card">Mon</div>
+        <div class="day-card">Tue</div>
+        <div class="day-card">Wed</div>
+        <div class="day-card">Thu</div>
+        <div class="day-card">Fri</div>
+        <div class="day-card">Sat</div>
+        <div class="day-card">Sun</div>
+
+    </div>
+
+    <canvas id="weekly-calorie-chart"></canvas>
+
+</section>
+
+<!-- ================= MEAL HISTORY FILTERS ================= -->
+<section id="meal-history-filters" class="view">
+
+    <h1>Meal History</h1>
+
+    <div class="filter-controls">
+
+        <label>
+            From
+            <input type="date" id="meal-from-date">
+        </label>
+
+        <label>
+            To
+            <input type="date" id="meal-to-date">
+        </label>
+
+        <label>
+            Meal Type
+            <select id="meal-filter-type">
+                <option value="">All</option>
+                <option>Breakfast</option>
+                <option>Lunch</option>
+                <option>Dinner</option>
+                <option>Snack</option>
+            </select>
+        </label>
+
+        <button id="apply-meal-filters">Apply Filters</button>
+
+    </div>
+
+    <table id="meal-history-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Meal</th>
+                <th>Food</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Carbs</th>
+                <th>Fat</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</section>
+
+<!-- ================= BODY METRIC COMPARISON ================= -->
+<section id="metric-comparison" class="view">
+
+    <h1>Body Measurement Comparison</h1>
+
+    <table id="metric-comparison-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Weight</th>
+                <th>Shoulders</th>
+                <th>Chest</th>
+                <th>Waist</th>
+                <th>Glutes</th>
+                <th>Arms</th>
+                <th>Legs</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</section>
+
+<!-- ================= METRIC PROGRESS SLIDERS ================= -->
+<section id="metric-sliders" class="view">
+
+    <h1>Metric Progress</h1>
+
+    <label>
+        Select Metric
+        <select id="metric-select">
+            <option value="weight">Weight</option>
+            <option value="shoulders">Shoulders</option>
+            <option value="chest">Chest</option>
+            <option value="waist">Waist</option>
+            <option value="glutes">Glutes</option>
+            <option value="arms">Arms</option>
+            <option value="legs">Legs</option>
+        </select>
+    </label>
+
+    <canvas id="metric-progress-chart"></canvas>
+
+</section>
+
+<!-- ================= HISTORY EXTENSIONS ================= -->
+<section id="training-history" class="view">
+
+    <h1>Training History</h1>
+
+    <table id="training-history-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Focus</th>
+                <th>Exercises</th>
+                <th>Volume</th>
+                <th>Mode</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</section>
+
+<!-- ================= ACCESSIBILITY HELPERS ================= -->
+<section id="accessibility" class="view">
+
+    <h1>Accessibility</h1>
+
+    <label>
+        <input type="checkbox" id="high-contrast-toggle">
+        High Contrast Mode
+    </label>
+
+    <label>
+        <input type="checkbox" id="large-text-toggle">
+        Large Text
+    </label>
+
+</section>
+
+<!-- ================= MOBILE GESTURE HINTS ================= -->
+<section id="mobile-help" class="view">
+
+    <h1>Mobile Navigation</h1>
+
+    <ul>
+        <li>Swipe left/right to change sections</li>
+        <li>Use bottom thumb bar for quick access</li>
+        <li>Tap burger menu for full navigation</li>
+    </ul>
+
+</section>
+
+<!-- ================= STRUCTURAL PADDING (FOR SCALING) ================= -->
+<!-- These containers support future modules and maintain layout integrity -->
+
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+<div class="future-module"></div>
+
+<!-- ================= SYSTEM MODALS ================= -->
+
+<div id="modal-overlay" class="hidden"></div>
+
+<div id="system-modal" class="modal hidden">
+    <h2 id="modal-title"></h2>
+    <p id="modal-message"></p>
+    <button id="modal-close">Close</button>
+</div>
+
+<!-- ================= READINESS EXPLANATION ================= -->
+<section id="readiness-info" class="view">
+
+    <h1>Readiness Score Breakdown</h1>
+
+    <ul>
+        <li>Recent training volume</li>
+        <li>Missed days</li>
+        <li>Bodyweight stability</li>
+        <li>Progressive overload trend</li>
+        <li>Manual reload / deload state</li>
+    </ul>
+
+</section>
+
+<!-- ================= PROGRESSIVE OVERLOAD INFO ================= -->
+<section id="progression-info" class="view">
+
+    <h1>Progressive Overload Logic</h1>
+
+    <p>
+        Workouts are automatically progressed based on:
+    </p>
+
+    <ul>
+        <li>Previous performance</li>
+        <li>Readiness score</li>
+        <li>Equipment availability</li>
+        <li>Manual reload or deload selection</li>
+    </ul>
+
+</section>
+
+<!-- ================= EXERCISE SUBSTITUTION INFO ================= -->
+<section id="substitution-info" class="view">
+
+    <h1>Exercise Substitution</h1>
+
+    <p>
+        If equipment is missing or broken, exercises are replaced
+        with biomechanically similar alternatives automatically.
+    </p>
+
+</section>
+
+<!-- ================= DELOAD / RELOAD INFO ================= -->
+<section id="reload-info" class="view">
+
+    <h1>Training Phases</h1>
+
+    <ul>
+        <li><strong>Normal</strong>: Standard progression</li>
+        <li><strong>Deload</strong>: Reduced volume and intensity</li>
+        <li><strong>Reload</strong>: Increased stimulus</li>
+    </ul>
+
+</section>
+
+<!-- ================= ERROR & SYNC HANDLING ================= -->
+<section id="system-status" class="view">
+
+    <h1>System Status</h1>
+
+    <div id="sync-status">Synced</div>
+    <div id="error-log"></div>
+
+</section>
+
+<!-- ================= KEYBOARD SHORTCUTS ================= -->
+<section id="shortcuts" class="view">
+
+    <h1>Keyboard Shortcuts</h1>
+
+    <ul>
+        <li>D → Dashboard</li>
+        <li>T → Training</li>
+        <li>N → Nutrition</li>
+        <li>B → Body Metrics</li>
+        <li>H → History</li>
+    </ul>
+
+</section>
+
+<!-- ================= HIDDEN MOBILE HELPERS ================= -->
+<div class="mobile-helper hidden"></div>
+<div class="mobile-helper hidden"></div>
+<div class="mobile-helper hidden"></div>
+<div class="mobile-helper hidden"></div>
+
+<!-- ================= NAVIGATION ANCHORS ================= -->
+<a id="nav-dashboard"></a>
+<a id="nav-training"></a>
+<a id="nav-nutrition"></a>
+<a id="nav-body"></a>
+<a id="nav-history"></a>
+
+<!-- ================= PLACEHOLDER CONTAINERS (SCALING) ================= -->
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+<section class="future-extension"></section>
+
+<!-- ================= FINAL HTML MARKER ================= -->
+<!-- END OF FULL HTML DOCUMENT -->
+</main>
+
+<!-- ================= SCRIPTS ================= -->
 <script src="app.js"></script>
+
 </body>
-            </html>
+        </html>
