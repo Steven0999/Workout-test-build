@@ -1,1113 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- =========================================================
-     META / HEAD
-========================================================= -->
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Integrated Fitness Dashboard</title>
+    <meta charset="UTF-8">
+    <title>VFit Fitness Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- =========================================================
-     EXTERNAL LIBRARIES
-========================================================= -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
-<!-- =========================================================
-     GLOBAL STYLES
-========================================================= -->
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap');
-
-body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background-color: #f0f4f8;
-    color: #1f2937;
-}
-
-.hidden { display: none !important; }
-
-.tab-btn {
-    padding: 0.6rem 1.2rem;
-    background: #e5e7eb;
-    border-radius: 6px;
-    font-weight: 700;
-}
-
-.tab-btn.active {
-    background: #2563eb;
-    color: white;
-}
-
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-
-#reader {
-    width: 100%;
-    max-width: 420px;
-    margin: auto;
-    background: black;
-    border-radius: 8px;
-}
-
-.metric-card {
-    border-top: 4px solid #7c3aed;
-    background: white;
-    border-radius: 12px;
-    padding: 1rem;
-}
-
-.section-divider {
-    margin: 3rem 0;
-    border-top: 2px dashed #c7d2fe;
-}
-</style>
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
+<body class="bg-gray-100 text-gray-900">
 
-<!-- =========================================================
-     GLOBAL MESSAGE SYSTEM
-========================================================= -->
-<div id="message-box"
-     class="fixed top-4 right-4 z-50 bg-green-100 text-green-800 px-4 py-2 rounded-xl shadow-lg hidden">
-</div>
+<!-- BURGER MENU BUTTON -->
+<button id="burger-btn" onclick="toggleMenu()">☰</button>
 
-<!-- =========================================================
-     MAIN CONTAINER
-========================================================= -->
-<div class="max-w-6xl mx-auto p-4 space-y-8">
+<!-- SIDE MENU -->
+<nav id="side-menu" class="hidden">
+    <button onclick="navigate('dashboard')">Dashboard</button>
+    <button onclick="navigate('gym')">Gym Config</button>
+    <button onclick="navigate('workout')">Training</button>
+    <button onclick="navigate('nutrition')">Nutrition</button>
+    <button onclick="navigate('metrics')">Body Measurements</button>
+    <button onclick="navigate('history')">History</button>
+</nav>
 
-<!-- =========================================================
-     DASHBOARD VIEW
-========================================================= -->
-<div id="view-dashboard" class="space-y-6">
+<div class="max-w-6xl mx-auto p-4 space-y-6">
 
-<header class="bg-white p-6 rounded-2xl shadow-xl">
-    <h1 class="text-3xl md:text-4xl font-black mb-2">Fitness Dashboard</h1>
-    <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-        <p><strong>User:</strong> <span id="user-name">Guest</span></p>
-        <p><strong>Goal:</strong> <span id="user-goal">Gain Muscle</span></p>
-        <p><strong>Calories:</strong> <span id="goal-cal-display">0</span></p>
-    </div>
-</header>
+    <!-- HEADER -->
+    <header class="bg-white p-6 rounded-xl shadow">
+        <h1 class="text-3xl font-black">Fitness Dashboard</h1>
+        <p class="text-sm text-gray-500">Training • Nutrition • Metrics</p>
+    </header>
 
-<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-    <button onclick="showView('gym-config')" class="bg-indigo-500 text-white p-6 rounded-xl shadow">
-        <i class="fas fa-dumbbell text-2xl mb-1"></i>
-        <div class="font-bold">Gym Config</div>
-    </button>
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view">
+        <div class="card">
+            <h2 class="section-title">Dashboard Overview</h2>
 
-    <button onclick="showView('plan-workout')" class="bg-green-500 text-white p-6 rounded-xl shadow">
-        <i class="fas fa-running text-2xl mb-1"></i>
-        <div class="font-bold">Workout</div>
-    </button>
+            <div class="grid md:grid-cols-3 gap-4 mt-4">
+                <div class="card">
+                    <h3 class="section-title">Training Today</h3>
+                    <p><strong id="dash-workouts">0</strong> workouts completed</p>
+                </div>
 
-    <button onclick="showView('meal-log')" class="bg-yellow-500 text-white p-6 rounded-xl shadow">
-        <i class="fas fa-utensils text-2xl mb-1"></i>
-        <div class="font-bold">Nutrition</div>
-    </button>
+                <div class="card">
+                    <h3 class="section-title">Nutrition Today</h3>
+                    <p>Calories: <strong id="dash-cal">0</strong></p>
+                    <p>Protein: <strong id="dash-prot">0</strong>g</p>
+                    <p>Carbs: <strong id="dash-carb">0</strong>g</p>
+                    <p>Fat: <strong id="dash-fat">0</strong>g</p>
+                </div>
 
-    <button onclick="showView('body-metrics')" class="bg-purple-500 text-white p-6 rounded-xl shadow">
-        <i class="fas fa-ruler-combined text-2xl mb-1"></i>
-        <div class="font-bold">Metrics</div>
-    </button>
+                <div class="card">
+                    <h3 class="section-title">Remaining</h3>
+                    <p>Calories: <strong id="dash-cal-rem">0</strong></p>
+                    <p>Protein: <strong id="dash-prot-rem">0</strong>g</p>
+                    <p>Carbs: <strong id="dash-carb-rem">0</strong>g</p>
+                    <p>Fat: <strong id="dash-fat-rem">0</strong>g</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <button onclick="openHistory()" class="bg-gray-600 text-white p-6 rounded-xl shadow">
-        <i class="fas fa-chart-line text-2xl mb-1"></i>
-        <div class="font-bold">History</div>
-    </button>
-</div>
+    <!-- NUTRITION -->
+    <section id="view-nutrition" class="view hidden">
+        <div class="card">
+            <h2 class="section-title">Nutrition Tracker</h2>
 
-</div>
+            <div class="grid md:grid-cols-6 gap-2">
+                <input id="food-name" placeholder="Food name">
+                <input id="food-cal" type="number" placeholder="Calories">
+                <input id="food-prot" type="number" placeholder="Protein">
+                <input id="food-carb" type="number" placeholder="Carbs">
+                <input id="food-fat" type="number" placeholder="Fat">
+                <select id="food-meal">
+                    <option>Breakfast</option>
+                    <option>Lunch</option>
+                    <option>Dinner</option>
+                    <option>Snack</option>
+                </select>
+                <button onclick="addFood()" class="btn-primary">Add</button>
+            </div>
 
-<!-- =========================================================
-     GYM CONFIG VIEW
-========================================================= -->
-<div id="view-gym-config" class="hidden bg-white p-6 rounded-2xl shadow-xl space-y-6">
+            <div class="totals">
+                <span>Calories: <strong id="total-cal">0</strong></span>
+                <span>Protein: <strong id="total-prot">0</strong>g</span>
+            </div>
 
-<div class="flex justify-between items-center">
-    <h2 class="text-2xl font-black text-indigo-600">Gym Setup</h2>
-    <button onclick="showView('dashboard')" class="bg-gray-200 px-4 py-2 rounded-lg">Back</button>
-</div>
+            <table class="nutrition-table">
+                <thead>
+                    <tr>
+                        <th>Meal</th>
+                        <th>Food</th>
+                        <th>Calories</th>
+                        <th>Protein</th>
+                        <th>Carbs</th>
+                        <th>Fat</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="nutrition-table"></tbody>
+            </table>
+        </div>
 
-<form id="gym-form" class="space-y-6">
+        <div class="card mt-4">
+            <h3 class="section-title">Macro Breakdown</h3>
+            <div class="grid grid-cols-4 gap-4 text-center">
+                <div>Calories<br><strong id="macro-cal">0</strong></div>
+                <div>Protein<br><strong id="macro-prot">0</strong>g</div>
+                <div>Carbs<br><strong id="macro-carb">0</strong>g</div>
+                <div>Fat<br><strong id="macro-fat">0</strong>g</div>
+            </div>
+        </div>
 
-<input id="gym-name" class="border p-3 rounded-xl w-full" placeholder="Gym Name"/>
+        <div class="card mt-4">
+            <h3 class="section-title">Barcode Scanner</h3>
+            <div id="barcode-reader"></div>
+            <button onclick="startScanner()" class="btn-primary mt-2">Start Scanner</button>
+        </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card mt-4">
+            <h3 class="section-title">Nutrition Analytics</h3>
+            <canvas id="nutritionChart"></canvas>
+        </div>
 
-<div>
-<h3 class="font-bold mb-2">Weights</h3>
-<div id="weights-options" class="space-y-1"></div>
-</div>
+        <div class="card mt-4">
+            <h3 class="section-title">Weekly Summary</h3>
+            <table class="nutrition-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Calories</th>
+                        <th>Protein</th>
+                    </tr>
+                </thead>
+                <tbody id="weekly-table"></tbody>
+            </table>
+        </div>
+    </section>
 
-<div>
-<h3 class="font-bold mb-2">Cardio</h3>
-<div id="cardio-options" class="space-y-1"></div>
-</div>
-
-<div>
-<h3 class="font-bold mb-2">Floor</h3>
-<div id="floor-options" class="space-y-1"></div>
-</div>
-
-</div>
-
-<button class="bg-indigo-600 text-white py-3 rounded-xl w-full font-bold">
-Save Gym Configuration
-</button>
-
-</form>
-</div>
-
-<!-- =========================================================
-     NUTRITION VIEW (EXPANDED STRUCTURE)
-========================================================= -->
-<div id="view-meal-log" class="hidden bg-white p-6 rounded-2xl shadow-xl space-y-6">
-
-<div class="flex justify-between items-center">
-    <h2 class="text-2xl font-black text-yellow-600">Nutrition Tracker</h2>
-    <button onclick="showView('dashboard')" class="bg-gray-200 px-4 py-2 rounded-lg">Back</button>
-</div>
-
-<!-- TABS -->
-<div class="flex gap-2 flex-wrap">
-    <button class="tab-btn active" onclick="switchTab(event,'trackerTab')">Tracker</button>
-    <button class="tab-btn" onclick="switchTab(event,'addFoodTab')">Add Food</button>
-    <button class="tab-btn" onclick="switchTab(event,'goalsTab')">Goals</button>
-    <button class="tab-btn" onclick="switchTab(event,'analyticsTab')">Analytics</button>
-</div>
-
-<!-- ================= TRACKER TAB ================= -->
-<div id="trackerTab" class="tab-content active space-y-4">
-
-<input id="searchInput"
-       oninput="searchFood()"
-       class="border p-3 rounded-xl w-full"
-       placeholder="Search food database..." />
-
-<div id="searchResults" class="border rounded-xl bg-white"></div>
-
-<div class="bg-yellow-50 p-4 rounded-xl">
-    <div class="flex justify-between">
-        <span>Calories</span>
-        <span><strong id="val-cal">0</strong> / <span id="target-cal">0</span></span>
-    </div>
-    <div class="flex justify-between">
-        <span>Protein</span>
-        <span><strong id="val-prot">0</strong> / <span id="target-prot">0</span></span>
-    </div>
-</div>
-
-<div id="today-log-container" class="space-y-2"></div>
+    <!-- PLACEHOLDERS -->
+    <section id="view-workout" class="view hidden"><div class="card">Training</div></section>
+    <section id="view-metrics" class="view hidden"><div class="card">Metrics</div></section>
+    <section id="view-history" class="view hidden"><div class="card">History</div></section>
+    <section id="view-gym" class="view hidden"><div class="card">Gym Config</div></section>
 
 </div>
 
-<!-- ================= ADD FOOD TAB ================= -->
-<div id="addFoodTab" class="tab-content space-y-4">
-
-<div>
-    <p class="font-bold mb-2">Barcode Scanner</p>
-    <div id="reader"></div>
-    <button onclick="startScanner()" class="bg-blue-600 text-white w-full py-2 rounded-xl mt-2">
-        Start Scanner
-    </button>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-<input id="new-food-name" class="border p-3 rounded-xl" placeholder="Food Name"/>
-<input id="new-food-cal" class="border p-3 rounded-xl" placeholder="Calories (per serving)"/>
-<input id="new-food-prot" class="border p-3 rounded-xl" placeholder="Protein (g)"/>
-</div>
-
-<button onclick="addNewFood()" class="bg-green-600 text-white w-full py-3 rounded-xl font-bold">
-Add Food To Database
-</button>
-
-</div>
-
-<!-- ================= GOALS TAB ================= -->
-<div id="goalsTab" class="tab-content space-y-4">
-<input id="goalCaloriesInput" class="border p-3 rounded-xl w-full" placeholder="Daily Calories"/>
-<input id="goalProteinInput" class="border p-3 rounded-xl w-full" placeholder="Daily Protein (g)"/>
-<button onclick="saveGoals()" class="bg-indigo-600 text-white w-full py-3 rounded-xl font-bold">
-Save Nutrition Goals
-</button>
-</div>
-
-<!-- ================= ANALYTICS TAB (SCAFFOLD) ================= -->
-<div id="analyticsTab" class="tab-content space-y-6">
-
-<p class="text-gray-500">
-This section will show weekly averages, streaks, macro balance,
-and calorie trends. (Logic implemented in JS – Part 3)
-</p>
-
-<canvas id="calorieChart" height="120"></canvas>
-<canvas id="proteinChart" height="120"></canvas>
-
-</div>
-
-</div>
-
-    <!-- =========================================================
-     WORKOUT PLANNING VIEW
-========================================================= -->
-<div id="view-plan-workout" class="hidden bg-white p-6 rounded-2xl shadow-xl space-y-6">
-
-<div class="flex justify-between items-center">
-    <h2 class="text-2xl font-black text-green-600">Plan Workout</h2>
-    <button onclick="showView('dashboard')" class="bg-gray-200 px-4 py-2 rounded-lg">Back</button>
-</div>
-
-<form id="workout-planning-form" class="space-y-6">
-
-<div>
-    <label class="font-bold block mb-1">Workout Focus</label>
-    <select id="workout-focus"
-            onchange="handleFocusChange()"
-            class="border p-3 rounded-xl w-full">
-        <option value="full-body">Full Body</option>
-        <option value="upper-body">Upper Body</option>
-        <option value="lower-body">Lower Body</option>
-        <option value="push">Push</option>
-        <option value="pull">Pull</option>
-        <option value="legs">Legs</option>
-        <option value="specific">Specific Muscles</option>
-    </select>
-</div>
-
-<div id="muscle-checkboxes" class="hidden bg-gray-50 p-4 rounded-xl space-y-2">
-    <p class="font-bold text-sm mb-2">Select Muscle Groups</p>
-    <div id="muscle-options" class="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <!-- Filled by JS -->
-    </div>
-</div>
-
-<button class="bg-green-600 text-white py-3 rounded-xl w-full font-bold">
-Start Workout
-</button>
-
-</form>
-</div>
-
-<!-- =========================================================
-     WORKOUT TRACKING VIEW
-========================================================= -->
-<div id="view-track-workout" class="hidden bg-white p-6 rounded-2xl shadow-2xl space-y-6">
-
-<div class="flex justify-between items-center">
-    <h2 id="active-workout-title"
-        class="text-xl md:text-2xl font-black text-green-700">
-        Active Workout
-    </h2>
-    <button onclick="finishWorkout()"
-            class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">
-        Finish
-    </button>
-</div>
-
-<!-- ADD EXERCISE -->
-<div class="bg-green-50 p-4 rounded-xl space-y-4 border border-green-200">
-
-<h3 class="font-bold text-green-800">Add Exercise</h3>
-
-<select id="exercise-select"
-        class="border p-3 rounded-xl w-full">
-</select>
-
-<div class="grid grid-cols-2 gap-2">
-    <input id="sets-input"
-           type="number"
-           min="1"
-           value="3"
-           class="border p-3 rounded-xl text-center"
-           placeholder="Sets"/>
-    <input id="target-reps-input"
-           type="number"
-           min="1"
-           value="10"
-           class="border p-3 rounded-xl text-center"
-           placeholder="Reps"/>
-</div>
-
-<button onclick="renderSetsTracking()"
-        class="bg-green-500 text-white py-2 rounded-xl font-bold w-full">
-Configure Sets
-</button>
-
-</div>
-
-<!-- SET TRACKING -->
-<div id="sets-tracking-container" class="space-y-4"></div>
-
-<!-- WORKOUT SUMMARY -->
-<div id="logged-exercises-summary" class="space-y-2"></div>
-
-</div>
-
-<!-- =========================================================
-     BODY METRICS VIEW
-========================================================= -->
-<div id="view-body-metrics" class="hidden bg-white p-6 rounded-2xl shadow-xl space-y-6">
-
-<div class="flex justify-between items-center">
-    <h2 class="text-2xl font-black text-purple-600">Body Metrics</h2>
-    <button onclick="showView('dashboard')" class="bg-gray-200 px-4 py-2 rounded-lg">
-        Back
-    </button>
-</div>
-
-<button onclick="openSnapshotModal()"
-        class="bg-purple-600 text-white py-3 rounded-xl w-full font-bold">
-Take Daily Snapshot
-</button>
-
-<div id="measurements-container"
-     class="grid grid-cols-1 md:grid-cols-2 gap-4">
-</div>
-
-</div>
-
-<!-- =========================================================
-     HISTORY MODAL
-========================================================= -->
-<div id="history-modal"
-     class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-
-<div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-
-<div class="p-4 border-b flex justify-between items-center">
-    <h2 class="font-black text-xl">Workout History</h2>
-    <button onclick="closeModal('history-modal')" class="text-2xl">&times;</button>
-</div>
-
-<div id="history-content"
-     class="p-4 overflow-y-auto space-y-4 bg-gray-50">
-</div>
-
-</div>
-</div>
-
-<!-- =========================================================
-     SNAPSHOT MODAL
-========================================================= -->
-<div id="snapshot-modal"
-     class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-
-<div class="bg-white rounded-2xl w-full max-w-lg p-6 space-y-4">
-
-<h2 class="text-xl font-black text-purple-600">Daily Snapshot</h2>
-
-<form id="snapshot-form" class="space-y-4">
-
-<div>
-<label class="font-bold block">Weight</label>
-<div class="flex gap-2">
-<input id="weight-input"
-       type="number"
-       step="0.1"
-       class="border p-3 rounded-xl w-full"/>
-<select id="weight-unit-select"
-        class="border p-3 rounded-xl">
-<option>kg</option>
-<option>lbs</option>
-</select>
-</div>
-</div>
-
-<div>
-<label class="font-bold block">Arms</label>
-<div class="flex gap-2">
-<input id="arm-input"
-       type="number"
-       step="0.1"
-       class="border p-3 rounded-xl w-full"/>
-<select id="arm-unit-select"
-        class="border p-3 rounded-xl">
-<option>cm</option>
-<option>in</option>
-</select>
-</div>
-</div>
-
-<div>
-<label class="font-bold block">Photo (optional)</label>
-<input id="photo-file-input"
-       type="file"
-       class="w-full text-sm"/>
-</div>
-
-<button class="bg-purple-600 text-white py-3 rounded-xl w-full font-bold">
-Save Snapshot
-</button>
-
-<button type="button"
-        onclick="closeModal('snapshot-modal')"
-        class="text-gray-400 w-full">
-Cancel
-</button>
-
-</form>
-
-</div>
-</div>
-
-<!-- =========================================================
-     JAVASCRIPT – STATE & CONSTANTS
-========================================================= -->
-<script>
-/* =========================================================
-   GLOBAL STORAGE KEYS
-========================================================= */
-const LS_KEYS = {
-    STATE: 'FITNESS_APP_STATE',
-    WORKOUTS: 'FITNESS_WORKOUTS',
-    METRICS: 'FITNESS_METRICS'
-};
-
-/* =========================================================
-   BASE STATE
-========================================================= */
-let state = JSON.parse(localStorage.getItem(LS_KEYS.STATE)) || {
-    userName: 'Steven',
-    goal: 'Gain Muscle',
-
-    gym: {
-        name: 'Home Gym',
-        weights: ['barbell','dumbbell'],
-        cardio: ['treadmill'],
-        floor: ['floor']
-    },
-
-    mealGoals: {
-        calories: 2500,
-        protein: 150
-    },
-
-    meals: {
-        date: new Date().toDateString(),
-        items: []
-    },
-
-    foodDatabase: [],
-
-    workouts: [],
-    exerciseHistory: {},
-
-    metrics: []
-};
-
-/* =========================================================
-   EQUIPMENT MAP
-========================================================= */
-const EQUIPMENT_MAP = {
-    weights: [
-        'barbell',
-        'dumbbell',
-        'kettlebell',
-        'smith machine',
-        'cable machine',
-        'plate loaded machine',
-        'pin stack machine'
-    ],
-    cardio: [
-        'treadmill',
-        'bike',
-        'rower',
-        'assault bike',
-        'stair climber'
-    ],
-    floor: [
-        'floor',
-        'trx',
-        'resistance band',
-        'medicine ball'
-    ]
-};
-
-/* =========================================================
-   MUSCLE GROUPS
-========================================================= */
-const MUSCLE_GROUPS = [
-    'chest',
-    'back',
-    'shoulders',
-    'biceps',
-    'triceps',
-    'quads',
-    'hamstrings',
-    'glutes',
-    'calves',
-    'abs'
-];
-
-/* =========================================================
-   EXERCISE LIBRARY (EXPANDED – PARTIAL)
-========================================================= */
-const EXERCISE_LIBRARY = [
-
-/* ================= CHEST ================= */
-{ name:'Bench Press', equipment:['barbell','bench'], muscles:['chest','triceps'] },
-{ name:'Incline Bench Press', equipment:['barbell','bench'], muscles:['chest'] },
-{ name:'Dumbbell Press', equipment:['dumbbell','bench'], muscles:['chest'] },
-{ name:'Chest Fly', equipment:['cable machine'], muscles:['chest'] },
-{ name:'Push Up', equipment:['floor'], muscles:['chest'] },
-
-/* ================= BACK ================= */
-{ name:'Deadlift', equipment:['barbell'], muscles:['back','hamstrings'] },
-{ name:'Lat Pulldown', equipment:['pin stack machine'], muscles:['back'] },
-{ name:'Seated Row', equipment:['cable machine'], muscles:['back'] },
-{ name:'Pull Up', equipment:['floor'], muscles:['back'] },
-
-/* ================= LEGS ================= */
-{ name:'Squat', equipment:['barbell'], muscles:['quads','glutes'] },
-{ name:'Leg Press', equipment:['plate loaded machine'], muscles:['quads'] },
-{ name:'Lunge', equipment:['dumbbell'], muscles:['glutes'] },
-{ name:'Hamstring Curl', equipment:['pin stack machine'], muscles:['hamstrings'] },
-
-/* ================= SHOULDERS ================= */
-{ name:'Overhead Press', equipment:['barbell'], muscles:['shoulders'] },
-{ name:'Dumbbell Shoulder Press', equipment:['dumbbell'], muscles:['shoulders'] },
-{ name:'Lateral Raise', equipment:['dumbbell'], muscles:['shoulders'] },
-
-/* ================= ARMS ================= */
-{ name:'Bicep Curl', equipment:['dumbbell'], muscles:['biceps'] },
-{ name:'Hammer Curl', equipment:['dumbbell'], muscles:['biceps'] },
-{ name:'Tricep Pushdown', equipment:['cable machine'], muscles:['triceps'] }
-
-];
-</script>
-<script>
-/* =========================================================
-   DOM HELPERS
-========================================================= */
-const $ = id => document.getElementById(id);
-const $$ = sel => document.querySelectorAll(sel);
-
-/* =========================================================
-   VIEW NAVIGATION
-========================================================= */
-function showView(view) {
-    $$('[id^="view-"]').forEach(v => v.classList.add('hidden'));
-    $('view-' + view)?.classList.remove('hidden');
-}
-
-/* =========================================================
-   MESSAGE SYSTEM
-========================================================= */
-function showMessage(text, type='success') {
-    const box = $('message-box');
-    box.textContent = text;
-    box.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-xl shadow-lg ${
-        type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-    }`;
-    box.classList.remove('hidden');
-    setTimeout(() => box.classList.add('hidden'), 2500);
-}
-
-/* =========================================================
-   SAVE / LOAD STATE
-========================================================= */
-function saveState() {
-    localStorage.setItem(LS_KEYS.STATE, JSON.stringify(state));
-}
-
-function resetDailyMealsIfNeeded() {
-    const today = new Date().toDateString();
-    if (state.meals.date !== today) {
-        state.meals = { date: today, items: [] };
-        saveState();
-    }
-}
-
-/* =========================================================
-   GYM CONFIG
-========================================================= */
-function initGymOptions() {
-    ['weights','cardio','floor'].forEach(type => {
-        const container = $(type + '-options');
-        container.innerHTML = '';
-        EQUIPMENT_MAP[type].forEach(eq => {
-            const id = `${type}-${eq}`;
-            container.innerHTML += `
-                <label class="flex gap-2 items-center">
-                    <input type="checkbox" id="${id}" ${state.gym[type].includes(eq)?'checked':''}>
-                    ${eq}
-                </label>`;
-        });
-    });
-}
-
-$('gym-form')?.addEventListener('submit', e => {
-    e.preventDefault();
-    state.gym.name = $('gym-name').value || 'My Gym';
-    ['weights','cardio','floor'].forEach(type => {
-        state.gym[type] = EQUIPMENT_MAP[type].filter(eq => $(`${type}-${eq}`).checked);
-    });
-    saveState();
-    showMessage('Gym configuration saved');
-    showView('dashboard');
-});
-
-/* =========================================================
-   WORKOUT PLANNING
-========================================================= */
-function handleFocusChange() {
-    $('muscle-checkboxes').classList.toggle(
-        'hidden',
-        $('workout-focus').value !== 'specific'
-    );
-}
-
-function initMuscleOptions() {
-    $('muscle-options').innerHTML = MUSCLE_GROUPS.map(m =>
-        `<label class="flex gap-2 items-center">
-            <input type="checkbox" value="${m}">${m}
-         </label>`
-    ).join('');
-}
-
-$('workout-planning-form')?.addEventListener('submit', e => {
-    e.preventDefault();
-    startWorkout();
-});
-
-function startWorkout() {
-    const focus = $('workout-focus').value;
-    let allowed = EXERCISE_LIBRARY;
-
-    if (focus === 'specific') {
-        const selected = [...$$('#muscle-options input:checked')].map(i => i.value);
-        allowed = allowed.filter(ex => ex.muscles.some(m => selected.includes(m)));
-    }
-
-    const availableEquip = [...state.gym.weights, ...state.gym.cardio, ...state.gym.floor];
-    allowed = allowed.filter(ex => ex.equipment.some(e => availableEquip.includes(e)));
-
-    $('exercise-select').innerHTML = allowed.map(ex =>
-        `<option>${ex.name}</option>`
-    ).join('');
-
-    state.activeWorkout = {
-        date: new Date().toISOString(),
-        exercises: []
-    };
-
-    $('active-workout-title').textContent = `Workout – ${new Date().toLocaleDateString()}`;
-    showView('track-workout');
-}
-
-/* =========================================================
-   WORKOUT TRACKING
-========================================================= */
-function renderSetsTracking() {
-    const name = $('exercise-select').value;
-    const sets = +$('sets-input').value;
-    const reps = +$('target-reps-input').value;
-
-    const container = $('sets-tracking-container');
-    container.innerHTML = `<h3 class="font-bold">${name}</h3>`;
-
-    for (let i=1;i<=sets;i++) {
-        container.innerHTML += `
-        <div class="flex gap-2">
-            <span class="w-6">${i}</span>
-            <input type="number" placeholder="Weight" class="border p-2 rounded-xl flex-1 weight-input">
-            <input type="number" placeholder="Reps" value="${reps}" class="border p-2 rounded-xl flex-1 reps-input">
-        </div>`;
-    }
-
-    container.innerHTML += `
-        <button onclick="logExercise('${name}')"
-                class="bg-green-600 text-white py-2 rounded-xl w-full font-bold mt-2">
-            Log Exercise
-        </button>`;
-}
-
-function logExercise(name) {
-    const weights = [...$$('.weight-input')].map(i => +i.value || 0);
-    const reps = [...$$('.reps-input')].map(i => +i.value || 0);
-
-    const entry = { name, weights, reps };
-    state.activeWorkout.exercises.push(entry);
-
-    updatePersonalBests(entry);
-    renderWorkoutSummary();
-    $('sets-tracking-container').innerHTML = '';
-}
-
-function renderWorkoutSummary() {
-    $('logged-exercises-summary').innerHTML =
-        state.activeWorkout.exercises.map(ex =>
-            `<div class="p-2 bg-gray-100 rounded-xl">
-                <strong>${ex.name}</strong> – ${ex.weights.length} sets
-             </div>`
-        ).join('');
-}
-
-function updatePersonalBests(ex) {
-    const maxWeight = Math.max(...ex.weights);
-    const prev = state.exerciseHistory[ex.name]?.best || 0;
-    if (maxWeight > prev) {
-        state.exerciseHistory[ex.name] = { best: maxWeight };
-        showMessage(`New PB on ${ex.name}: ${maxWeight}`);
-    }
-}
-
-function finishWorkout() {
-    state.workouts.push(state.activeWorkout);
-    delete state.activeWorkout;
-    saveState();
-    showMessage('Workout saved');
-    showView('dashboard');
-}
-
-/* =========================================================
-   NUTRITION – SEARCH & LOG
-========================================================= */
-function searchFood() {
-    const q = $('searchInput').value.toLowerCase();
-    const res = state.foodDatabase.filter(f => f.name.toLowerCase().includes(q));
-    $('searchResults').innerHTML = res.map(f =>
-        `<div onclick="addFoodToLog('${f.name}')"
-              class="p-2 border-b cursor-pointer hover:bg-gray-100">
-            ${f.name} – ${f.cal} cal
-         </div>`
-    ).join('');
-}
-
-function addFoodToLog(name) {
-    const food = state.foodDatabase.find(f => f.name === name);
-    state.meals.items.push(food);
-    saveState();
-    updateNutritionUI();
-}
-
-function updateNutritionUI() {
-    resetDailyMealsIfNeeded();
-    const totals = state.meals.items.reduce((a,f) => {
-        a.cal += f.cal;
-        a.prot += f.prot;
-        return a;
-    },{cal:0,prot:0});
-
-    $('val-cal').textContent = totals.cal;
-    $('val-prot').textContent = totals.prot;
-    $('target-cal').textContent = state.mealGoals.calories;
-    $('target-prot').textContent = state.mealGoals.protein;
-
-    $('today-log-container').innerHTML =
-        state.meals.items.map(f => `<div>${f.name}</div>`).join('');
-}
-
-/* =========================================================
-   ADD FOOD
-========================================================= */
-function addNewFood() {
-    const f = {
-        name: $('new-food-name').value,
-        cal: +$('new-food-cal').value,
-        prot: +$('new-food-prot').value
-    };
-    state.foodDatabase.push(f);
-    saveState();
-    showMessage('Food added');
-}
-
-/* =========================================================
-   GOALS
-========================================================= */
-function saveGoals() {
-    state.mealGoals.calories = +$('goalCaloriesInput').value;
-    state.mealGoals.protein = +$('goalProteinInput').value;
-    saveState();
-    showMessage('Goals saved');
-}
-
-/* =========================================================
-   BODY METRICS
-========================================================= */
-function openSnapshotModal() {
-    $('snapshot-modal').classList.remove('hidden');
-}
-
-$('snapshot-form')?.addEventListener('submit', e => {
-    e.preventDefault();
-    state.metrics.push({
-        date: new Date().toISOString(),
-        weight: $('weight-input').value,
-        arm: $('arm-input').value
-    });
-    saveState();
-    closeModal('snapshot-modal');
-    renderMetrics();
-});
-
-function renderMetrics() {
-    $('measurements-container').innerHTML =
-        state.metrics.slice(-4).map(m =>
-            `<div class="metric-card">
-                <div>${new Date(m.date).toLocaleDateString()}</div>
-                <div>Weight: ${m.weight}</div>
-                <div>Arms: ${m.arm}</div>
-             </div>`
-        ).join('');
-}
-
-/* =========================================================
-   HISTORY
-========================================================= */
-function openHistory() {
-    $('history-modal').classList.remove('hidden');
-    $('history-content').innerHTML =
-        state.workouts.map(w =>
-            `<div class="bg-white p-3 rounded-xl">
-                <strong>${new Date(w.date).toLocaleDateString()}</strong>
-                <div>${w.exercises.length} exercises</div>
-             </div>`
-        ).join('');
-}
-
-function closeModal(id) {
-    $(id).classList.add('hidden');
-}
-
-/* =========================================================
-   CHARTS (BASIC)
-========================================================= */
-function initCharts() {
-    if (!$('calorieChart')) return;
-    new Chart($('calorieChart'), {
-        type: 'line',
-        data: {
-            labels: state.meals.items.map((_,i)=>i+1),
-            datasets: [{ data: state.meals.items.map(f=>f.cal) }]
-        }
-    });
-}
-
-/* =========================================================
-   INIT
-========================================================= */
-document.addEventListener('DOMContentLoaded', () => {
-    initGymOptions();
-    initMuscleOptions();
-    updateNutritionUI();
-    renderMetrics();
-    initCharts();
-    $('user-name').textContent = state.userName;
-    $('user-goal').textContent = state.goal;
-});
-</script>
-<script>
-/* =========================================================
-   ANALYTICS – NUTRITION
-========================================================= */
-
-/*
-   Calculates rolling averages, streaks, and weekly totals.
-   These helpers intentionally add structure and future
-   expansion points without changing core behavior.
-*/
-
-function getWeeklyMeals() {
-    const byDate = {};
-    state.meals.items.forEach(item => {
-        const d = state.meals.date;
-        if (!byDate[d]) byDate[d] = [];
-        byDate[d].push(item);
-    });
-    return byDate;
-}
-
-function calculateWeeklyNutrition() {
-    const weekly = getWeeklyMeals();
-    const totals = [];
-
-    for (const day in weekly) {
-        const sum = weekly[day].reduce((a,f)=>{
-            a.cal += f.cal;
-            a.prot += f.prot;
-            return a;
-        },{cal:0,prot:0});
-        totals.push({ day, ...sum });
-    }
-    return totals;
-}
-
-function renderNutritionAnalytics() {
-    if (!$('analyticsTab')) return;
-
-    const weekly = calculateWeeklyNutrition();
-    if (!weekly.length) return;
-
-    const labels = weekly.map(w => w.day.slice(0,6));
-    const calories = weekly.map(w => w.cal);
-    const protein = weekly.map(w => w.prot);
-
-    if ($('calorieChart')) {
-        new Chart($('calorieChart'), {
-            type: 'line',
-            data: { labels, datasets: [{ data: calories }] }
-        });
-    }
-
-    if ($('proteinChart')) {
-        new Chart($('proteinChart'), {
-            type: 'line',
-            data: { labels, datasets: [{ data: protein }] }
-        });
-    }
-}
-
-/* =========================================================
-   ANALYTICS – WORKOUTS
-========================================================= */
-
-function getWorkoutFrequency() {
-    const map = {};
-    state.workouts.forEach(w => {
-        const d = new Date(w.date).toLocaleDateString();
-        map[d] = (map[d] || 0) + 1;
-    });
-    return map;
-}
-
-function getMostPerformedExercises() {
-    const counts = {};
-    state.workouts.forEach(w => {
-        w.exercises.forEach(ex => {
-            counts[ex.name] = (counts[ex.name] || 0) + 1;
-        });
-    });
-    return Object.entries(counts)
-        .sort((a,b)=>b[1]-a[1])
-        .slice(0,5);
-}
-
-/* =========================================================
-   METRICS – TREND HELPERS
-========================================================= */
-
-function getMetricTrend(metric) {
-    return state.metrics.map(m => ({
-        date: new Date(m.date).toLocaleDateString(),
-        value: m[metric]
-    }));
-}
-
-function getLatestMetric(metric) {
-    if (!state.metrics.length) return null;
-    return state.metrics[state.metrics.length - 1][metric];
-}
-
-/* =========================================================
-   SCANNER – SAFE FALLBACK
-========================================================= */
-
-/*
-   Barcode scanning is sandboxed to avoid CORS failures.
-   If OpenFoodFacts is unavailable, user can manually add food.
-*/
-
-let scanner;
-
-function startScanner() {
-    if (scanner) return;
-
-    scanner = new Html5Qrcode("reader");
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        decoded => {
-            stopScanner();
-            showMessage('Barcode scanned (manual entry recommended)');
-        },
-        err => {}
-    ).catch(() => {
-        showMessage('Camera unavailable', 'error');
-    });
-}
-
-function stopScanner() {
-    if (!scanner) return;
-    scanner.stop().then(() => {
-        scanner.clear();
-        scanner = null;
-    });
-}
-
-/* =========================================================
-   DEBUG / DEV UTILITIES
-========================================================= */
-
-/*
-   These utilities are intentionally verbose to support
-   development, testing, and future feature growth.
-*/
-
-const DEBUG = false;
-
-function logDebug(...args) {
-    if (DEBUG) console.log('[DEBUG]', ...args);
-}
-
-function dumpState() {
-    console.log(JSON.stringify(state, null, 2));
-}
-
-function clearAllData() {
-    if (!confirm('Clear all stored data?')) return;
-    localStorage.clear();
-    location.reload();
-}
-
-/* =========================================================
-   UI SAFETY GUARDS
-========================================================= */
-
-window.addEventListener('click', e => {
-    const modal = $('history-modal');
-    if (modal && e.target === modal) closeModal('history-modal');
-});
-
-/* =========================================================
-   FINAL INIT EXTENSIONS
-========================================================= */
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    // Nutrition analytics
-    renderNutritionAnalytics();
-
-    // Restore goals UI
-    if ($('goalCaloriesInput')) {
-        $('goalCaloriesInput').value = state.mealGoals.calories;
-        $('goalProteinInput').value = state.mealGoals.protein;
-    }
-
-    // Restore gym name
-    if ($('gym-name')) $('gym-name').value = state.gym.name;
-
-    // Defensive UI hydration
-    try {
-        updateNutritionUI();
-        renderMetrics();
-    } catch(e) {
-        console.error('UI hydration error', e);
-    }
-
-});
-
-/* =========================================================
-   END OF APPLICATION
-========================================================= */
-</script>
-
+<script src="app.js"></script>
 </body>
-</html>
+                 </html>
