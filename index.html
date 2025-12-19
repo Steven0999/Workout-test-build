@@ -1,298 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>VFit Fitness Dashboard</title>
-
-    <!-- Existing libraries (UNCHANGED) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="styles.css"/>
-
-    <!-- Offline-first support (ADD ONLY) -->
-    <link rel="manifest" href="manifest.json"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker Dashboard</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+<body>
 
-<body class="bg-gray-100 text-gray-800">
+<!-- Offline Notice -->
+<div id="offline-notice">You are currently offline. Some features may not be available.</div>
 
-<!-- =========================================================
-     BURGER MENU BUTTON (ADD ONLY)
-========================================================= -->
-<button id="burger-btn"
-        class="fixed top-4 left-4 z-[2100] bg-white p-3 rounded-xl shadow-lg">
-    <i class="fas fa-bars text-xl"></i>
-</button>
-
-<!-- =========================================================
-     SIDE NAV MENU (SLIDE-IN STRUCTURE)
-========================================================= -->
-<nav id="side-menu"
-     class="fixed top-0 left-0 h-full w-64 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 z-[2000]">
-
-    <div class="p-6 border-b">
-        <h2 class="text-xl font-black text-indigo-600">VFit Menu</h2>
-    </div>
-
-    <div class="flex flex-col p-4 gap-2">
-        <button data-nav="dashboard" onclick="navigate('dashboard')" class="menu-btn">
-            <i class="fas fa-home mr-2"></i> Dashboard
-        </button>
-        <button data-nav="gym-config" onclick="navigate('gym-config')" class="menu-btn">
-            <i class="fas fa-dumbbell mr-2"></i> Gym Config
-        </button>
-        <button data-nav="plan-workout" onclick="navigate('plan-workout')" class="menu-btn">
-            <i class="fas fa-running mr-2"></i> Training
-        </button>
-        <button data-nav="meal-log" onclick="navigate('meal-log')" class="menu-btn">
-            <i class="fas fa-utensils mr-2"></i> Nutrition
-        </button>
-        <button data-nav="body-metrics" onclick="navigate('body-metrics')" class="menu-btn">
-            <i class="fas fa-ruler-combined mr-2"></i> Body Metrics
-        </button>
-        <button data-nav="history" onclick="openHistory()" class="menu-btn">
-            <i class="fas fa-chart-line mr-2"></i> History
-        </button>
-    </div>
+<!-- Burger Menu -->
+<div id="burger-menu">&#9776;</div>
+<nav id="side-menu">
+    <a href="#" class="menu-link active-link" data-section="dashboard">Dashboard</a>
+    <a href="#" class="menu-link" data-section="gym-config">Gym Config</a>
+    <a href="#" class="menu-link" data-section="training">Training</a>
+    <a href="#" class="menu-link" data-section="nutrition">Nutrition</a>
+    <a href="#" class="menu-link" data-section="body-metrics">Body Measurements</a>
+    <a href="#" class="menu-link" data-section="history">History</a>
 </nav>
 
-<!-- =========================================================
-     MAIN APP CONTAINER (UNCHANGED ROOT)
-========================================================= -->
-<div class="max-w-6xl mx-auto p-4 space-y-6">
+<!-- Main Content -->
+<div class="view-container">
 
-<!-- =========================================================
-     DASHBOARD VIEW (EXTENDED – ADD ONLY)
-========================================================= -->
-<div id="view-dashboard" class="view-container space-y-6">
-
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h1 class="text-3xl font-black mb-2">Dashboard</h1>
-        <p class="text-gray-500">Daily overview of your training & nutrition</p>
-    </header>
-
-    <!-- DASHBOARD OVERVIEW GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- Workouts Today -->
-        <div class="card cursor-pointer" onclick="navigate('plan-workout')">
-            <h3 class="font-bold text-indigo-600 mb-2">Workouts Today</h3>
-            <p class="text-4xl font-black" id="dash-workouts">0</p>
-            <p class="text-sm text-gray-500">Sessions completed</p>
-        </div>
-
-        <!-- Calories -->
-        <div class="card cursor-pointer" onclick="navigate('meal-log')">
-            <h3 class="font-bold text-yellow-600 mb-2">Calories</h3>
-            <p class="text-xl"><strong id="dash-cal">0</strong> / <span id="dash-cal-goal">0</span></p>
-            <p class="text-sm text-gray-500">Remaining: <strong id="dash-cal-rem">0</strong></p>
-        </div>
-
-        <!-- Macros -->
-        <div class="card cursor-pointer" onclick="navigate('meal-log')">
-            <h3 class="font-bold text-green-600 mb-2">Macros</h3>
-            <p>Protein: <strong id="dash-prot">0</strong>g</p>
-            <p>Carbs: <strong id="dash-carb">0</strong>g</p>
-            <p>Fat: <strong id="dash-fat">0</strong>g</p>
-        </div>
-
-        <!-- Measurements -->
-        <div class="card cursor-pointer" onclick="navigate('body-metrics')">
-            <h3 class="font-bold text-purple-600 mb-2">Measurements</h3>
-            <p class="text-sm text-gray-500">Latest snapshot</p>
-            <p class="font-bold" id="dash-latest-weight">--</p>
-        </div>
-    </div>
-
-    <!-- QUICK ACCESS BUTTONS (ADD ONLY) -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-        <button onclick="navigate('gym-config')" class="quick-btn">Gym</button>
-        <button onclick="navigate('plan-workout')" class="quick-btn">Train</button>
-        <button onclick="navigate('meal-log')" class="quick-btn">Eat</button>
-        <button onclick="navigate('body-metrics')" class="quick-btn">Measure</button>
-    </div>
-
-</div>
-<!-- END DASHBOARD VIEW -->
-
-    <!-- =========================================================
-     GYM CONFIG VIEW (UNCHANGED)
-========================================================= -->
-<div id="view-gym-config" class="view-container hidden">
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold">Gym Configuration</h2>
-    </header>
-
-    <section class="p-4 space-y-4">
-        <form id="gym-config-form" class="space-y-4">
-            <div>
-                <label class="font-semibold">Gym Name:</label>
-                <input type="text" id="gym-name" class="input-field"/>
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="tab-content active">
+        <h1>Dashboard Overview</h1>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3>Workouts Completed Today</h3>
+                <p id="workouts-today">0</p>
             </div>
-            <div>
-                <label class="font-semibold">Location:</label>
-                <input type="text" id="gym-location" class="input-field"/>
+            <div class="dashboard-card">
+                <h3>Nutrition Today</h3>
+                <p>Calories: <span id="calories-today">0</span> / <span id="calories-goal">0</span></p>
+                <p>Protein: <span id="protein-today">0</span> / <span id="protein-goal">0</span> g</p>
+                <p>Carbs: <span id="carbs-today">0</span> / <span id="carbs-goal">0</span> g</p>
+                <p>Fats: <span id="fats-today">0</span> / <span id="fats-goal">0</span> g</p>
             </div>
-            <div>
-                <label class="font-semibold">Preferred Equipment:</label>
-                <input type="text" id="gym-equipment" class="input-field"/>
+            <div class="dashboard-card">
+                <h3>Body Measurements</h3>
+                <p>Weight: <span id="weight-today">0</span> kg</p>
+                <p>Body Fat: <span id="bodyfat-today">0</span> %</p>
+                <p>Muscle Mass: <span id="muscle-today">0</span> kg</p>
             </div>
-            <button type="submit" class="btn-primary">Save Configuration</button>
-        </form>
-    </section>
-</div>
-
-<!-- =========================================================
-     PLAN WORKOUT / TRAINING VIEW (UNCHANGED)
-========================================================= -->
-<div id="view-plan-workout" class="view-container hidden">
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold">Training Plan</h2>
-    </header>
-
-    <section class="p-4 space-y-4">
-        <form id="workout-form" class="space-y-4">
-            <div>
-                <label class="font-semibold">Workout Name:</label>
-                <input type="text" id="workout-name" class="input-field"/>
+            <div class="dashboard-card">
+                <h3>History Overview</h3>
+                <p>Total Workouts: <span id="total-workouts">0</span></p>
+                <p>Total Calories Logged: <span id="total-calories">0</span></p>
             </div>
-            <div>
-                <label class="font-semibold">Sets:</label>
-                <input type="number" id="workout-sets" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Reps:</label>
-                <input type="number" id="workout-reps" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Weight:</label>
-                <input type="number" id="workout-weight" class="input-field"/>
-            </div>
-            <button type="submit" class="btn-primary">Add Workout</button>
-        </form>
-
-        <div id="workout-list" class="space-y-2">
-            <!-- Existing workouts will appear here -->
         </div>
     </section>
-</div>
 
-<!-- =========================================================
-     NUTRITION / MEAL LOG VIEW (UNCHANGED STRUCTURE)
-========================================================= -->
-<div id="view-meal-log" class="view-container hidden">
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold">Nutrition Log</h2>
-    </header>
+    <!-- Gym Config Section -->
+    <section id="gym-config" class="tab-content">
+        <h1>Gym Configuration</h1>
+        <div class="form-group">
+            <label for="gym-name">Gym Name</label>
+            <input type="text" id="gym-name" placeholder="Enter gym name">
+        </div>
+        <div class="form-group">
+            <label for="membership-type">Membership Type</label>
+            <select id="membership-type">
+                <option value="basic">Basic</option>
+                <option value="premium">Premium</option>
+                <option value="vip">VIP</option>
+            </select>
+        </div>
+        <button class="std-btn" id="save-gym">Save Gym Config</button>
+    </section>
 
-    <section class="p-4 space-y-4">
+    <!-- Training Section -->
+    <section id="training" class="tab-content">
+        <h1>Training</h1>
+        <div class="form-group">
+            <label for="exercise-name">Exercise Name</label>
+            <input type="text" id="exercise-name">
+        </div>
+        <div class="form-group">
+            <label for="sets">Sets</label>
+            <input type="number" id="sets">
+        </div>
+        <div class="form-group">
+            <label for="reps">Reps</label>
+            <input type="number" id="reps">
+        </div>
+        <button class="std-btn" id="add-exercise">Add Exercise</button>
 
-        <form id="meal-form" class="space-y-4">
-            <div>
-                <label class="font-semibold">Food Item:</label>
-                <input type="text" id="meal-name" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Meal Type:</label>
-                <select id="meal-type" class="input-field">
-                    <option value="Breakfast">Breakfast</option>
-                    <option value="Lunch">Lunch</option>
-                    <option value="Dinner">Dinner</option>
-                    <option value="Snack">Snack</option>
-                </select>
-            </div>
-            <div>
-                <label class="font-semibold">Calories:</label>
-                <input type="number" id="meal-calories" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Protein (g):</label>
-                <input type="number" id="meal-protein" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Carbs (g):</label>
-                <input type="number" id="meal-carbs" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Fat (g):</label>
-                <input type="number" id="meal-fat" class="input-field"/>
-            </div>
-            <button type="submit" class="btn-primary">Add Food</button>
-        </form>
-
-        <table class="w-full mt-4 border-collapse">
+        <h2>Today's Exercises</h2>
+        <table id="exercise-table">
             <thead>
                 <tr>
-                    <th class="border p-2">Meal Type</th>
-                    <th class="border p-2">Food</th>
-                    <th class="border p-2">Calories</th>
-                    <th class="border p-2">Protein</th>
-                    <th class="border p-2">Carbs</th>
-                    <th class="border p-2">Fat</th>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
                 </tr>
             </thead>
-            <tbody id="meal-table-body">
-                <!-- Meals sorted Breakfast > Lunch > Dinner > Snack -->
-            </tbody>
+            <tbody></tbody>
         </table>
     </section>
-</div>
 
-<!-- =========================================================
-     BODY METRICS VIEW (UNCHANGED)
-========================================================= -->
-<div id="view-body-metrics" class="view-container hidden">
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold">Body Measurements</h2>
-    </header>
-
-    <section class="p-4 space-y-4">
-        <form id="body-metrics-form" class="space-y-4">
-            <div>
-                <label class="font-semibold">Date:</label>
-                <input type="date" id="metric-date" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Weight (kg):</label>
-                <input type="number" id="metric-weight" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Body Fat (%):</label>
-                <input type="number" id="metric-bf" class="input-field"/>
-            </div>
-            <div>
-                <label class="font-semibold">Muscle Mass (kg):</label>
-                <input type="number" id="metric-muscle" class="input-field"/>
-            </div>
-            <button type="submit" class="btn-primary">Add Metrics</button>
-        </form>
-
-        <div id="metrics-history" class="space-y-2">
-            <!-- Historical metrics will appear here -->
+    <!-- Nutrition Section -->
+    <section id="nutrition" class="tab-content">
+        <h1>Nutrition</h1>
+        <div class="form-group">
+            <label for="meal-type">Meal Type</label>
+            <select id="meal-type">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Snack">Snack</option>
+            </select>
         </div>
-    </section>
-</div>
-
-<!-- =========================================================
-     HISTORY VIEW (UNCHANGED)
-========================================================= -->
-<div id="view-history" class="view-container hidden">
-    <header class="bg-white p-6 rounded-2xl shadow-xl">
-        <h2 class="text-2xl font-bold">History</h2>
-    </header>
-
-    <section class="p-4 space-y-4">
-        <div id="history-list">
-            <!-- All past workouts, meals, metrics -->
+        <div class="form-group">
+            <label for="food-name">Food Name</label>
+            <input type="text" id="food-name">
         </div>
+        <div class="form-group">
+            <label for="food-calories">Calories</label>
+            <input type="number" id="food-calories">
+        </div>
+        <div class="form-group">
+            <label for="food-protein">Protein (g)</label>
+            <input type="number" id="food-protein">
+        </div>
+        <div class="form-group">
+            <label for="food-carbs">Carbs (g)</label>
+            <input type="number" id="food-carbs">
+        </div>
+        <div class="form-group">
+            <label for="food-fats">Fats (g)</label>
+            <input type="number" id="food-fats">
+        </div>
+        <button class="std-btn" id="add-food">Add Food</button>
+
+        <h2>Nutrition Log</h2>
+        <table id="nutrition-table">
+            <thead>
+                <tr>
+                    <th>Meal</th>
+                    <th>Food</th>
+                    <th>Calories</th>
+                    <th>Protein</th>
+                    <th>Carbs</th>
+                    <th>Fats</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </section>
+
+    <!-- Body Metrics Section -->
+    <section id="body-metrics" class="tab-content">
+        <h1>Body Measurements</h1>
+        <div class="form-group">
+            <label for="weight">Weight (kg)</label>
+            <input type="number" id="weight">
+        </div>
+        <div class="form-group">
+            <label for="bodyfat">Body Fat (%)</label>
+            <input type="number" id="bodyfat">
+        </div>
+        <div class="form-group">
+            <label for="muscle-mass">Muscle Mass (kg)</label>
+            <input type="number" id="muscle-mass">
+        </div>
+        <button class="std-btn" id="save-metrics">Save Metrics</button>
+    </section>
+
+    <!-- History Section -->
+    <section id="history" class="tab-content">
+        <h1>History</h1>
+        <div class="history-tabs">
+            <button class="history-tab active" data-tab="workouts-history">Workouts</button>
+            <button class="history-tab" data-tab="nutrition-history">Nutrition</button>
+            <button class="history-tab" data-tab="metrics-history">Body Metrics</button>
+        </div>
+
+        <div id="workouts-history" class="history-view active"></div>
+        <div id="nutrition-history" class="history-view"></div>
+        <div id="metrics-history" class="history-view"></div>
+    </section>
+
 </div>
 
 <script src="app.js"></script>
-
 </body>
-</html>
+            </html>
