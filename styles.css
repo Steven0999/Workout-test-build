@@ -1,5 +1,6 @@
 body {
     font-family: Inter, system-ui, sans-serif;
+    position: relative;
 }
 
 .view.hidden {
@@ -13,43 +14,19 @@ body {
     box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
+.card.cursor-pointer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.08);
+    transition: all 0.15s ease;
+}
+
 .section-title {
     font-size: 1.25rem;
     font-weight: 800;
     margin-bottom: 0.75rem;
 }
 
-input, select {
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #ccc;
-}
-
-.btn-primary {
-    background: #16a34a;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    font-weight: 700;
-}
-
-.nutrition-table {
-    width: 100%;
-    margin-top: 1rem;
-    border-collapse: collapse;
-}
-
-.nutrition-table th,
-.nutrition-table td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
-}
-
-.nutrition-table th {
-    background: #4f46e5;
-    color: white;
-}
-
+/* BURGER BUTTON */
 #burger-btn {
     position: fixed;
     top: 1rem;
@@ -59,32 +36,44 @@ input, select {
     font-size: 1.75rem;
     padding: 0.5rem 0.75rem;
     border-radius: 0.75rem;
-    z-index: 1000;
+    z-index: 3000;
 }
 
+/* SIDE MENU */
 #side-menu {
     position: fixed;
     top: 0;
     left: 0;
-    width: 240px;
+    width: 260px;
     height: 100%;
-    background: white;
+    background: #ffffff;
     padding: 1rem;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.1);
-    z-index: 999;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.15);
+    z-index: 2000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+#side-menu.open {
+    transform: translateX(0);
+}
+
+#side-menu.hidden {
+    display: block;
 }
 
 #side-menu button {
-    display: block;
     width: 100%;
-    margin-bottom: 0.5rem;
+    text-align: left;
     padding: 0.75rem;
+    margin-bottom: 0.5rem;
     font-weight: 700;
     border-radius: 0.5rem;
+    background: #f3f4f6;
+    color: #111827;
 }
 
-#barcode-reader {
-    border: 2px dashed #4f46e5;
-    border-radius: 1rem;
-    padding: 1rem;
+#side-menu button.active {
+    background: #4f46e5;
+    color: white;
 }
