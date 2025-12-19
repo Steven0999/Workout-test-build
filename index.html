@@ -3,616 +3,682 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitness Tracker Dashboard</title>
+    <title>FitTrack Pro - Performance Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* ===== General Styles ===== */
-        body {
+        @keyframes scanLine {
+            0% { top: 0% }
+            50% { top: 100% }
+            100% { top: 0% }
+        }
+        .scan-animation {
+            animation: scanLine 2s infinite linear;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            overflow-x: hidden;
-        }
-
-        h1, h2, h3 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-
-        .view-container {
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-            transition: margin-left 0.3s ease;
-        }
-
-        /* ===== Header & Burger Menu ===== */
-        #offline-notice {
-            display: none;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background-color: #e74c3c;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            z-index: 2000;
-        }
-
-        #burger-menu {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            cursor: pointer;
-            font-size: 28px;
-            z-index: 1100;
-            background: #1abc9c;
-            color: white;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        #side-menu {
-            position: fixed;
-            top: 0;
-            left: -260px;
-            width: 250px;
-            height: 100%;
-            background-color: #2c3e50;
-            color: white;
-            transition: left 0.3s ease;
-            z-index: 1000;
-            padding-top: 80px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-
-        #side-menu.slide-in {
-            left: 0;
-        }
-
-        .menu-link {
-            display: block;
-            color: #bdc3c7;
-            text-decoration: none;
-            padding: 15px 25px;
-            font-size: 16px;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-        }
-
-        .menu-link:hover, .menu-link.active-link {
-            background-color: #34495e;
-            color: white;
-            border-left: 4px solid #1abc9c;
-        }
-
-        /* ===== Dashboard Grid ===== */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .dashboard-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .dashboard-card p {
-            margin: 8px 0;
-            font-size: 15px;
-        }
-
-        .dashboard-card span {
-            font-weight: bold;
-            color: #1abc9c;
-        }
-
-        /* ===== Forms & Inputs ===== */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-
-        .std-btn {
-            background-color: #1abc9c;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            width: 100%;
-            transition: background 0.2s;
-        }
-
-        .std-btn:hover {
-            background-color: #16a085;
-        }
-
-        /* ===== Tables ===== */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-
-        /* ===== History ===== */
-        .history-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .history-tab {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: #ecf0f1;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .history-tab.active {
-            background: #1abc9c;
-            color: white;
-        }
-
-        .history-view {
-            display: none;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            min-height: 100px;
-        }
-
-        .history-view.active {
-            display: block;
-        }
-
-        .history-item {
-            padding: 10px;
-            border-bottom: 1px solid #f1f1f1;
-        }
-
-        /* Mobile Adjustment */
-        @media (max-width: 600px) {
-            .view-container {
-                padding-top: 70px;
-            }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 font-sans pb-24">
 
-<div id="offline-notice">You are currently offline.</div>
-
-<div id="burger-menu">&#9776;</div>
-<nav id="side-menu">
-    <a href="#" class="menu-link active-link" data-section="dashboard">Dashboard</a>
-    <a href="#" class="menu-link" data-section="gym-config">Gym Config</a>
-    <a href="#" class="menu-link" data-section="training">Training</a>
-    <a href="#" class="menu-link" data-section="nutrition">Nutrition</a>
-    <a href="#" class="menu-link" data-section="body-metrics">Body Metrics</a>
-    <a href="#" class="menu-link" data-section="history">History</a>
-</nav>
-
-<div class="view-container">
-    <!-- Dashboard Section -->
-    <section id="dashboard" class="tab-content active">
-        <h1>Dashboard</h1>
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>Workouts Today</h3>
-                <p id="workouts-today">0</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Nutrition Progress</h3>
-                <p>Calories: <span id="calories-today">0</span> / <span id="calories-goal">2000</span></p>
-                <p>Protein: <span id="protein-today">0</span> / <span id="protein-goal">150</span>g</p>
-                <p>Carbs: <span id="carbs-today">0</span> / <span id="carbs-goal">250</span>g</p>
-                <p>Fats: <span id="fats-today">0</span> / <span id="fats-goal">70</span>g</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Latest Metrics</h3>
-                <p>Weight: <span id="weight-today">0</span> kg</p>
-                <p>Body Fat: <span id="bodyfat-today">0</span> %</p>
-                <p>Muscle: <span id="muscle-today">0</span> kg</p>
-            </div>
-            <div class="dashboard-card">
-                <h3>Lifetime Stats</h3>
-                <p>Total Workouts: <span id="total-workouts">0</span></p>
-                <p>Total Calories: <span id="total-calories">0</span></p>
-            </div>
+    <!-- Header -->
+    <header class="bg-white border-b px-6 py-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
+        <div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">FitTrack Pro</h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Performance Hub</p>
         </div>
-    </section>
+        <button onclick="toggleSettings()" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <i data-lucide="settings" class="text-slate-600 w-5 h-5"></i>
+        </button>
+    </header>
 
-    <!-- Gym Config Section -->
-    <section id="gym-config" class="tab-content">
-        <h1>Gym Configuration</h1>
-        <div class="dashboard-card">
-            <div class="form-group">
-                <label>Gym Name</label>
-                <input type="text" id="gym-name" placeholder="Enter gym name">
-            </div>
-            <div class="form-group">
-                <label>Membership Type</label>
-                <select id="membership-type">
-                    <option value="basic">Basic</option>
-                    <option value="premium">Premium</option>
-                    <option value="vip">VIP</option>
-                </select>
-            </div>
-            <button class="std-btn" id="save-gym">Save Config</button>
-        </div>
-    </section>
-
-    <!-- Training Section -->
-    <section id="training" class="tab-content">
-        <h1>Training</h1>
-        <div class="dashboard-card">
-            <div class="form-group">
-                <label>Exercise Name</label>
-                <input type="text" id="exercise-name" placeholder="e.g. Bench Press">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex: 1;">
-                    <label>Sets</label>
-                    <input type="number" id="sets" placeholder="0">
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Reps</label>
-                    <input type="number" id="reps" placeholder="0">
-                </div>
-            </div>
-            <button class="std-btn" id="add-exercise">Add Exercise</button>
-        </div>
-
-        <table id="exercise-table">
-            <thead>
-                <tr>
-                    <th>Exercise</th>
-                    <th>Sets</th>
-                    <th>Reps</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
-    <!-- Nutrition Section -->
-    <section id="nutrition" class="tab-content">
-        <h1>Nutrition</h1>
-        <div class="dashboard-card">
-            <div class="form-group">
-                <label>Meal Type</label>
-                <select id="meal-type">
-                    <option value="Breakfast">Breakfast</option>
-                    <option value="Lunch">Lunch</option>
-                    <option value="Dinner">Dinner</option>
-                    <option value="Snack">Snack</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Food Item</label>
-                <input type="text" id="food-name" placeholder="e.g. Chicken Breast">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group"><label>Calories</label><input type="number" id="food-calories"></div>
-                <div class="form-group"><label>Protein (g)</label><input type="number" id="food-protein"></div>
-                <div class="form-group"><label>Carbs (g)</label><input type="number" id="food-carbs"></div>
-                <div class="form-group"><label>Fats (g)</label><input type="number" id="food-fats"></div>
-            </div>
-            <button class="std-btn" id="add-food">Log Food</button>
-        </div>
-
-        <table id="nutrition-table">
-            <thead>
-                <tr>
-                    <th>Meal</th>
-                    <th>Food</th>
-                    <th>Cals</th>
-                    <th>P/C/F</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
-
-    <!-- Body Metrics Section -->
-    <section id="body-metrics" class="tab-content">
-        <h1>Body Metrics</h1>
-        <div class="dashboard-card">
-            <div class="form-group">
-                <label>Weight (kg)</label>
-                <input type="number" step="0.1" id="weight">
-            </div>
-            <div class="form-group">
-                <label>Body Fat (%)</label>
-                <input type="number" step="0.1" id="bodyfat">
-            </div>
-            <div class="form-group">
-                <label>Muscle Mass (kg)</label>
-                <input type="number" step="0.1" id="muscle-mass">
-            </div>
-            <button class="std-btn" id="save-metrics">Save Metrics</button>
-        </div>
-    </section>
-
-    <!-- History Section -->
-    <section id="history" class="tab-content">
-        <h1>History</h1>
-        <div class="history-tabs">
-            <button class="history-tab active" data-tab="workouts-history">Workouts</button>
-            <button class="history-tab" data-tab="nutrition-history">Nutrition</button>
-            <button class="history-tab" data-tab="metrics-history">Metrics</button>
-        </div>
-
-        <div id="workouts-history" class="history-view active"></div>
-        <div id="nutrition-history" class="history-view"></div>
-        <div id="metrics-history" class="history-view"></div>
-    </section>
-</div>
-
-<script>
-    // ===== Data Stores =====
-    let exerciseData = [];
-    let nutritionData = [];
-    let bodyMetricsData = [];
-    let nutritionGoal = {calories: 2000, protein: 150, carbs: 250, fats: 70};
-
-    // ===== Navigation & UI =====
-    const burger = document.getElementById('burger-menu');
-    const sideMenu = document.getElementById('side-menu');
-    const menuLinks = document.querySelectorAll('.menu-link');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    burger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        sideMenu.classList.toggle('slide-in');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!sideMenu.contains(e.target) && !burger.contains(e.target)) {
-            sideMenu.classList.remove('slide-in');
-        }
-    });
-
-    menuLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sectionId = link.dataset.section;
-            
-            tabContents.forEach(tab => tab.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
-
-            menuLinks.forEach(l => l.classList.remove('active-link'));
-            link.classList.add('active-link');
-            sideMenu.classList.remove('slide-in');
-            
-            if(sectionId === 'history') renderHistoryTab('workouts-history');
-        });
-    });
-
-    // ===== Dashboard Updating =====
-    function updateDashboard() {
-        document.getElementById('workouts-today').textContent = exerciseData.length;
-
-        let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFats = 0;
-        nutritionData.forEach(food => {
-            totalCalories += food.calories || 0;
-            totalProtein += food.protein || 0;
-            totalCarbs += food.carbs || 0;
-            totalFats += food.fats || 0;
-        });
-
-        document.getElementById('calories-today').textContent = totalCalories;
-        document.getElementById('protein-today').textContent = totalProtein;
-        document.getElementById('carbs-today').textContent = totalCarbs;
-        document.getElementById('fats-today').textContent = totalFats;
-
-        document.getElementById('calories-goal').textContent = nutritionGoal.calories;
-        document.getElementById('protein-goal').textContent = nutritionGoal.protein;
-        document.getElementById('carbs-goal').textContent = nutritionGoal.carbs;
-        document.getElementById('fats-goal').textContent = nutritionGoal.fats;
-
-        const latestMetrics = bodyMetricsData[bodyMetricsData.length - 1] || {weight: 0, bodyfat:0, muscle:0};
-        document.getElementById('weight-today').textContent = latestMetrics.weight;
-        document.getElementById('bodyfat-today').textContent = latestMetrics.bodyfat;
-        document.getElementById('muscle-today').textContent = latestMetrics.muscle;
-
-        document.getElementById('total-workouts').textContent = exerciseData.length;
-        document.getElementById('total-calories').textContent = totalCalories;
-    }
-
-    // ===== Gym Config =====
-    document.getElementById('save-gym').addEventListener('click', () => {
-        const gymName = document.getElementById('gym-name').value;
-        const membershipType = document.getElementById('membership-type').value;
-        localStorage.setItem('gymConfig', JSON.stringify({gymName, membershipType}));
-        alert('Gym configuration saved locally!');
-    });
-
-    // ===== Training =====
-    const exerciseTableBody = document.querySelector('#exercise-table tbody');
-
-    document.getElementById('add-exercise').addEventListener('click', () => {
-        const name = document.getElementById('exercise-name').value;
-        const sets = parseInt(document.getElementById('sets').value);
-        const reps = parseInt(document.getElementById('reps').value);
-
-        if(!name || isNaN(sets) || isNaN(reps)) {
-            return alert('Please enter exercise name, sets, and reps.');
-        }
-
-        exerciseData.push({name, sets, reps});
-        renderExerciseTable();
-        updateDashboard();
+    <main class="max-w-xl mx-auto p-4 space-y-6">
         
-        // Clear inputs
-        document.getElementById('exercise-name').value = '';
-        document.getElementById('sets').value = '';
-        document.getElementById('reps').value = '';
-    });
+        <!-- Dashboard Tab -->
+        <section id="dashboard" class="tab-content active space-y-6">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+                    <i data-lucide="flame" class="text-orange-500 mb-2 w-5 h-5"></i>
+                    <div id="dash-cals" class="text-2xl font-black">0</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase">Cals vs <span class="target-cals-display">2500</span></div>
+                </div>
+                <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+                    <i data-lucide="target" class="text-blue-500 mb-2 w-5 h-5"></i>
+                    <div id="dash-prot" class="text-2xl font-black">0g</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase">Prot vs <span class="target-prot-display">180</span>g</div>
+                </div>
+            </div>
 
-    function renderExerciseTable() {
-        exerciseTableBody.innerHTML = '';
-        exerciseData.forEach(ex => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${ex.name}</td><td>${ex.sets}</td><td>${ex.reps}</td>`;
-            exerciseTableBody.appendChild(row);
-        });
-    }
+            <div class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <h3 class="text-lg font-bold mb-1">Today's Session</h3>
+                    <p id="dash-focus-text" class="text-indigo-100 text-sm mb-4">Focus: Full Body</p>
+                    <button onclick="switchTab('training')" class="bg-white text-indigo-600 px-6 py-2 rounded-2xl font-bold text-sm">Start Now</button>
+                </div>
+                <i data-lucide="dumbbell" class="absolute -right-4 -bottom-4 text-indigo-500/30 w-32 h-32 opacity-50"></i>
+            </div>
+        </section>
 
-    // ===== Nutrition =====
-    const nutritionTableBody = document.querySelector('#nutrition-table tbody');
+        <!-- Training Tab -->
+        <section id="training" class="tab-content space-y-6">
+            <div id="workout-setup" class="space-y-4">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold mb-4">Session Focus</h3>
+                    <select id="focus-select" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none">
+                        <option>Full Body</option>
+                        <option>Upper Body</option>
+                        <option>Lower Body</option>
+                        <option>Push</option>
+                        <option>Pull</option>
+                    </select>
+                </div>
 
-    document.getElementById('add-food').addEventListener('click', () => {
-        const mealType = document.getElementById('meal-type').value;
-        const name = document.getElementById('food-name').value;
-        const calories = parseInt(document.getElementById('food-calories').value);
-        const protein = parseInt(document.getElementById('food-protein').value);
-        const carbs = parseInt(document.getElementById('food-carbs').value);
-        const fats = parseInt(document.getElementById('food-fats').value);
+                <div class="grid grid-cols-1 gap-4">
+                    <button onclick="startAiWorkout()" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left flex items-center gap-4 group">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <i data-lucide="brain-circuit"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">AI Auto-Generate</h4>
+                            <p class="text-xs text-slate-400">Smart plan based on focus</p>
+                        </div>
+                    </button>
 
-        if(!name || isNaN(calories)) return alert('Minimum requirement: Food Name and Calories');
+                    <button onclick="startManualWorkout()" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left flex items-center gap-4 group">
+                        <div class="w-12 h-12 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-all">
+                            <i data-lucide="plus"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Manual Builder</h4>
+                            <p class="text-xs text-slate-400">Choose your own exercises</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
 
-        nutritionData.push({meal: mealType, name, calories, protein, carbs, fats});
-        nutritionData.sort((a,b)=>{
-            const order = ['Breakfast','Lunch','Dinner','Snack'];
-            return order.indexOf(a.meal) - order.indexOf(b.meal);
-        });
-        renderNutritionTable();
-        updateDashboard();
+            <!-- Active Workout View -->
+            <div id="active-workout" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="workout-title" class="text-xl font-bold">Workout</h3>
+                    <button onclick="cancelWorkout()" class="text-red-500 font-bold text-sm">Cancel</button>
+                </div>
+                <div id="exercise-list" class="space-y-4 mb-6"></div>
+                <button id="add-ex-btn" onclick="addExerciseRow()" class="hidden w-full p-4 mb-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm">+ Add Exercise</button>
+                <button onclick="cancelWorkout()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Complete Workout</button>
+            </div>
+        </section>
 
-        // Clear inputs
-        ['food-name','food-calories','food-protein','food-carbs','food-fats'].forEach(id => document.getElementById(id).value = '');
-    });
+        <!-- Nutrition Tab -->
+        <section id="nutrition" class="tab-content space-y-6">
+            <!-- Date Navigation -->
+            <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <button onclick="changeNutritionDate(-1)" class="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left"></i></button>
+                <div class="text-center">
+                    <input type="date" id="nutrition-date-picker" onchange="handleDateChange()" class="font-bold text-sm bg-transparent border-none outline-none text-center">
+                </div>
+                <button onclick="changeNutritionDate(1)" class="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right"></i></button>
+            </div>
 
-    function renderNutritionTable() {
-        nutritionTableBody.innerHTML = '';
-        nutritionData.forEach(f => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${f.meal}</td><td>${f.name}</td><td>${f.calories}</td><td>${f.protein}/${f.carbs}/${f.fats}</td>`;
-            nutritionTableBody.appendChild(row);
-        });
-    }
+            <div id="scanner-ui" class="hidden fixed inset-0 z-[60] bg-black flex flex-col p-6">
+                <div class="flex justify-between items-center text-white mb-6">
+                    <h3 class="font-bold">Barcode Scanner</h3>
+                    <button onclick="stopScanner()" class="p-2 bg-white/10 rounded-full"><i data-lucide="x"></i></button>
+                </div>
+                <div class="relative w-full max-w-sm mx-auto aspect-square rounded-3xl overflow-hidden border-2 border-indigo-500">
+                    <div id="reader" class="w-full h-full"></div>
+                    <div class="absolute top-0 left-0 w-full h-1 bg-white/50 shadow-[0_0_10px_white] scan-animation"></div>
+                </div>
+                <div class="mt-8 text-center">
+                    <p id="scan-status" class="text-white font-bold mb-2 text-lg">Ready to scan</p>
+                    <p class="text-slate-400 text-sm px-10">Point camera at product barcode for automatic macro tracking.</p>
+                </div>
+            </div>
 
-    // ===== Body Metrics =====
-    document.getElementById('save-metrics').addEventListener('click', () => {
-        const weight = parseFloat(document.getElementById('weight').value);
-        const bodyfat = parseFloat(document.getElementById('bodyfat').value);
-        const muscle = parseFloat(document.getElementById('muscle-mass').value);
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold">Add Food</h3>
+                    <button onclick="initScanner()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm">
+                        <i data-lucide="scan" class="w-4 h-4"></i> Camera
+                    </button>
+                </div>
+                <form id="food-form" class="space-y-4">
+                    <input id="food-name" placeholder="Item Name" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
+                    <div class="grid grid-cols-2 gap-4">
+                        <input id="food-cals" type="number" placeholder="Cals" class="p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
+                        <input id="food-prot" type="number" placeholder="Protein (g)" class="p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
+                    </div>
+                    <select id="food-type" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none">
+                        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+                    </select>
+                    <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Save Item</button>
+                </form>
+            </div>
 
-        if(isNaN(weight)) return alert('Please enter at least your weight.');
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <th class="p-4">Meal</th><th class="p-4">Food</th><th class="p-4 text-center">Cals</th><th class="p-4 text-center">Prot</th><th class="p-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="meal-history-body" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </section>
 
-        bodyMetricsData.push({weight, bodyfat: bodyfat || 0, muscle: muscle || 0});
-        updateDashboard();
-        alert('Metrics updated!');
-    });
+        <!-- Body Metrics Tab -->
+        <section id="metrics" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
+                <h3 id="metric-form-title" class="font-bold mb-4">New Log</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Weight</label><input id="m-weight" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Shoulder</label><input id="m-shoulder" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Chest</label><input id="m-chest" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Waist</label><input id="m-waist" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Glute</label><input id="m-glute" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Arm</label><input id="m-arm" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Leg</label><input id="m-leg" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+                </div>
+                <div class="flex items-center gap-4 mb-6">
+                    <label class="bg-slate-100 p-4 rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors">
+                        <i data-lucide="camera" class="text-slate-600"></i>
+                        <input id="photo-upload" type="file" class="hidden" accept="image/*">
+                    </label>
+                    <div id="photo-preview-container" class="hidden"><img id="photo-preview" class="w-16 h-16 rounded-xl object-cover"></div>
+                </div>
+                <button onclick="saveMetrics()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+                    <i data-lucide="save"></i> <span id="metric-save-btn-text">Log Measurements</span>
+                </button>
+            </div>
 
-    // ===== History Functionality =====
-    const historyTabs = document.querySelectorAll('.history-tab');
-    const historyViews = document.querySelectorAll('.history-view');
+            <div id="metrics-history" class="space-y-4"></div>
+        </section>
 
-    historyTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            historyTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            const tabId = tab.dataset.tab;
-            historyViews.forEach(view => view.classList.remove('active'));
+        <!-- Settings Tab -->
+        <section id="settings" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 class="font-bold mb-6">Gym Configuration</h3>
+                <div id="gym-config-list" class="space-y-3"></div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 class="font-bold mb-4">Goals</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-xs text-slate-400 font-bold uppercase">Cals Goal</label><input id="goal-cals" type="number" value="2500" class="w-full p-3 bg-slate-50 rounded-xl border-none outline-none font-bold"></div>
+                    <div><label class="text-xs text-slate-400 font-bold uppercase">Prot Goal</label><input id="goal-prot" type="number" value="180" class="w-full p-3 bg-slate-50 rounded-xl border-none outline-none font-bold"></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-red-100 shadow-sm">
+                <h3 class="font-bold mb-4 text-red-600">Danger Zone</h3>
+                <button onclick="clearAllData()" class="w-full p-4 border border-red-200 text-red-500 rounded-2xl font-bold text-sm">Clear All Local Data</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Nav -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t px-6 py-4 flex justify-between items-center z-50">
+        <button onclick="switchTab('dashboard')" class="nav-btn text-indigo-600 flex flex-col items-center gap-1" data-tab="dashboard">
+            <i data-lucide="check-circle-2"></i><span class="text-[9px] font-black uppercase">Today</span>
+        </button>
+        <button onclick="switchTab('training')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="training">
+            <i data-lucide="dumbbell"></i><span class="text-[9px] font-black uppercase">Workout</span>
+        </button>
+        <button onclick="switchTab('nutrition')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="nutrition">
+            <i data-lucide="utensils"></i><span class="text-[9px] font-black uppercase">Food</span>
+        </button>
+        <button onclick="switchTab('metrics')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="metrics">
+            <i data-lucide="scale"></i><span class="text-[9px] font-black uppercase">Body</span>
+        </button>
+    </nav>
+
+    <script>
+        // --- State Management ---
+        const STORAGE_KEY = 'fittrack_pro_data';
+        
+        // Initialize default state
+        let state = {
+            gymConfig: { barbell: true, dumbbell: true, cables: true, pinMachine: true, weightMachine: true },
+            nutrition: { targets: { calories: 2500, protein: 180 }, dailyMeals: [] },
+            metrics: { history: [], current: { photo: null }, editingId: null },
+            training: { active: null, focus: 'Full Body' },
+            viewDate: new Date().toISOString().split('T')[0], // Default to today
+            currentTab: 'dashboard',
+            lastTab: 'dashboard'
+        };
+
+        // Load data from LocalStorage
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                // Ensure viewDate is always reset to today on fresh load if not specified
+                if(!state.viewDate) state.viewDate = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        // Save data to LocalStorage
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        const EXERCISE_DATABASE = [
+            { name: "Barbell Squat", focus: "Lower Body", equipment: "barbell" },
+            { name: "Deadlift", focus: "Lower Body", equipment: "barbell" },
+            { name: "Dumbbell Lunges", focus: "Lower Body", equipment: "dumbbell" },
+            { name: "Leg Press", focus: "Lower Body", equipment: "weightMachine" },
+            { name: "Leg Extension", focus: "Lower Body", equipment: "pinMachine" },
+            { name: "Bench Press", focus: "Upper Body", equipment: "barbell" },
+            { name: "Dumbbell Flyes", focus: "Upper Body", equipment: "dumbbell" },
+            { name: "Cable Crossover", focus: "Upper Body", equipment: "cables" },
+            { name: "Chest Press Machine", focus: "Upper Body", equipment: "weightMachine" },
+            { name: "Lat Pulldown", focus: "Pull", equipment: "pinMachine" },
+            { name: "Seated Cable Row", focus: "Pull", equipment: "cables" },
+            { name: "Dumbbell Row", focus: "Pull", equipment: "dumbbell" },
+            { name: "Barbell Curl", focus: "Pull", equipment: "barbell" },
+            { name: "Overhead Press", focus: "Push", equipment: "barbell" },
+            { name: "Lateral Raise", focus: "Push", equipment: "dumbbell" },
+            { name: "Tricep Pushdown", focus: "Push", equipment: "cables" },
+            { name: "Dips", focus: "Push", equipment: "weightMachine" },
+        ];
+
+        // --- Core Navigation ---
+        function switchTab(tabId) {
+            // Record last tab if it's not settings
+            if (state.currentTab !== 'settings') {
+                state.lastTab = state.currentTab;
+            }
+            state.currentTab = tabId;
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            renderHistoryTab(tabId);
-        });
-    });
-
-    function renderHistoryTab(tabId){
-        const view = document.getElementById(tabId);
-        view.innerHTML = '';
-        
-        let dataToRender = [];
-        if(tabId === 'workouts-history') dataToRender = exerciseData.map(ex => `${ex.name}: ${ex.sets}x${ex.reps}`);
-        else if(tabId === 'nutrition-history') dataToRender = nutritionData.map(f => `${f.meal} - ${f.name} (${f.calories} kcal)`);
-        else if(tabId === 'metrics-history') dataToRender = bodyMetricsData.map(m => `Weight: ${m.weight}kg | BF: ${m.bodyfat}% | Muscle: ${m.muscle}kg`);
-
-        if(dataToRender.length === 0) {
-            view.innerHTML = '<p style="color: #999; text-align: center;">No data logged yet.</p>';
-            return;
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const isActive = btn.dataset.tab === tabId;
+                btn.classList.toggle('text-indigo-600', isActive);
+                btn.classList.toggle('text-slate-300', !isActive);
+            });
+            window.scrollTo(0, 0);
         }
 
-        dataToRender.forEach(text => {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.textContent = text;
-            view.appendChild(item);
-        });
-    }
+        function toggleSettings() {
+            if (state.currentTab === 'settings') {
+                switchTab(state.lastTab || 'dashboard');
+            } else {
+                switchTab('settings');
+            }
+        }
 
-    // ===== Online/Offline Status =====
-    window.addEventListener('online', () => document.getElementById('offline-notice').style.display = 'none');
-    window.addEventListener('offline', () => document.getElementById('offline-notice').style.display = 'block');
+        // --- Training Logic ---
+        function startManualWorkout() {
+            state.training.focus = document.getElementById('focus-select').value;
+            state.training.active = { type: 'Manual', exercises: [] };
+            renderWorkoutView();
+        }
 
-    // Initial Dashboard Update
-    updateDashboard();
+        async function startAiWorkout() {
+            state.training.focus = document.getElementById('focus-select').value;
+            const availableEquip = Object.keys(state.gymConfig).filter(k => state.gymConfig[k]);
+            const filtered = EXERCISE_DATABASE.filter(ex => 
+                (state.training.focus === 'Full Body' || ex.focus === state.training.focus) && 
+                availableEquip.includes(ex.equipment)
+            );
+            
+            const selection = filtered.sort(() => 0.5 - Math.random()).slice(0, 5);
+            state.training.active = { 
+                type: 'Automatic', 
+                exercises: selection.map(s => ({ name: s.name, sets: 3, reps: 10, weights: ['', '', ''] })) 
+            };
+            renderWorkoutView();
+        }
 
-</script>
+        function renderWorkoutView() {
+            document.getElementById('workout-setup').classList.add('hidden');
+            document.getElementById('active-workout').classList.remove('hidden');
+            document.getElementById('workout-title').innerText = `${state.training.focus} session`;
+            
+            const list = document.getElementById('exercise-list');
+            list.innerHTML = '';
+            
+            state.training.active.exercises.forEach((ex, idx) => {
+                list.appendChild(createExerciseRow(ex, idx));
+            });
+
+            const addBtn = document.getElementById('add-ex-btn');
+            if(state.training.active.type === 'Manual') addBtn.classList.remove('hidden');
+            else addBtn.classList.add('hidden');
+            
+            if(state.training.active.exercises.length === 0 && state.training.active.type === 'Manual') {
+                addExerciseRow();
+            }
+        }
+
+        function createExerciseRow(ex, idx) {
+            const row = document.createElement('div');
+            row.className = 'bg-slate-50 p-4 rounded-2xl';
+            
+            let nameField;
+            if (state.training.active.type === 'Manual') {
+                const availableEquip = Object.keys(state.gymConfig).filter(k => state.gymConfig[k]);
+                const options = EXERCISE_DATABASE.filter(dbEx => 
+                    (state.training.focus === 'Full Body' || dbEx.focus === state.training.focus) &&
+                    availableEquip.includes(dbEx.equipment)
+                );
+                
+                nameField = `<select class="w-full bg-white p-3 rounded-xl border border-slate-200 font-bold text-sm mb-2" onchange="updateExercise(${idx}, 'name', this.value)">
+                    <option value="">Select Exercise...</option>
+                    ${options.map(o => `<option value="${o.name}" ${o.name === ex.name ? 'selected' : ''}>${o.name}</option>`).join('')}
+                </select>`;
+            } else {
+                nameField = `<div class="font-bold text-indigo-600 mb-2">${ex.name}</div>`;
+            }
+
+            row.innerHTML = `
+                ${nameField}
+                <div class="flex gap-2 mb-3">
+                    <input type="number" class="w-20 p-2 text-xs rounded-lg border" placeholder="Sets" value="${ex.sets}" onchange="updateExercise(${idx}, 'sets', this.value)">
+                    <input type="number" class="w-20 p-2 text-xs rounded-lg border" placeholder="Reps" value="${ex.reps}" onchange="updateExercise(${idx}, 'reps', this.value)">
+                </div>
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    ${ex.weights.map((w, sIdx) => `
+                        <input type="number" class="min-w-[60px] p-2 text-xs rounded-lg border bg-white" placeholder="S${sIdx+1}" value="${w}" onchange="updateWeight(${idx}, ${sIdx}, this.value)">
+                    `).join('')}
+                </div>
+            `;
+            return row;
+        }
+
+        function addExerciseRow() {
+            state.training.active.exercises.push({ name: '', sets: 3, reps: 10, weights: ['', '', ''] });
+            renderWorkoutView();
+        }
+
+        function updateExercise(idx, key, val) {
+            state.training.active.exercises[idx][key] = val;
+            if(key === 'sets') {
+                state.training.active.exercises[idx].weights = Array(Number(val)).fill('');
+                renderWorkoutView();
+            }
+        }
+
+        function updateWeight(exIdx, sIdx, val) {
+            state.training.active.exercises[exIdx].weights[sIdx] = val;
+        }
+
+        function cancelWorkout() {
+            state.training.active = null;
+            document.getElementById('active-workout').classList.add('hidden');
+            document.getElementById('workout-setup').classList.remove('hidden');
+        }
+
+        // --- Nutrition Logic ---
+        let html5QrCode = null;
+
+        function handleDateChange() {
+            state.viewDate = document.getElementById('nutrition-date-picker').value;
+            renderNutrition();
+            updateDashboard();
+        }
+
+        function changeNutritionDate(offset) {
+            const date = new Date(state.viewDate);
+            date.setDate(date.getDate() + offset);
+            state.viewDate = date.toISOString().split('T')[0];
+            document.getElementById('nutrition-date-picker').value = state.viewDate;
+            handleDateChange();
+        }
+
+        function initScanner() {
+            document.getElementById('scanner-ui').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 15, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 };
+            
+            html5QrCode.start({ facingMode: "environment" }, config, (decoded) => {
+                handleBarcode(decoded);
+                stopScanner();
+            }).catch(e => {
+                document.getElementById('scan-status').innerText = "Camera Error";
+            });
+        }
+
+        function stopScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-ui').classList.add('hidden');
+                }).catch(() => {
+                    document.getElementById('scanner-ui').classList.add('hidden');
+                });
+            } else {
+                document.getElementById('scanner-ui').classList.add('hidden');
+            }
+        }
+
+        async function handleBarcode(barcode) {
+            document.getElementById('scan-status').innerText = "Searching OpenFoodFacts...";
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+                const data = await res.json();
+                if(data.status === 1) {
+                    const p = data.product;
+                    document.getElementById('food-name').value = p.product_name || "Unknown";
+                    document.getElementById('food-cals').value = Math.round(p.nutriments['energy-kcal_100g'] || 0);
+                    document.getElementById('food-prot').value = Math.round(p.nutriments.proteins_100g || 0);
+                }
+            } catch(e) { console.error(e); }
+            document.getElementById('scan-status').innerText = "Ready to scan";
+        }
+
+        document.getElementById('food-form').onsubmit = (e) => {
+            e.preventDefault();
+            const meal = {
+                id: Date.now(),
+                date: state.viewDate, // Save for specific date
+                name: document.getElementById('food-name').value,
+                calories: Number(document.getElementById('food-cals').value),
+                protein: Number(document.getElementById('food-prot').value),
+                type: document.getElementById('food-type').value
+            };
+            state.nutrition.dailyMeals.push(meal);
+            saveToStorage();
+            e.target.reset();
+            renderNutrition();
+            updateDashboard();
+        };
+
+        function renderNutrition() {
+            document.getElementById('nutrition-date-picker').value = state.viewDate;
+            const body = document.getElementById('meal-history-body');
+            body.innerHTML = '';
+            
+            // Only show meals for the selected date
+            const filteredMeals = state.nutrition.dailyMeals.filter(m => m.date === state.viewDate);
+
+            ['Breakfast', 'Lunch', 'Dinner', 'Snack'].forEach(type => {
+                body.innerHTML += `<tr class="bg-slate-50/30"><td colspan="5" class="px-4 py-1 text-[9px] font-black text-slate-300 uppercase">${type}</td></tr>`;
+                filteredMeals.filter(m => m.type === type).forEach(m => {
+                    body.innerHTML += `
+                        <tr class="text-sm">
+                            <td class="p-4"><i data-lucide="utensils" class="w-4 h-4 text-slate-300"></i></td>
+                            <td class="p-4 font-bold">${m.name}</td>
+                            <td class="p-4 text-center font-medium">${m.calories}</td>
+                            <td class="p-4 text-center font-medium">${m.protein}g</td>
+                            <td class="p-4 text-right">
+                                <button onclick="deleteMeal(${m.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+            lucide.createIcons();
+        }
+
+        function deleteMeal(id) {
+            state.nutrition.dailyMeals = state.nutrition.dailyMeals.filter(m => m.id !== id);
+            saveToStorage();
+            renderNutrition();
+            updateDashboard();
+        }
+
+        // --- Metrics Logic ---
+        document.getElementById('photo-upload').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                state.metrics.current.photo = f.target.result;
+                document.getElementById('photo-preview').src = f.target.result;
+                document.getElementById('photo-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        function saveMetrics() {
+            const fields = ['weight', 'shoulder', 'chest', 'waist', 'glute', 'arm', 'leg'];
+            const data = { id: state.metrics.editingId || Date.now(), photo: state.metrics.current.photo };
+            fields.forEach(f => data[f] = document.getElementById(`m-${f}`).value);
+            
+            if (state.metrics.editingId) {
+                const idx = state.metrics.history.findIndex(m => m.id === state.metrics.editingId);
+                state.metrics.history[idx] = { ...data, date: state.metrics.history[idx].date, time: state.metrics.history[idx].time };
+            } else {
+                data.date = new Date().toLocaleDateString();
+                data.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                state.metrics.history.unshift(data);
+            }
+            
+            state.metrics.editingId = null;
+            state.metrics.current.photo = null;
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('metric-form-title').innerText = "New Log";
+            document.getElementById('metric-save-btn-text').innerText = "Log Measurements";
+            fields.forEach(f => document.getElementById(`m-${f}`).value = '');
+            
+            saveToStorage();
+            renderMetrics();
+            updateDashboard();
+        }
+
+        function renderMetrics() {
+            const container = document.getElementById('metrics-history');
+            container.innerHTML = '';
+            state.metrics.history.forEach(log => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex gap-4';
+                card.innerHTML = `
+                    ${log.photo ? `<img src="${log.photo}" class="w-16 h-20 rounded-xl object-cover">` : `<div class="w-16 h-20 bg-slate-50 rounded-xl flex items-center justify-center"><i data-lucide="camera" class="text-slate-200"></i></div>`}
+                    <div class="flex-1">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-indigo-900">${log.weight}kg</span>
+                            <div class="flex gap-2">
+                                <button onclick="editMetric(${log.id})" class="text-slate-300 hover:text-indigo-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                <button onclick="deleteMetric(${log.id})" class="text-slate-300 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">${log.date} @ ${log.time}</p>
+                        <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-500 font-medium">
+                            <span>WST: ${log.waist}</span><span>CH: ${log.chest}</span><span>LG: ${log.leg}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function editMetric(id) {
+            const log = state.metrics.history.find(m => m.id === id);
+            state.metrics.editingId = id;
+            document.getElementById('metric-form-title').innerText = "Update Log";
+            document.getElementById('metric-save-btn-text').innerText = "Update Entry";
+            ['weight', 'shoulder', 'chest', 'waist', 'glute', 'arm', 'leg'].forEach(f => {
+                document.getElementById(`m-${f}`).value = log[f];
+            });
+            if(log.photo) {
+                state.metrics.current.photo = log.photo;
+                document.getElementById('photo-preview').src = log.photo;
+                document.getElementById('photo-preview-container').classList.remove('hidden');
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function deleteMetric(id) {
+            state.metrics.history = state.metrics.history.filter(m => m.id !== id);
+            saveToStorage();
+            renderMetrics();
+        }
+
+        // --- Settings Logic ---
+        function renderSettings() {
+            const list = document.getElementById('gym-config-list');
+            list.innerHTML = '';
+            Object.keys(state.gymConfig).forEach(k => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer';
+                label.innerHTML = `
+                    <span class="font-bold text-sm text-slate-700 capitalize">${k.replace(/([A-Z])/g, ' $1')}</span>
+                    <input type="checkbox" ${state.gymConfig[k] ? 'checked' : ''} onchange="updateGymConfig('${k}', this.checked)" class="w-6 h-6 rounded-lg text-indigo-600">
+                `;
+                list.appendChild(label);
+            });
+            document.getElementById('goal-cals').value = state.nutrition.targets.calories;
+            document.getElementById('goal-prot').value = state.nutrition.targets.protein;
+        }
+
+        function updateGymConfig(key, val) {
+            state.gymConfig[key] = val;
+            saveToStorage();
+        }
+
+        document.getElementById('goal-cals').onchange = (e) => {
+            state.nutrition.targets.calories = Number(e.target.value);
+            saveToStorage();
+            updateDashboard();
+        };
+        document.getElementById('goal-prot').onchange = (e) => {
+            state.nutrition.targets.protein = Number(e.target.value);
+            saveToStorage();
+            updateDashboard();
+        };
+
+        function clearAllData() {
+            if(confirm("Are you sure you want to delete all saved progress? This cannot be undone.")) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+
+        // --- Global Dashboard ---
+        function updateDashboard() {
+            // Dashboard calculations based on viewDate
+            const totals = state.nutrition.dailyMeals
+                .filter(m => m.date === state.viewDate)
+                .reduce((acc, m) => ({
+                    calories: acc.calories + m.calories,
+                    protein: acc.protein + m.protein
+                }), { calories: 0, protein: 0 });
+
+            document.getElementById('dash-cals').innerText = totals.calories;
+            document.getElementById('dash-prot').innerText = totals.protein + 'g';
+            document.querySelectorAll('.target-cals-display').forEach(el => el.innerText = state.nutrition.targets.calories);
+            document.querySelectorAll('.target-prot-display').forEach(el => el.innerText = state.nutrition.targets.protein);
+            
+            const focus = document.getElementById('focus-select').value;
+            document.getElementById('dash-focus-text').innerText = `Focus: ${focus}`;
+        }
+
+        // Initialization
+        window.onload = () => {
+            loadState();
+            lucide.createIcons();
+            renderSettings();
+            renderNutrition();
+            renderMetrics();
+            updateDashboard();
+        };
+    </script>
 </body>
 </html>
-
 
