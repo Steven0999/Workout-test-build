@@ -1,262 +1,861 @@
-// app.js
+/* =========================================================
+   GLOBAL VARIABLES & STATE
+   ========================================================= */
 
-// ===== Offline First Support =====
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, err => {
-            console.log('ServiceWorker registration failed: ', err);
-        });
+const appState = {
+    workouts: [], // Array of all workouts
+    nutrition: [], // Array of food logs
+    bodyMetrics: {
+        shoulders: [],
+        chest: [],
+        waist: [],
+        glutes: [],
+        arms: [],
+        legs: []
+    },
+    photos: [], // Multiple photos per date
+    history: [],
+    readinessScore: 0,
+    offline: false,
+    activeSection: 'dashboard'
+};
+
+const elements = {
+    burgerBtn: document.getElementById('burger-btn'),
+    sideMenu: document.getElementById('side-menu'),
+    sections: document.querySelectorAll('.section'),
+    thumbNavButtons: document.querySelectorAll('.thumb-nav button'),
+    offlineIndicator: document.getElementById('offline-indicator'),
+    dashboardCards: document.querySelectorAll('.dashboard-card')
+};
+
+/* =========================================================
+   UTILITY FUNCTIONS
+   ========================================================= */
+
+function setActiveSection(sectionId) {
+    appState.activeSection = sectionId;
+
+    // Hide all sections
+    elements.sections.forEach(sec => {
+        sec.classList.remove('active');
+    });
+
+    // Show the selected section
+    const activeSec = document.getElementById(sectionId);
+    if (activeSec) {
+        activeSec.classList.add('active');
+    }
+
+    // Highlight in side menu
+    elements.sideMenu.querySelectorAll('a').forEach(link => {
+        if (link.dataset.target === sectionId) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
     });
 }
+
+/* =========================================================
+   BURGER MENU TOGGLE
+   ========================================================= */
+
+elements.burgerBtn.addEventListener('click', () => {
+    elements.sideMenu.classList.toggle('active');
+});
+
+/* =========================================================
+   THUMB NAVIGATION HANDLERS
+   ========================================================= */
+
+elements.thumbNavButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const target = e.currentTarget.dataset.target;
+        setActiveSection(target);
+    });
+});
+
+/* =========================================================
+   OFFLINE DETECTION
+   ========================================================= */
 
 window.addEventListener('online', () => {
-    document.getElementById('offline-notice').style.display = 'none';
+    appState.offline = false;
+    elements.offlineIndicator.classList.remove('active');
 });
+
 window.addEventListener('offline', () => {
-    document.getElementById('offline-notice').style.display = 'block';
+    appState.offline = true;
+    elements.offlineIndicator.classList.add('active');
 });
 
-// ===== Burger Menu =====
-const burger = document.getElementById('burger-menu');
-const sideMenu = document.getElementById('side-menu');
-const menuLinks = document.querySelectorAll('.menu-link');
-const tabContents = document.querySelectorAll('.tab-content');
+/* =========================================================
+   DASHBOARD UPDATES
+   ========================================================= */
 
-burger.addEventListener('click', () => {
-    sideMenu.classList.toggle('slide-in');
-});
-
-menuLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const sectionId = link.dataset.section;
-        tabContents.forEach(tab => tab.classList.remove('active'));
-        document.getElementById(sectionId).classList.add('active');
-
-        menuLinks.forEach(l => l.classList.remove('active-link'));
-        link.classList.add('active-link');
-    });
-});
-
-// ===== Dashboard Updating =====
 function updateDashboard() {
-    document.getElementById('workouts-today').textContent = exerciseData.length;
+    // Example: Workout completed today
+    const workoutsToday = appState.workouts.filter(w => w.date === getTodayDate());
+    const workoutCard = document.getElementById('workouts-today-count');
+    if (workoutCard) workoutCard.textContent = workoutsToday.length;
 
-    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFats = 0;
-    nutritionData.forEach(food => {
-        totalCalories += food.calories;
-        totalProtein += food.protein;
-        totalCarbs += food.carbs;
-        totalFats += food.fats;
-    });
+    // Nutrition totals
+    const nutritionCard = document.getElementById('nutrition-summary');
+    if (nutritionCard) {
+        const totalCalories = appState.nutrition.reduce((sum, f) => sum + f.calories, 0);
+        const totalProtein = appState.nutrition.reduce((sum, f) => sum + f.protein, 0);
+        const totalCarbs = appState.nutrition.reduce((sum, f) => sum + f.carbs, 0);
+        const totalFat = appState.nutrition.reduce((sum, f) => sum + f.fat, 0);
+        nutritionCard.innerHTML = `
+            <p>Calories: ${totalCalories}</p>
+            <p>Protein: ${totalProtein}g</p>
+            <p>Carbs: ${totalCarbs}g</p>
+            <p>Fat: ${totalFat}g</p>
+        `;
+    }
 
-    document.getElementById('calories-today').textContent = totalCalories;
-    document.getElementById('protein-today').textContent = totalProtein;
-    document.getElementById('carbs-today').textContent = totalCarbs;
-    document.getElementById('fats-today').textContent = totalFats;
-
-    document.getElementById('calories-goal').textContent = nutritionGoal.calories;
-    document.getElementById('protein-goal').textContent = nutritionGoal.protein;
-    document.getElementById('carbs-goal').textContent = nutritionGoal.carbs;
-    document.getElementById('fats-goal').textContent = nutritionGoal.fats;
-
-    const latestMetrics = bodyMetricsData[bodyMetricsData.length - 1] || {weight: 0, bodyfat:0, muscle:0};
-    document.getElementById('weight-today').textContent = latestMetrics.weight;
-    document.getElementById('bodyfat-today').textContent = latestMetrics.bodyfat;
-    document.getElementById('muscle-today').textContent = latestMetrics.muscle;
-
-    document.getElementById('total-workouts').textContent = exerciseData.length;
-    document.getElementById('total-calories').textContent = totalCalories;
-}
-
-// ===== Data Stores =====
-let exerciseData = [];
-let nutritionData = [];
-let bodyMetricsData = [];
-let nutritionGoal = {calories: 2000, protein: 150, carbs: 250, fats: 70};
-
-// ===== Gym Config =====
-document.getElementById('save-gym').addEventListener('click', () => {
-    const gymName = document.getElementById('gym-name').value;
-    const membershipType = document.getElementById('membership-type').value;
-    localStorage.setItem('gymConfig', JSON.stringify({gymName, membershipType}));
-    alert('Gym config saved!');
-});
-
-// ===== Training =====
-const exerciseTableBody = document.querySelector('#exercise-table tbody');
-
-document.getElementById('add-exercise').addEventListener('click', () => {
-    const name = document.getElementById('exercise-name').value;
-    const sets = parseInt(document.getElementById('sets').value);
-    const reps = parseInt(document.getElementById('reps').value);
-
-    if(!name || !sets || !reps) return alert('Complete all exercise fields');
-
-    const exercise = {name, sets, reps};
-    exerciseData.push(exercise);
-    renderExerciseTable();
-    updateDashboard();
-});
-
-function renderExerciseTable() {
-    exerciseTableBody.innerHTML = '';
-    exerciseData.forEach(ex => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${ex.name}</td><td>${ex.sets}</td><td>${ex.reps}</td>`;
-        exerciseTableBody.appendChild(row);
-    });
-}
-
-// ===== Nutrition =====
-const nutritionTableBody = document.querySelector('#nutrition-table tbody');
-
-document.getElementById('add-food').addEventListener('click', () => {
-    const mealType = document.getElementById('meal-type').value;
-    const name = document.getElementById('food-name').value;
-    const calories = parseInt(document.getElementById('food-calories').value);
-    const protein = parseInt(document.getElementById('food-protein').value);
-    const carbs = parseInt(document.getElementById('food-carbs').value);
-    const fats = parseInt(document.getElementById('food-fats').value);
-
-    if(!name || !calories || !protein || !carbs || !fats) return alert('Complete all nutrition fields');
-
-    const food = {meal: mealType, name, calories, protein, carbs, fats};
-    nutritionData.push(food);
-    nutritionData.sort((a,b)=>{
-        const order = ['Breakfast','Lunch','Dinner','Snack'];
-        return order.indexOf(a.meal) - order.indexOf(b.meal);
-    });
-    renderNutritionTable();
-    updateDashboard();
-});
-
-function renderNutritionTable() {
-    nutritionTableBody.innerHTML = '';
-    nutritionData.forEach(food => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${food.meal}</td><td>${food.name}</td><td>${food.calories}</td><td>${food.protein}</td><td>${food.carbs}</td><td>${food.fats}</td>`;
-        nutritionTableBody.appendChild(row);
-    });
-}
-
-// ===== Body Metrics =====
-document.getElementById('save-metrics').addEventListener('click', () => {
-    const weight = parseFloat(document.getElementById('weight').value);
-    const bodyfat = parseFloat(document.getElementById('bodyfat').value);
-    const muscle = parseFloat(document.getElementById('muscle-mass').value);
-
-    if(!weight || !bodyfat || !muscle) return alert('Complete all body metrics');
-
-    bodyMetricsData.push({weight, bodyfat, muscle});
-    updateDashboard();
-});
-
-// ===== History Tabs =====
-const historyTabs = document.querySelectorAll('.history-tab');
-const historyViews = document.querySelectorAll('.history-view');
-
-historyTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        historyTabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        const tabId = tab.dataset.tab;
-        historyViews.forEach(view => view.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        renderHistoryTab(tabId);
-    });
-});
-
-function renderHistoryTab(tabId){
-    const view = document.getElementById(tabId);
-    view.innerHTML = '';
-    if(tabId==='workouts-history'){
-        exerciseData.forEach(ex => {
-            const p = document.createElement('p');
-            p.textContent = `${ex.name} - Sets: ${ex.sets}, Reps: ${ex.reps}`;
-            view.appendChild(p);
-        });
-    } else if(tabId==='nutrition-history'){
-        nutritionData.forEach(food => {
-            const p = document.createElement('p');
-            p.textContent = `${food.meal}: ${food.name} - ${food.calories} cal`;
-            view.appendChild(p);
-        });
-    } else if(tabId==='metrics-history'){
-        bodyMetricsData.forEach(m => {
-            const p = document.createElement('p');
-            p.textContent = `Weight: ${m.weight}, Body Fat: ${m.bodyfat}, Muscle: ${m.muscle}`;
-            view.appendChild(p);
-        });
+    // Readiness score
+    const readinessCard = document.getElementById('readiness-score');
+    if (readinessCard) {
+        readinessCard.querySelector('.score').textContent = appState.readinessScore;
     }
 }
 
-// ===== Barcode Scanner Placeholder =====
-function scanBarcode(){
-    // Placeholder for future barcode scanner integration
-    alert('Barcode scanner will be implemented here!');
+/* =========================================================
+   HELPER FUNCTIONS
+   ========================================================= */
+
+function getTodayDate() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+/* =========================================================
+   BODY METRICS FUNCTIONS
+   ========================================================= */
+
+function addBodyMetric(date, metricName, value) {
+    if (!appState.bodyMetrics[metricName]) {
+        console.warn(`Metric ${metricName} does not exist.`);
+        return;
+    }
+    appState.bodyMetrics[metricName].push({ date, value });
+    updateBodyMetricChart(metricName);
 }
 
-// ===== Analytics Charts Placeholder =====
-function renderCharts(){
-    // Placeholder for charts using chart.js or similar
-    console.log('Render analytics charts');
+function updateBodyMetricChart(metricName) {
+    const data = appState.bodyMetrics[metricName];
+    const chartContainer = document.getElementById(`${metricName}-chart`);
+    if (!chartContainer) return;
+
+    // Clear existing chart
+    chartContainer.innerHTML = '';
+
+    // Create simple line chart (HTML-based for now)
+    const maxVal = Math.max(...data.map(d => d.value), 1);
+    data.forEach((point, index) => {
+        const bar = document.createElement('div');
+        bar.classList.add('chart-bar');
+        bar.style.height = `${(point.value / maxVal) * 100}%`;
+        bar.title = `${point.date}: ${point.value}`;
+        chartContainer.appendChild(bar);
+    });
 }
 
-// ===== Weekly Views Placeholder =====
-function renderWeeklyView(){
-    // Placeholder for weekly charts and summary
-    console.log('Render weekly summaries');
+/* =========================================================
+   PHOTO MANAGEMENT
+   ========================================================= */
+
+function addBodyPhoto(date, photoURL) {
+    if (!appState.photos[date]) {
+        appState.photos[date] = [];
+    }
+    appState.photos[date].push(photoURL);
+    updatePhotoTimeline(date);
 }
 
-// ===== Slide-in Animation for Burger Menu =====
-sideMenu.classList.add('slide-anim');
+function updatePhotoTimeline(date) {
+    const timelineContainer = document.getElementById('photo-timeline');
+    if (!timelineContainer) return;
 
-// ===== Initial Render =====
-updateDashboard();
-renderExerciseTable();
-renderNutritionTable();
-renderHistoryTab('workouts-history');
+    timelineContainer.innerHTML = '';
 
-// ===== Active Section Highlight on Load =====
-menuLinks.forEach(l => {
-    if(l.dataset.section === 'dashboard') l.classList.add('active-link');
+    Object.keys(appState.photos).sort().forEach(d => {
+        const dateGroup = document.createElement('div');
+        dateGroup.classList.add('photo-date-group');
+        const dateLabel = document.createElement('h4');
+        dateLabel.textContent = d;
+        dateGroup.appendChild(dateLabel);
+
+        appState.photos[d].forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.classList.add('body-photo');
+            dateGroup.appendChild(img);
+        });
+
+        timelineContainer.appendChild(dateGroup);
+    });
+}
+
+/* =========================================================
+   NUTRITION LOGGING
+   ========================================================= */
+
+function addNutrition(date, mealType, foodItem) {
+    // mealType: Breakfast, Lunch, Dinner, Snack
+    appState.nutrition.push({ date, mealType, ...foodItem });
+    sortNutrition();
+    renderNutritionTable();
+}
+
+function sortNutrition() {
+    const mealOrder = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+    appState.nutrition.sort((a, b) => {
+        if (a.date !== b.date) return new Date(a.date) - new Date(b.date);
+        return mealOrder.indexOf(a.mealType) - mealOrder.indexOf(b.mealType);
+    });
+}
+
+function renderNutritionTable() {
+    const tableBody = document.getElementById('nutrition-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+    appState.nutrition.forEach(entry => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${entry.date}</td>
+            <td>${entry.mealType}</td>
+            <td>${entry.name}</td>
+            <td>${entry.calories}</td>
+            <td>${entry.protein}</td>
+            <td>${entry.carbs}</td>
+            <td>${entry.fat}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+/* =========================================================
+   WORKOUT FOCUS + EQUIPMENT LOGIC
+   ========================================================= */
+
+function getAvailableExercises(focus, equipmentList) {
+    // Example: filtering exercises based on focus and available equipment
+    const allExercises = [
+        { name: 'Bench Press', focus: 'push', equipment: 'barbell' },
+        { name: 'Squat', focus: 'squat', equipment: 'barbell' },
+        { name: 'Pull Up', focus: 'pull', equipment: 'pull-up bar' },
+        { name: 'Deadlift', focus: 'hinge', equipment: 'barbell' },
+        { name: 'Bicep Curl', focus: 'arms', equipment: 'dumbbell' },
+        { name: 'Leg Press', focus: 'lower body', equipment: 'machine' }
+    ];
+
+    return allExercises.filter(ex => 
+        ex.focus === focus && equipmentList.includes(ex.equipment)
+    );
+}
+
+/* =========================================================
+   AUTOGENERATED WORKOUT
+   ========================================================= */
+
+function generateWorkout(focus, equipmentList) {
+    const exercises = getAvailableExercises(focus, equipmentList);
+    const workout = exercises.map(e => ({
+        name: e.name,
+        sets: 3,
+        reps: 8,
+        weight: 0 // Can integrate progressive overload logic later
+    }));
+
+    return workout;
+}
+/* =========================================================
+   AI-STYLE PROGRESSIVE OVERLOAD
+   ========================================================= */
+
+function applyProgressiveOverload(workout) {
+    // Increase weight or reps intelligently based on last session
+    workout.forEach(exercise => {
+        const lastSession = appState.history.find(h =>
+            h.workout.some(e => e.name === exercise.name)
+        );
+
+        if (!lastSession) return;
+
+        const lastEx = lastSession.workout.find(e => e.name === exercise.name);
+
+        // Simple progressive logic: +2.5% weight if last set completed
+        if (lastEx && lastEx.completedSets >= lastEx.sets) {
+            exercise.weight = Math.round((lastEx.weight * 1.025) * 10) / 10;
+        } else {
+            exercise.weight = lastEx ? lastEx.weight : 0;
+        }
+
+        // Optional: increase reps if weight same
+        if (exercise.weight === lastEx.weight) {
+            exercise.reps = lastEx.reps + 1;
+        }
+    });
+
+    return workout;
+}
+
+/* =========================================================
+   READINESS SCORE
+   ========================================================= */
+
+function computeReadinessScore() {
+    const sleep = appState.dailyStats.sleep || 7; // hours
+    const fatigue = appState.dailyStats.fatigue || 5; // 1-10
+    const stress = appState.dailyStats.stress || 5; // 1-10
+    const injury = appState.dailyStats.injury || 0; // 0-1
+
+    // Example simple formula: 0-100%
+    let score = 100;
+    score -= fatigue * 5;
+    score -= stress * 3;
+    score -= injury * 20;
+    if (sleep < 6) score -= (6 - sleep) * 5;
+
+    appState.readiness = Math.max(0, Math.min(100, score));
+    renderReadinessScore();
+}
+
+function renderReadinessScore() {
+    const readinessEl = document.getElementById('readiness-score');
+    if (!readinessEl) return;
+
+    readinessEl.textContent = `${appState.readiness}% Ready`;
+    readinessEl.style.color = appState.readiness > 70 ? 'green' :
+                              appState.readiness > 40 ? 'orange' : 'red';
+}
+
+/* =========================================================
+   EXERCISE SUBSTITUTION
+   ========================================================= */
+
+function substituteExercise(originalExercise, equipmentList) {
+    // Substitute if equipment missing
+    const equipment = originalExercise.equipment;
+    if (equipmentList.includes(equipment)) return originalExercise;
+
+    // Find alternative with same focus
+    const alternatives = [
+        { name: 'Push-up', focus: 'push', equipment: 'bodyweight' },
+        { name: 'Goblet Squat', focus: 'squat', equipment: 'dumbbell' },
+        { name: 'Dumbbell Row', focus: 'pull', equipment: 'dumbbell' },
+        { name: 'Hip Thrust', focus: 'glutes', equipment: 'bodyweight' }
+    ];
+
+    return alternatives.find(a => a.focus === originalExercise.focus) || originalExercise;
+}
+
+/* =========================================================
+   MOBILE-FIRST SWIPE NAVIGATION
+   ========================================================= */
+
+let currentSectionIndex = 0;
+const sections = ['dashboard', 'gymConfig', 'workout', 'nutrition', 'bodyMetrics', 'history'];
+
+function showSection(index) {
+    sections.forEach((sec, i) => {
+        const el = document.getElementById(sec);
+        if (!el) return;
+        el.style.transform = `translateX(${(i - index) * 100}%)`;
+        el.style.transition = 'transform 0.4s ease';
+    });
+
+    highlightActiveSection(index);
+    currentSectionIndex = index;
+}
+
+function highlightActiveSection(index) {
+    sections.forEach((sec, i) => {
+        const btn = document.querySelector(`.nav-btn[data-section="${sec}"]`);
+        if (!btn) return;
+        btn.classList.toggle('active', i === index);
+    });
+}
+
+// Swipe detection
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
 });
 
-// ===== Additional Helpers =====
-function resetForm(formId){
-    document.getElementById(formId).reset();
-}
-
-// ===== Offline Caching Logic =====
-window.addEventListener('beforeinstallprompt', (e)=>{
-    e.preventDefault();
-    console.log('PWA install prompt saved');
+document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleGesture();
 });
 
-// ===== Long placeholder to reach 500+ lines =====
-// Repeat some functions or placeholders for future features to extend code
-function placeholder1(){console.log('placeholder');}
-function placeholder2(){console.log('placeholder');}
-function placeholder3(){console.log('placeholder');}
-function placeholder4(){console.log('placeholder');}
-function placeholder5(){console.log('placeholder');}
-function placeholder6(){console.log('placeholder');}
-function placeholder7(){console.log('placeholder');}
-function placeholder8(){console.log('placeholder');}
-function placeholder9(){console.log('placeholder');}
-function placeholder10(){console.log('placeholder');}
-function placeholder11(){console.log('placeholder');}
-function placeholder12(){console.log('placeholder');}
-function placeholder13(){console.log('placeholder');}
-function placeholder14(){console.log('placeholder');}
-function placeholder15(){console.log('placeholder');}
-function placeholder16(){console.log('placeholder');}
-function placeholder17(){console.log('placeholder');}
-function placeholder18(){console.log('placeholder');}
-function placeholder19(){console.log('placeholder');}
-function placeholder20(){console.log('placeholder');}
+function handleGesture() {
+    if (touchEndX < touchStartX - 50) {
+        showSection(Math.min(currentSectionIndex + 1, sections.length - 1));
+    }
+    if (touchEndX > touchStartX + 50) {
+        showSection(Math.max(currentSectionIndex - 1, 0));
+    }
+}
 
-// End of app.js (500+ lines)
+/* =========================================================
+   ONE-HAND THUMB UI INTERACTIONS
+   ========================================================= */
+
+function initThumbNavigation() {
+    const thumbNav = document.getElementById('thumb-nav');
+    if (!thumbNav) return;
+
+    thumbNav.addEventListener('click', e => {
+        const targetSection = e.target.dataset.section;
+        if (!targetSection) return;
+        const index = sections.indexOf(targetSection);
+        if (index !== -1) showSection(index);
+    });
+}
+
+/* =========================================================
+   INIT FUNCTION
+   ========================================================= */
+
+function initApp() {
+    computeReadinessScore();
+    showSection(0);
+    initThumbNavigation();
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+/* =========================================================
+   DASHBOARD OVERVIEW RENDERING
+   ========================================================= */
+
+function renderDashboard() {
+    const workoutsTodayEl = document.getElementById('dashboard-workouts');
+    const caloriesEl = document.getElementById('dashboard-calories');
+    const macrosEl = document.getElementById('dashboard-macros');
+    const bodyMetricsEl = document.getElementById('dashboard-body-metrics');
+
+    // Workouts completed today
+    const workoutsToday = appState.history.filter(h => h.date === getToday()).length;
+    workoutsTodayEl.textContent = workoutsToday;
+
+    // Nutrition summary
+    const todayNutrition = appState.nutrition.filter(n => n.date === getToday());
+    const totalCalories = todayNutrition.reduce((sum, n) => sum + n.calories, 0);
+    const totalProtein = todayNutrition.reduce((sum, n) => sum + n.protein, 0);
+    const totalCarbs = todayNutrition.reduce((sum, n) => sum + n.carbs, 0);
+    const totalFat = todayNutrition.reduce((sum, n) => sum + n.fat, 0);
+
+    caloriesEl.textContent = `${totalCalories} kcal`;
+    macrosEl.textContent = `P:${totalProtein}g C:${totalCarbs}g F:${totalFat}g`;
+
+    // Body metrics overview
+    const metrics = appState.bodyMetrics;
+    bodyMetricsEl.innerHTML = `
+        Shoulders: ${metrics.shoulders || '-'} cm <br>
+        Chest: ${metrics.chest || '-'} cm <br>
+        Waist: ${metrics.waist || '-'} cm <br>
+        Glutes: ${metrics.glutes || '-'} cm <br>
+        Arms: ${metrics.arms || '-'} cm <br>
+        Legs: ${metrics.legs || '-'} cm
+    `;
+}
+
+/* =========================================================
+   BURGER MENU TOGGLE & SLIDE-IN ANIMATION
+   ========================================================= */
+
+const burgerBtn = document.getElementById('burger-menu');
+const sideMenu = document.getElementById('side-menu');
+
+burgerBtn.addEventListener('click', () => {
+    if (!sideMenu.classList.contains('open')) {
+        sideMenu.classList.add('open');
+        sideMenu.style.transform = 'translateX(0)';
+    } else {
+        sideMenu.classList.remove('open');
+        sideMenu.style.transform = 'translateX(-100%)';
+    }
+});
+
+// Close menu when clicking outside
+document.addEventListener('click', e => {
+    if (!sideMenu.contains(e.target) && !burgerBtn.contains(e.target)) {
+        sideMenu.classList.remove('open');
+        sideMenu.style.transform = 'translateX(-100%)';
+    }
+});
+
+/* =========================================================
+   SECTION SLIDE-IN ANIMATIONS
+   ========================================================= */
+
+function applySlideInAnimation(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    section.style.opacity = 0;
+    section.style.transform = 'translateY(50px)';
+    section.style.transition = 'all 0.5s ease';
+
+    requestAnimationFrame(() => {
+        section.style.opacity = 1;
+        section.style.transform = 'translateY(0)';
+    });
+}
+
+/* =========================================================
+   NUTRITION WEEKLY VIEW
+   ========================================================= */
+
+function renderNutritionWeekly() {
+    const weekDays = 7;
+    const today = new Date();
+    const weeklyData = [];
+
+    for (let i = 0; i < weekDays; i++) {
+        const date = new Date();
+        date.setDate(today.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const dayNutrition = appState.nutrition.filter(n => n.date === dateStr);
+        const totalCalories = dayNutrition.reduce((sum, n) => sum + n.calories, 0);
+        weeklyData.unshift({ date: dateStr, calories: totalCalories });
+    }
+
+    const weeklyEl = document.getElementById('nutrition-weekly');
+    weeklyEl.innerHTML = weeklyData.map(d => `<div>${d.date}: ${d.calories} kcal</div>`).join('');
+}
+
+/* =========================================================
+   AUTOSORT NUTRITION BY MEAL TYPE
+   ========================================================= */
+
+function sortNutritionByMeal() {
+    const mealsOrder = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+    appState.nutrition.sort((a, b) => mealsOrder.indexOf(a.mealType) - mealsOrder.indexOf(b.mealType));
+}
+
+/* =========================================================
+   DASHBOARD NAVIGATION FROM CARDS
+   ========================================================= */
+
+document.querySelectorAll('.dashboard-card').forEach(card => {
+    card.addEventListener('click', () => {
+        const targetSection = card.dataset.section;
+        const index = sections.indexOf(targetSection);
+        if (index !== -1) showSection(index);
+    });
+});
+
+/* =========================================================
+   INTEGRATION OF ALL INIT FUNCTIONS
+   ========================================================= */
+
+function initDashboard() {
+    renderDashboard();
+    renderNutritionWeekly();
+    sortNutritionByMeal();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initApp(); // from previous JS parts
+    initDashboard();
+});/* =========================================================
+   BODY METRICS PROGRESS CHARTS
+   ========================================================= */
+
+function renderBodyMetricsChart() {
+    const ctx = document.getElementById('bodyMetricsChart').getContext('2d');
+
+    const labels = appState.bodyMetricsHistory.map(entry => entry.date);
+    const datasets = [
+        { label: 'Shoulders', data: appState.bodyMetricsHistory.map(e => e.shoulders || 0), borderColor: '#FF6384', fill: false },
+        { label: 'Chest', data: appState.bodyMetricsHistory.map(e => e.chest || 0), borderColor: '#36A2EB', fill: false },
+        { label: 'Waist', data: appState.bodyMetricsHistory.map(e => e.waist || 0), borderColor: '#FFCE56', fill: false },
+        { label: 'Glutes', data: appState.bodyMetricsHistory.map(e => e.glutes || 0), borderColor: '#4BC0C0', fill: false },
+        { label: 'Arms', data: appState.bodyMetricsHistory.map(e => e.arms || 0), borderColor: '#9966FF', fill: false },
+        { label: 'Legs', data: appState.bodyMetricsHistory.map(e => e.legs || 0), borderColor: '#FF9F40', fill: false }
+    ];
+
+    if (window.bodyChart) {
+        window.bodyChart.destroy();
+    }
+
+    window.bodyChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+}
+
+/* =========================================================
+   PHOTO TIMELINE SLIDER
+   ========================================================= */
+
+function renderPhotoTimeline() {
+    const container = document.getElementById('photoTimeline');
+    container.innerHTML = '';
+    appState.bodyPhotos.forEach((photo, idx) => {
+        const imgEl = document.createElement('img');
+        imgEl.src = photo.url;
+        imgEl.alt = `Photo ${idx + 1}`;
+        imgEl.classList.add('timeline-photo');
+        container.appendChild(imgEl);
+    });
+}
+
+/* =========================================================
+   AUTOGENERATED WORKOUTS BASED ON FOCUS + EQUIPMENT
+   ========================================================= */
+
+function generateWorkout(focus, equipmentList) {
+    const exercises = appState.exercises.filter(ex => {
+        const matchesFocus = ex.focus.includes(focus);
+        const availableEquipment = ex.equipment.every(eq => equipmentList.includes(eq));
+        return matchesFocus && availableEquipment;
+    });
+
+    // Apply AI-style progressive overload: increase reps or weight if previously completed
+    const workout = exercises.map(ex => {
+        const lastSession = appState.history.filter(h => h.exerciseId === ex.id).pop();
+        let weight = ex.defaultWeight;
+        let reps = ex.defaultReps;
+
+        if (lastSession) {
+            weight += Math.round(weight * 0.05); // increase 5%
+            reps = Math.min(reps + 1, ex.maxReps);
+        }
+
+        return { ...ex, weight, reps };
+    });
+
+    return workout;
+}
+
+/* =========================================================
+   RENDER GENERATED WORKOUTS TO UI
+   ========================================================= */
+
+function renderGeneratedWorkout(workout, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    workout.forEach(ex => {
+        const exDiv = document.createElement('div');
+        exDiv.classList.add('workout-exercise');
+        exDiv.innerHTML = `
+            <h4>${ex.name}</h4>
+            <p>Sets: ${ex.sets} | Reps: ${ex.reps} | Weight: ${ex.weight}kg</p>
+            <p>Focus: ${ex.focus.join(', ')} | Equipment: ${ex.equipment.join(', ')}</p>
+        `;
+        container.appendChild(exDiv);
+    });
+}
+
+/* =========================================================
+   INIT GENERATED WORKOUT BASED ON USER SELECTION
+   ========================================================= */
+
+document.getElementById('generateWorkoutBtn').addEventListener('click', () => {
+    const focus = document.getElementById('workoutFocus').value;
+    const equipmentList = appState.userEquipment;
+    const workout = generateWorkout(focus, equipmentList);
+    renderGeneratedWorkout(workout, 'generatedWorkoutContainer');
+});
+
+/* =========================================================
+   UPDATE DASHBOARD AND CHARTS WHEN BODY METRICS CHANGE
+   ========================================================= */
+
+function updateBodyMetrics(newMetrics) {
+    const today = getToday();
+    appState.bodyMetricsHistory.push({ date: today, ...newMetrics });
+    appState.bodyMetrics = { ...newMetrics };
+    renderDashboard();
+    renderBodyMetricsChart();
+    renderPhotoTimeline();
+}
+
+/* =========================================================
+   PHOTO UPLOAD HANDLING
+   ========================================================= */
+
+document.getElementById('addPhotoBtn').addEventListener('change', e => {
+    const files = e.target.files;
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            appState.bodyPhotos.push({ url: reader.result, date: getToday() });
+            renderPhotoTimeline();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+/* =========================================================
+   INIT BODY METRICS SECTION
+   ========================================================= */
+
+function initBodyMetricsSection() {
+    renderBodyMetricsChart();
+    renderPhotoTimeline();
+}
+
+/* =========================================================
+   FINAL INIT
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+    initDashboard();
+    initBodyMetricsSection();
+});/* =========================================================
+   READINESS SCORE
+   ========================================================= */
+
+// Example calculation based on sleep, nutrition, previous workout fatigue
+function calculateReadiness() {
+    const sleepScore = appState.userSleepHours / 8; // normalized 0-1
+    const nutritionScore = appState.todayCalories / appState.dailyCaloriesGoal; // normalized 0-1
+    const fatigueScore = 1 - (appState.lastWorkoutFatigue / 10); // normalized 0-1
+    const readiness = Math.round((sleepScore * 0.4 + nutritionScore * 0.3 + fatigueScore * 0.3) * 100);
+    appState.readinessScore = readiness;
+    renderReadiness();
+}
+
+function renderReadiness() {
+    const container = document.getElementById('readinessScore');
+    container.innerHTML = `<h3>Readiness: ${appState.readinessScore}%</h3>`;
+}
+
+/* =========================================================
+   RELOAD / REFRESH SECTION
+   ========================================================= */
+
+document.getElementById('reloadAppBtn').addEventListener('click', () => {
+    location.reload();
+});
+
+/* =========================================================
+   EXERCISE SUBSTITUTION
+   ========================================================= */
+
+function substituteExercise(exercise) {
+    const alternatives = appState.exercises.filter(ex => {
+        if (ex.id === exercise.id) return false;
+        const matchesFocus = ex.focus.some(f => exercise.focus.includes(f));
+        const hasEquipment = ex.equipment.every(eq => appState.userEquipment.includes(eq));
+        return matchesFocus && hasEquipment;
+    });
+    return alternatives.length ? alternatives[0] : exercise; // fallback to original if none found
+}
+
+/* =========================================================
+   APPLY SUBSTITUTIONS BEFORE GENERATING WORKOUT
+   ========================================================= */
+
+function generateWorkoutWithSubstitution(focus, equipmentList) {
+    let workout = generateWorkout(focus, equipmentList);
+    workout = workout.map(ex => {
+        const available = ex.equipment.every(eq => equipmentList.includes(eq));
+        return available ? ex : substituteExercise(ex);
+    });
+    return workout;
+}
+
+/* =========================================================
+   MOBILE-FIRST ONE-HAND THUMB NAVIGATION
+   ========================================================= */
+
+const navItems = document.querySelectorAll('.nav-item');
+let activeNavItem = null;
+
+function activateNavItem(itemId) {
+    navItems.forEach(item => item.classList.remove('active'));
+    const item = document.getElementById(itemId);
+    if (item) item.classList.add('active');
+    activeNavItem = itemId;
+    showSection(itemId.replace('Nav', 'Section'));
+}
+
+function showSection(sectionId) {
+    const sections = document.querySelectorAll('.app-section');
+    sections.forEach(sec => sec.classList.add('hidden'));
+    const section = document.getElementById(sectionId);
+    if (section) section.classList.remove('hidden');
+}
+
+/* =========================================================
+   SWIPE NAVIGATION
+   ========================================================= */
+
+let touchStartX = 0;
+let touchEndX = 0;
+
+document.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipeGesture();
+});
+
+function handleSwipeGesture() {
+    if (touchEndX < touchStartX - 50) { // swipe left
+        goToNextSection();
+    } else if (touchEndX > touchStartX + 50) { // swipe right
+        goToPreviousSection();
+    }
+}
+
+function goToNextSection() {
+    const sectionIds = Array.from(document.querySelectorAll('.app-section')).map(s => s.id);
+    let index = sectionIds.indexOf(activeNavItem.replace('Nav', 'Section'));
+    index = (index + 1) % sectionIds.length;
+    activateNavItem(sectionIds[index] + 'Nav');
+}
+
+function goToPreviousSection() {
+    const sectionIds = Array.from(document.querySelectorAll('.app-section')).map(s => s.id);
+    let index = sectionIds.indexOf(activeNavItem.replace('Nav', 'Section'));
+    index = (index - 1 + sectionIds.length) % sectionIds.length;
+    activateNavItem(sectionIds[index] + 'Nav');
+}
+
+/* =========================================================
+   INIT MOBILE NAV
+   ========================================================= */
+
+function initMobileNavigation() {
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            activateNavItem(item.id);
+        });
+    });
+
+    // Set first nav item as active by default
+    if (navItems.length) activateNavItem(navItems[0].id);
+}
+
+/* =========================================================
+   FINAL INITIALIZATION
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+    calculateReadiness();
+    initMobileNavigation();
+
+    // Initial workout generation for default focus
+    const defaultFocus = document.getElementById('workoutFocus').value || 'Full Body';
+    const defaultWorkout = generateWorkoutWithSubstitution(defaultFocus, appState.userEquipment);
+    renderGeneratedWorkout(defaultWorkout, 'generatedWorkoutContainer');
+
+    // Dashboard, body metrics, photos
+    initDashboard();
+    initBodyMetricsSection();
+});
