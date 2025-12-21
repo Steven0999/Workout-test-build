@@ -3,270 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitTrack Pro - Performance Hub</title>
+    <title>FitTrack Pro V6.2</title>
+    <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        @keyframes scanLine {
-            0% { top: 0% }
-            50% { top: 100% }
-            100% { top: 0% }
-        }
-        .scan-animation {
-            animation: scanLine 2s infinite linear;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* Barcode Scanner Styles */
+        #interactive.viewport { width: 100%; height: 100%; position: relative; }
+        #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; border-radius: 1.5rem; }
+        canvas.drawingBuffer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 1.5rem; }
+        
+        @keyframes scanLine { from { top: 0%; } to { top: 100%; } }
+        .animate-scanLine { animation: scanLine 2s linear infinite; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans pb-24">
+<body class="bg-slate-50 text-slate-900 pb-24">
 
     <!-- Header -->
     <header class="bg-white border-b px-6 py-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
         <div>
             <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">FitTrack Pro</h1>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Performance Hub</p>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">V6.2 Performance</p>
         </div>
-        <button onclick="toggleSettings()" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <i data-lucide="settings" class="text-slate-600 w-5 h-5"></i>
+        <button onclick="switchTab('settings')" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <i data-lucide="settings" class="text-slate-600"></i>
         </button>
     </header>
 
     <main class="max-w-xl mx-auto p-4 space-y-6">
         
-        <!-- Dashboard Tab -->
+        <!-- DASHBOARD TAB -->
         <section id="dashboard" class="tab-content active space-y-6">
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-                    <i data-lucide="flame" class="text-orange-500 mb-2 w-5 h-5"></i>
-                    <div id="dash-cals" class="text-2xl font-black">0</div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">Cals vs <span class="target-cals-display">2500</span></div>
+                    <i data-lucide="flame" class="text-orange-500 mb-2"></i>
+                    <div id="dash-calories" class="text-2xl font-black">0</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase">Calories</div>
                 </div>
                 <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-                    <i data-lucide="target" class="text-blue-500 mb-2 w-5 h-5"></i>
-                    <div id="dash-prot" class="text-2xl font-black">0g</div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">Prot vs <span class="target-prot-display">180</span>g</div>
+                    <i data-lucide="target" class="text-blue-500 mb-2"></i>
+                    <div id="dash-protein" class="text-2xl font-black">0g</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase">Protein</div>
                 </div>
             </div>
-
             <div class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
                 <div class="relative z-10">
-                    <h3 class="text-lg font-bold mb-1">Today's Session</h3>
-                    <p id="dash-focus-text" class="text-indigo-100 text-sm mb-4">Focus: Full Body</p>
-                    <button onclick="switchTab('training')" class="bg-white text-indigo-600 px-6 py-2 rounded-2xl font-bold text-sm">Start Now</button>
+                    <h3 class="text-lg font-bold mb-1">Active Progress</h3>
+                    <p id="dash-sessions" class="text-indigo-100 text-sm mb-4">You've logged 0 sessions</p>
+                    <button onclick="switchTab('training')" class="bg-white text-indigo-600 px-6 py-2 rounded-2xl font-bold text-sm">Start New Workout</button>
                 </div>
-                <i data-lucide="dumbbell" class="absolute -right-4 -bottom-4 text-indigo-500/30 w-32 h-32 opacity-50"></i>
+                <i data-lucide="trending-up" class="absolute -right-4 -bottom-4 text-indigo-500/30 w-32 h-32"></i>
             </div>
         </section>
 
-        <!-- Training Tab -->
+        <!-- TRAINING TAB -->
         <section id="training" class="tab-content space-y-6">
-            <div id="workout-setup" class="space-y-4">
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 class="font-bold mb-4">Session Focus</h3>
-                    <select id="focus-select" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none">
-                        <option>Full Body</option>
-                        <option>Upper Body</option>
-                        <option>Lower Body</option>
-                        <option>Push</option>
-                        <option>Pull</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4">
-                    <button onclick="startAiWorkout()" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left flex items-center gap-4 group">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                            <i data-lucide="brain-circuit"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold">AI Auto-Generate</h4>
-                            <p class="text-xs text-slate-400">Smart plan based on focus</p>
-                        </div>
+            <div id="workout-setup" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
+                <h3 class="font-bold mb-4">Choose Training Type</h3>
+                <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold mb-4">
+                    <option>Full Body</option>
+                    <option>Upper Body</option>
+                    <option>Lower Body</option>
+                </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-2xl font-bold flex flex-col items-center gap-2">
+                        <i data-lucide="plus"></i> <span class="text-xs">Manual</span>
                     </button>
-
-                    <button onclick="startManualWorkout()" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-left flex items-center gap-4 group">
-                        <div class="w-12 h-12 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition-all">
-                            <i data-lucide="plus"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold">Manual Builder</h4>
-                            <p class="text-xs text-slate-400">Choose your own exercises</p>
-                        </div>
+                    <button onclick="generateAIWorkout()" class="p-4 bg-indigo-600 text-white rounded-2xl font-bold flex flex-col items-center gap-2">
+                        <i data-lucide="brain-circuit"></i> <span class="text-xs">AI Suggest</span>
                     </button>
                 </div>
             </div>
-
-            <!-- Active Workout View -->
-            <div id="active-workout" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+            <div id="workout-active" class="hidden bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 id="workout-title" class="text-xl font-bold">Workout</h3>
+                    <h3 id="active-workout-title" class="text-xl font-bold">Workout</h3>
                     <button onclick="cancelWorkout()" class="text-red-500 font-bold text-sm">Cancel</button>
                 </div>
                 <div id="exercise-list" class="space-y-4 mb-6"></div>
-                <button id="add-ex-btn" onclick="addExerciseRow()" class="hidden w-full p-4 mb-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm">+ Add Exercise</button>
-                <button onclick="cancelWorkout()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Complete Workout</button>
+                <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm mb-4">+ Add Exercise</button>
+                <button onclick="saveWorkout()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Log Workout</button>
             </div>
         </section>
 
-        <!-- Nutrition Tab -->
+        <!-- NUTRITION TAB -->
         <section id="nutrition" class="tab-content space-y-6">
-            <!-- Date Navigation -->
-            <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-                <button onclick="changeNutritionDate(-1)" class="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-left"></i></button>
-                <div class="text-center">
-                    <input type="date" id="nutrition-date-picker" onchange="handleDateChange()" class="font-bold text-sm bg-transparent border-none outline-none text-center">
-                </div>
-                <button onclick="changeNutritionDate(1)" class="p-2 hover:bg-slate-50 rounded-full"><i data-lucide="chevron-right"></i></button>
+            <div class="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+                <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white shadow-lg transition-all">Diary</button>
+                <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl text-slate-400 transition-all">Database</button>
             </div>
 
-            <div id="scanner-ui" class="hidden fixed inset-0 z-[60] bg-black flex flex-col p-6">
-                <div class="flex justify-between items-center text-white mb-6">
-                    <h3 class="font-bold">Barcode Scanner</h3>
-                    <button onclick="stopScanner()" class="p-2 bg-white/10 rounded-full"><i data-lucide="x"></i></button>
+            <!-- Diary View -->
+            <div id="nut-view-log" class="space-y-6">
+                <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                    <button onclick="changeDate(-1)"><i data-lucide="chevron-left"></i></button>
+                    <span id="date-display" class="font-bold"></span>
+                    <button onclick="changeDate(1)"><i data-lucide="chevron-right"></i></button>
                 </div>
-                <div class="relative w-full max-w-sm mx-auto aspect-square rounded-3xl overflow-hidden border-2 border-indigo-500">
-                    <div id="reader" class="w-full h-full"></div>
-                    <div class="absolute top-0 left-0 w-full h-1 bg-white/50 shadow-[0_0_10px_white] scan-animation"></div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
+                    <input id="food-search" placeholder="Search foods to log..." class="w-full p-4 bg-slate-50 rounded-2xl" oninput="handleFoodSearch(this.value)">
+                    <div id="food-results" class="hidden absolute left-6 right-6 top-full mt-1 bg-white border rounded-2xl overflow-hidden z-50 shadow-2xl max-h-48 overflow-y-auto"></div>
                 </div>
-                <div class="mt-8 text-center">
-                    <p id="scan-status" class="text-white font-bold mb-2 text-lg">Ready to scan</p>
-                    <p class="text-slate-400 text-sm px-10">Point camera at product barcode for automatic macro tracking.</p>
-                </div>
+                <div id="daily-log-list" class="bg-white rounded-3xl border border-slate-100 shadow-sm divide-y"></div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold">Add Food</h3>
-                    <button onclick="initScanner()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm">
-                        <i data-lucide="scan" class="w-4 h-4"></i> Camera
-                    </button>
-                </div>
-                <form id="food-form" class="space-y-4">
-                    <input id="food-name" placeholder="Item Name" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
-                    <div class="grid grid-cols-2 gap-4">
-                        <input id="food-cals" type="number" placeholder="Cals" class="p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
-                        <input id="food-prot" type="number" placeholder="Protein (g)" class="p-4 bg-slate-50 rounded-2xl border-none font-medium outline-none" required />
+            <!-- Database / Scanner View -->
+            <div id="nut-view-db" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <div id="scanner-ui" class="hidden space-y-4 mb-6">
+                        <div class="bg-indigo-600 text-white p-3 rounded-2xl flex items-center justify-center gap-2 mb-2 shadow-lg">
+                            <i data-lucide="info" class="animate-pulse"></i>
+                            <span id="scanner-feedback" class="text-sm font-bold tracking-tight">Aligning camera...</span>
+                        </div>
+                        <div id="interactive" class="viewport aspect-square bg-black rounded-3xl overflow-hidden shadow-2xl">
+                            <div class="absolute inset-0 border-4 border-white/20 rounded-3xl z-10 pointer-events-none flex items-center justify-center">
+                                <div class="w-48 h-48 border-2 border-indigo-400 border-dashed rounded-xl opacity-50 animate-pulse"></div>
+                            </div>
+                            <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-indigo-50 shadow-[0_0_15px_indigo] z-20 animate-scanLine"></div>
+                        </div>
+                        <button onclick="stopScanner()" class="w-full bg-slate-100 text-slate-600 p-4 rounded-2xl font-bold">Stop Camera</button>
                     </div>
-                    <select id="food-type" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none">
-                        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
-                    </select>
-                    <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold">Save Item</button>
-                </form>
-            </div>
 
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50">
-                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            <th class="p-4">Meal</th><th class="p-4">Food</th><th class="p-4 text-center">Cals</th><th class="p-4 text-center">Prot</th><th class="p-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="meal-history-body" class="divide-y divide-slate-50"></tbody>
-                </table>
+                    <button id="btn-start-scan" onclick="startScanner()" class="group w-full bg-indigo-600 text-white p-8 rounded-3xl flex flex-col items-center gap-3 font-bold mb-6 shadow-xl shadow-indigo-100 transition-all active:scale-95">
+                        <div class="p-4 bg-white/10 rounded-full group-hover:bg-white/20 transition-colors">
+                            <i data-lucide="barcode" class="w-10 h-10"></i>
+                        </div>
+                        <span class="text-lg">Scan Product Barcode</span>
+                        <span class="text-[10px] uppercase opacity-60 tracking-widest font-black">OpenFoodFacts API</span>
+                    </button>
+
+                    <div class="space-y-4 text-left p-2">
+                        <div class="flex justify-between items-end border-b pb-2 mb-2">
+                            <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">Product Details</h4>
+                            <div id="fetch-loader" class="hidden"><i data-lucide="loader-2" class="animate-spin text-indigo-600 w-4 h-4"></i></div>
+                        </div>
+                        <div class="space-y-3">
+                            <input id="form-name" placeholder="Name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="form-cals" type="number" placeholder="Calories" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none">
+                                <input id="form-prot" type="number" placeholder="Protein" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none">
+                            </div>
+                        </div>
+                        <button onclick="saveToDatabase()" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest mt-2">Add to Database</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b flex justify-between items-center text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        <span>Saved Items</span>
+                        <i data-lucide="database" class="w-3 h-3 text-slate-300"></i>
+                    </div>
+                    <div id="custom-db-list" class="divide-y max-h-64 overflow-y-auto"></div>
+                </div>
             </div>
         </section>
 
-        <!-- Body Metrics Tab -->
+        <!-- BODY TAB -->
         <section id="metrics" class="tab-content space-y-6">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
-                <h3 id="metric-form-title" class="font-bold mb-4">New Log</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Weight</label><input id="m-weight" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Shoulder</label><input id="m-shoulder" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Chest</label><input id="m-chest" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Waist</label><input id="m-waist" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Glute</label><input id="m-glute" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Arm</label><input id="m-arm" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
-                    <div><label class="text-[10px] font-bold text-slate-400 uppercase">Leg</label><input id="m-leg" type="number" class="w-full p-2 bg-slate-50 rounded-xl border-none font-bold text-sm outline-none"></div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 class="font-bold mb-6">New Log</h3>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <input id="body-weight" type="number" placeholder="Weight (kg)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
+                    <input id="body-waist" type="number" placeholder="Waist (cm)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
                 </div>
-                <div class="flex items-center gap-4 mb-6">
-                    <label class="bg-slate-100 p-4 rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors">
-                        <i data-lucide="camera" class="text-slate-600"></i>
-                        <input id="photo-upload" type="file" class="hidden" accept="image/*">
-                    </label>
-                    <div id="photo-preview-container" class="hidden"><img id="photo-preview" class="w-16 h-16 rounded-xl object-cover"></div>
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <div onclick="document.getElementById('file-front').click()" class="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer relative overflow-hidden">
+                        <i data-lucide="camera" class="text-slate-300"></i>
+                        <input type="file" id="file-front" class="hidden" onchange="previewImg(this, 'img-front')">
+                        <img id="img-front" class="absolute inset-0 w-full h-full object-cover hidden">
+                    </div>
+                    <div onclick="document.getElementById('file-side').click()" class="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer relative overflow-hidden">
+                        <i data-lucide="camera" class="text-slate-300"></i>
+                        <input type="file" id="file-side" class="hidden" onchange="previewImg(this, 'img-side')">
+                        <img id="img-side" class="absolute inset-0 w-full h-full object-cover hidden">
+                    </div>
+                    <div onclick="document.getElementById('file-back').click()" class="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer relative overflow-hidden">
+                        <i data-lucide="camera" class="text-slate-300"></i>
+                        <input type="file" id="file-back" class="hidden" onchange="previewImg(this, 'img-back')">
+                        <img id="img-back" class="absolute inset-0 w-full h-full object-cover hidden">
+                    </div>
                 </div>
-                <button onclick="saveMetrics()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2">
-                    <i data-lucide="save"></i> <span id="metric-save-btn-text">Log Measurements</span>
-                </button>
+                <button onclick="saveMetrics()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-indigo-100">Save Metrics</button>
             </div>
-
-            <div id="metrics-history" class="space-y-4"></div>
         </section>
 
-        <!-- Settings Tab -->
+        <!-- HISTORY TAB -->
+        <section id="history" class="tab-content space-y-6">
+            <div class="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+                <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-indigo-600 text-white shadow-md">training</button>
+                <button onclick="setHistoryTab('nutrition')" id="hist-tab-nut" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">nutrition</button>
+                <button onclick="setHistoryTab('body')" id="hist-tab-body" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">body</button>
+            </div>
+            <div id="history-list" class="space-y-4"></div>
+        </section>
+
+        <!-- SETTINGS TAB -->
         <section id="settings" class="tab-content space-y-6">
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold mb-6">Gym Configuration</h3>
-                <div id="gym-config-list" class="space-y-3"></div>
+                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Gym Configuration</h3>
+                <div id="gym-config-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold mb-4">Goals</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-xs text-slate-400 font-bold uppercase">Cals Goal</label><input id="goal-cals" type="number" value="2500" class="w-full p-3 bg-slate-50 rounded-xl border-none outline-none font-bold"></div>
-                    <div><label class="text-xs text-slate-400 font-bold uppercase">Prot Goal</label><input id="goal-prot" type="number" value="180" class="w-full p-3 bg-slate-50 rounded-xl border-none outline-none font-bold"></div>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-red-100 shadow-sm">
-                <h3 class="font-bold mb-4 text-red-600">Danger Zone</h3>
-                <button onclick="clearAllData()" class="w-full p-4 border border-red-200 text-red-500 rounded-2xl font-bold text-sm">Clear All Local Data</button>
-            </div>
+            <button onclick="resetData()" class="w-full p-4 text-red-500 font-black uppercase text-[10px] tracking-widest bg-red-50 rounded-2xl">Reset Local Storage</button>
         </section>
+
     </main>
 
-    <!-- Nav -->
+    <!-- Navigation -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t px-6 py-4 flex justify-between items-center z-50">
-        <button onclick="switchTab('dashboard')" class="nav-btn text-indigo-600 flex flex-col items-center gap-1" data-tab="dashboard">
-            <i data-lucide="check-circle-2"></i><span class="text-[9px] font-black uppercase">Today</span>
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1">
+            <i data-lucide="layout" stroke-width="3"></i><span class="text-[9px] font-black uppercase">Board</span>
         </button>
-        <button onclick="switchTab('training')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="training">
-            <i data-lucide="dumbbell"></i><span class="text-[9px] font-black uppercase">Workout</span>
+        <button onclick="switchTab('training')" data-tab="training" class="nav-item text-slate-300 flex flex-col items-center gap-1">
+            <i data-lucide="dumbbell"></i><span class="text-[9px] font-black uppercase">Train</span>
         </button>
-        <button onclick="switchTab('nutrition')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="nutrition">
+        <button onclick="switchTab('history')" data-tab="history" class="nav-item text-slate-300 flex flex-col items-center gap-1">
+            <i data-lucide="history"></i><span class="text-[9px] font-black uppercase">History</span>
+        </button>
+        <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item text-slate-300 flex flex-col items-center gap-1">
             <i data-lucide="utensils"></i><span class="text-[9px] font-black uppercase">Food</span>
         </button>
-        <button onclick="switchTab('metrics')" class="nav-btn text-slate-300 flex flex-col items-center gap-1" data-tab="metrics">
+        <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item text-slate-300 flex flex-col items-center gap-1">
             <i data-lucide="scale"></i><span class="text-[9px] font-black uppercase">Body</span>
         </button>
     </nav>
 
     <script>
-        // --- State Management ---
-        const STORAGE_KEY = 'fittrack_pro_data';
-        
-        // Initialize default state
-        let state = {
-            gymConfig: { barbell: true, dumbbell: true, cables: true, pinMachine: true, weightMachine: true },
-            nutrition: { targets: { calories: 2500, protein: 180 }, dailyMeals: [] },
-            metrics: { history: [], current: { photo: null }, editingId: null },
-            training: { active: null, focus: 'Full Body' },
-            viewDate: new Date().toISOString().split('T')[0], // Default to today
-            currentTab: 'dashboard',
-            lastTab: 'dashboard'
-        };
-
-        // Load data from LocalStorage
-        function loadState() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                state = { ...state, ...parsed };
-                // Ensure viewDate is always reset to today on fresh load if not specified
-                if(!state.viewDate) state.viewDate = new Date().toISOString().split('T')[0];
-            }
-        }
-
-        // Save data to LocalStorage
-        function saveToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-
+        // --- CONSTANTS ---
         const EXERCISE_DATABASE = [
             { name: "Barbell Squat", focus: "Lower Body", equipment: "barbell" },
             { name: "Deadlift", focus: "Lower Body", equipment: "barbell" },
@@ -275,409 +248,450 @@
             { name: "Leg Extension", focus: "Lower Body", equipment: "pinMachine" },
             { name: "Bench Press", focus: "Upper Body", equipment: "barbell" },
             { name: "Dumbbell Flyes", focus: "Upper Body", equipment: "dumbbell" },
-            { name: "Cable Crossover", focus: "Upper Body", equipment: "cables" },
-            { name: "Chest Press Machine", focus: "Upper Body", equipment: "weightMachine" },
-            { name: "Lat Pulldown", focus: "Pull", equipment: "pinMachine" },
-            { name: "Seated Cable Row", focus: "Pull", equipment: "cables" },
-            { name: "Dumbbell Row", focus: "Pull", equipment: "dumbbell" },
-            { name: "Barbell Curl", focus: "Pull", equipment: "barbell" },
-            { name: "Overhead Press", focus: "Push", equipment: "barbell" },
-            { name: "Lateral Raise", focus: "Push", equipment: "dumbbell" },
-            { name: "Tricep Pushdown", focus: "Push", equipment: "cables" },
-            { name: "Dips", focus: "Push", equipment: "weightMachine" },
+            { name: "Lat Pulldown", focus: "Upper Body", equipment: "pinMachine" },
+            { name: "Seated Cable Row", focus: "Upper Body", equipment: "cables" },
+            { name: "Dumbbell Row", focus: "Upper Body", equipment: "dumbbell" },
+            { name: "Overhead Press", focus: "Upper Body", equipment: "barbell" },
+            { name: "Lateral Raise", focus: "Upper Body", equipment: "dumbbell" },
+            { name: "Tricep Pushdown", focus: "Upper Body", equipment: "cables" },
+            { name: "Bicep Curls", focus: "Upper Body", equipment: "dumbbell" },
         ];
 
-        // --- Core Navigation ---
+        // --- STATE ---
+        let state = {
+            activeTab: 'dashboard',
+            historyTab: 'training',
+            nutritionTab: 'log',
+            viewDate: new Date().toISOString().split('T')[0],
+            gymConfig: { barbell: true, dumbbell: true, cables: true, pinMachine: true, weightMachine: true },
+            dailyMeals: [],
+            workoutHistory: [],
+            metricsHistory: [],
+            customFoodDb: []
+        };
+
+        let currentActiveWorkout = null;
+
+        // --- INIT ---
+        window.onload = () => {
+            const saved = localStorage.getItem('fittrack_v6_vanilla');
+            if (saved) state = { ...state, ...JSON.parse(saved) };
+            
+            renderGymConfig();
+            updateDateDisplay();
+            renderDashboard();
+            lucide.createIcons();
+        };
+
+        function saveState() {
+            localStorage.setItem('fittrack_v6_vanilla', JSON.stringify(state));
+        }
+
+        // --- NAVIGATION ---
         function switchTab(tabId) {
-            // Record last tab if it's not settings
-            if (state.currentTab !== 'settings') {
-                state.lastTab = state.currentTab;
-            }
-            state.currentTab = tabId;
-
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                const isActive = btn.dataset.tab === tabId;
-                btn.classList.toggle('text-indigo-600', isActive);
-                btn.classList.toggle('text-slate-300', !isActive);
-            });
-            window.scrollTo(0, 0);
-        }
 
-        function toggleSettings() {
-            if (state.currentTab === 'settings') {
-                switchTab(state.lastTab || 'dashboard');
-            } else {
-                switchTab('settings');
+            document.querySelectorAll('.nav-item').forEach(n => {
+                const icon = n.querySelector('svg');
+                if (n.dataset.tab === tabId) {
+                    n.classList.remove('text-slate-300');
+                    n.classList.add('text-indigo-600', 'scale-110');
+                    if (icon) icon.setAttribute('stroke-width', '3');
+                } else {
+                    n.classList.add('text-slate-300');
+                    n.classList.remove('text-indigo-600', 'scale-110');
+                    if (icon) icon.setAttribute('stroke-width', '2');
+                }
+            });
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'history') renderHistory();
+            if (tabId === 'nutrition') {
+                renderCustomDb();
+                renderDailyLog();
             }
         }
 
-        // --- Training Logic ---
-        function startManualWorkout() {
-            state.training.focus = document.getElementById('focus-select').value;
-            state.training.active = { type: 'Manual', exercises: [] };
-            renderWorkoutView();
-        }
-
-        async function startAiWorkout() {
-            state.training.focus = document.getElementById('focus-select').value;
-            const availableEquip = Object.keys(state.gymConfig).filter(k => state.gymConfig[k]);
-            const filtered = EXERCISE_DATABASE.filter(ex => 
-                (state.training.focus === 'Full Body' || ex.focus === state.training.focus) && 
-                availableEquip.includes(ex.equipment)
-            );
+        // --- DASHBOARD ---
+        function renderDashboard() {
+            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
+            const cals = today.reduce((acc, m) => acc + Number(m.calories || 0), 0);
+            const prot = today.reduce((acc, m) => acc + Number(m.protein || 0), 0);
             
-            const selection = filtered.sort(() => 0.5 - Math.random()).slice(0, 5);
-            state.training.active = { 
-                type: 'Automatic', 
-                exercises: selection.map(s => ({ name: s.name, sets: 3, reps: 10, weights: ['', '', ''] })) 
-            };
-            renderWorkoutView();
+            document.getElementById('dash-calories').innerText = cals;
+            document.getElementById('dash-protein').innerText = prot.toFixed(1) + 'g';
+            document.getElementById('dash-sessions').innerText = `You've logged ${state.workoutHistory.length} sessions`;
         }
 
-        function renderWorkoutView() {
+        // --- TRAINING ---
+        function startManualWorkout() {
+            currentActiveWorkout = { focus: document.getElementById('workout-focus').value, exercises: [{ name: "New Exercise", weights: [''] }] };
+            renderActiveWorkout();
+        }
+
+        function generateAIWorkout() {
+            const focus = document.getElementById('workout-focus').value;
+            const filtered = EXERCISE_DATABASE.filter(e => 
+                (e.focus === focus || focus === 'Full Body') && state.gymConfig[e.equipment]
+            );
+            const selection = filtered.sort(() => 0.5 - Math.random()).slice(0, 5);
+            currentActiveWorkout = {
+                focus: focus,
+                exercises: selection.map(s => ({ name: s.name, weights: [''] }))
+            };
+            renderActiveWorkout();
+        }
+
+        function renderActiveWorkout() {
             document.getElementById('workout-setup').classList.add('hidden');
-            document.getElementById('active-workout').classList.remove('hidden');
-            document.getElementById('workout-title').innerText = `${state.training.focus} session`;
+            const activeDiv = document.getElementById('workout-active');
+            activeDiv.classList.remove('hidden');
+            document.getElementById('active-workout-title').innerText = currentActiveWorkout.focus;
             
             const list = document.getElementById('exercise-list');
             list.innerHTML = '';
-            
-            state.training.active.exercises.forEach((ex, idx) => {
-                list.appendChild(createExerciseRow(ex, idx));
+            currentActiveWorkout.exercises.forEach((ex, exIdx) => {
+                const item = document.createElement('div');
+                item.className = "p-4 bg-slate-50 rounded-2xl";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <input class="font-bold text-slate-800 bg-transparent outline-none w-full" value="${ex.name}" oninput="currentActiveWorkout.exercises[${exIdx}].name = this.value">
+                        <button onclick="removeExercise(${exIdx})" class="text-slate-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                    <div class="flex gap-2 flex-wrap" id="sets-${exIdx}">
+                        ${ex.weights.map((w, sIdx) => `
+                            <input placeholder="kg" class="w-16 p-2 rounded-lg bg-white border text-center text-xs" value="${w}" oninput="currentActiveWorkout.exercises[${exIdx}].weights[${sIdx}] = this.value">
+                        `).join('')}
+                        <button onclick="addSet(${exIdx})" class="p-2 bg-white rounded-lg border text-indigo-600"><i data-lucide="plus" class="w-3 h-3"></i></button>
+                    </div>
+                `;
+                list.appendChild(item);
             });
-
-            const addBtn = document.getElementById('add-ex-btn');
-            if(state.training.active.type === 'Manual') addBtn.classList.remove('hidden');
-            else addBtn.classList.add('hidden');
-            
-            if(state.training.active.exercises.length === 0 && state.training.active.type === 'Manual') {
-                addExerciseRow();
-            }
+            lucide.createIcons();
         }
 
-        function createExerciseRow(ex, idx) {
-            const row = document.createElement('div');
-            row.className = 'bg-slate-50 p-4 rounded-2xl';
-            
-            let nameField;
-            if (state.training.active.type === 'Manual') {
-                const availableEquip = Object.keys(state.gymConfig).filter(k => state.gymConfig[k]);
-                const options = EXERCISE_DATABASE.filter(dbEx => 
-                    (state.training.focus === 'Full Body' || dbEx.focus === state.training.focus) &&
-                    availableEquip.includes(dbEx.equipment)
-                );
-                
-                nameField = `<select class="w-full bg-white p-3 rounded-xl border border-slate-200 font-bold text-sm mb-2" onchange="updateExercise(${idx}, 'name', this.value)">
-                    <option value="">Select Exercise...</option>
-                    ${options.map(o => `<option value="${o.name}" ${o.name === ex.name ? 'selected' : ''}>${o.name}</option>`).join('')}
-                </select>`;
-            } else {
-                nameField = `<div class="font-bold text-indigo-600 mb-2">${ex.name}</div>`;
-            }
-
-            row.innerHTML = `
-                ${nameField}
-                <div class="flex gap-2 mb-3">
-                    <input type="number" class="w-20 p-2 text-xs rounded-lg border" placeholder="Sets" value="${ex.sets}" onchange="updateExercise(${idx}, 'sets', this.value)">
-                    <input type="number" class="w-20 p-2 text-xs rounded-lg border" placeholder="Reps" value="${ex.reps}" onchange="updateExercise(${idx}, 'reps', this.value)">
-                </div>
-                <div class="flex gap-2 overflow-x-auto pb-2">
-                    ${ex.weights.map((w, sIdx) => `
-                        <input type="number" class="min-w-[60px] p-2 text-xs rounded-lg border bg-white" placeholder="S${sIdx+1}" value="${w}" onchange="updateWeight(${idx}, ${sIdx}, this.value)">
-                    `).join('')}
-                </div>
-            `;
-            return row;
+        function addExerciseField() {
+            currentActiveWorkout.exercises.push({ name: "New Exercise", weights: [''] });
+            renderActiveWorkout();
         }
 
-        function addExerciseRow() {
-            state.training.active.exercises.push({ name: '', sets: 3, reps: 10, weights: ['', '', ''] });
-            renderWorkoutView();
+        function removeExercise(idx) {
+            currentActiveWorkout.exercises.splice(idx, 1);
+            renderActiveWorkout();
         }
 
-        function updateExercise(idx, key, val) {
-            state.training.active.exercises[idx][key] = val;
-            if(key === 'sets') {
-                state.training.active.exercises[idx].weights = Array(Number(val)).fill('');
-                renderWorkoutView();
-            }
+        function addSet(idx) {
+            currentActiveWorkout.exercises[idx].weights.push('');
+            renderActiveWorkout();
         }
 
-        function updateWeight(exIdx, sIdx, val) {
-            state.training.active.exercises[exIdx].weights[sIdx] = val;
+        function saveWorkout() {
+            state.workoutHistory.unshift({ ...currentActiveWorkout, id: Date.now(), date: state.viewDate });
+            saveState();
+            cancelWorkout();
+            switchTab('history');
         }
 
         function cancelWorkout() {
-            state.training.active = null;
-            document.getElementById('active-workout').classList.add('hidden');
+            currentActiveWorkout = null;
             document.getElementById('workout-setup').classList.remove('hidden');
+            document.getElementById('workout-active').classList.add('hidden');
         }
 
-        // --- Nutrition Logic ---
-        let html5QrCode = null;
-
-        function handleDateChange() {
-            state.viewDate = document.getElementById('nutrition-date-picker').value;
-            renderNutrition();
-            updateDashboard();
-        }
-
-        function changeNutritionDate(offset) {
-            const date = new Date(state.viewDate);
-            date.setDate(date.getDate() + offset);
-            state.viewDate = date.toISOString().split('T')[0];
-            document.getElementById('nutrition-date-picker').value = state.viewDate;
-            handleDateChange();
-        }
-
-        function initScanner() {
-            document.getElementById('scanner-ui').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 15, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 };
+        // --- NUTRITION ---
+        function setNutritionTab(tab) {
+            state.nutritionTab = tab;
+            document.getElementById('nut-view-log').classList.toggle('hidden', tab !== 'log');
+            document.getElementById('nut-view-db').classList.toggle('hidden', tab !== 'database');
             
-            html5QrCode.start({ facingMode: "environment" }, config, (decoded) => {
-                handleBarcode(decoded);
-                stopScanner();
-            }).catch(e => {
-                document.getElementById('scan-status').innerText = "Camera Error";
-            });
-        }
-
-        function stopScanner() {
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scanner-ui').classList.add('hidden');
-                }).catch(() => {
-                    document.getElementById('scanner-ui').classList.add('hidden');
-                });
+            const lBtn = document.getElementById('nut-tab-log');
+            const dBtn = document.getElementById('nut-tab-db');
+            if(tab === 'log') {
+                lBtn.className = "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white shadow-lg";
+                dBtn.className = "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl text-slate-400";
+                renderDailyLog();
             } else {
-                document.getElementById('scanner-ui').classList.add('hidden');
+                dBtn.className = "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white shadow-lg";
+                lBtn.className = "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl text-slate-400";
+                renderCustomDb();
             }
         }
 
-        async function handleBarcode(barcode) {
-            document.getElementById('scan-status').innerText = "Searching OpenFoodFacts...";
-            try {
-                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-                const data = await res.json();
-                if(data.status === 1) {
-                    const p = data.product;
-                    document.getElementById('food-name').value = p.product_name || "Unknown";
-                    document.getElementById('food-cals').value = Math.round(p.nutriments['energy-kcal_100g'] || 0);
-                    document.getElementById('food-prot').value = Math.round(p.nutriments.proteins_100g || 0);
-                }
-            } catch(e) { console.error(e); }
-            document.getElementById('scan-status').innerText = "Ready to scan";
+        function updateDateDisplay() {
+            document.getElementById('date-display').innerText = state.viewDate;
         }
 
-        document.getElementById('food-form').onsubmit = (e) => {
-            e.preventDefault();
-            const meal = {
-                id: Date.now(),
-                date: state.viewDate, // Save for specific date
-                name: document.getElementById('food-name').value,
-                calories: Number(document.getElementById('food-cals').value),
-                protein: Number(document.getElementById('food-prot').value),
-                type: document.getElementById('food-type').value
-            };
-            state.nutrition.dailyMeals.push(meal);
-            saveToStorage();
-            e.target.reset();
-            renderNutrition();
-            updateDashboard();
-        };
+        function changeDate(days) {
+            let d = new Date(state.viewDate);
+            d.setDate(d.getDate() + days);
+            state.viewDate = d.toISOString().split('T')[0];
+            updateDateDisplay();
+            renderDailyLog();
+            renderDashboard();
+        }
 
-        function renderNutrition() {
-            document.getElementById('nutrition-date-picker').value = state.viewDate;
-            const body = document.getElementById('meal-history-body');
-            body.innerHTML = '';
+        function handleFoodSearch(val) {
+            const results = document.getElementById('food-results');
+            if (val.length < 2) { results.classList.add('hidden'); return; }
             
-            // Only show meals for the selected date
-            const filteredMeals = state.nutrition.dailyMeals.filter(m => m.date === state.viewDate);
+            const base = [
+                { name: "Chicken Breast", calories: 165, protein: 31 },
+                { name: "Banana", calories: 89, protein: 1.1 },
+                { name: "Egg", calories: 70, protein: 6 },
+                { name: "Greek Yogurt", calories: 59, protein: 10 },
+            ];
+            const combined = [...base, ...state.customFoodDb];
+            const filtered = combined.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
+            
+            if (filtered.length > 0) {
+                results.classList.remove('hidden');
+                results.innerHTML = filtered.map(f => `
+                    <div onclick="logFoodItem('${f.name}', ${f.calories}, ${f.protein})" class="p-4 border-b last:border-0 hover:bg-slate-50 cursor-pointer flex justify-between">
+                        <span>${f.name}</span>
+                        <span class="text-[10px] text-slate-400 font-bold">${f.calories} kcal</span>
+                    </div>
+                `).join('');
+            } else {
+                results.classList.add('hidden');
+            }
+        }
 
-            ['Breakfast', 'Lunch', 'Dinner', 'Snack'].forEach(type => {
-                body.innerHTML += `<tr class="bg-slate-50/30"><td colspan="5" class="px-4 py-1 text-[9px] font-black text-slate-300 uppercase">${type}</td></tr>`;
-                filteredMeals.filter(m => m.type === type).forEach(m => {
-                    body.innerHTML += `
-                        <tr class="text-sm">
-                            <td class="p-4"><i data-lucide="utensils" class="w-4 h-4 text-slate-300"></i></td>
-                            <td class="p-4 font-bold">${m.name}</td>
-                            <td class="p-4 text-center font-medium">${m.calories}</td>
-                            <td class="p-4 text-center font-medium">${m.protein}g</td>
-                            <td class="p-4 text-right">
-                                <button onclick="deleteMeal(${m.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
+        function logFoodItem(name, cals, prot) {
+            state.dailyMeals.unshift({ id: Date.now(), date: state.viewDate, name, calories: cals, protein: prot });
+            saveState();
+            document.getElementById('food-search').value = '';
+            document.getElementById('food-results').classList.add('hidden');
+            renderDailyLog();
+            renderDashboard();
+        }
+
+        function renderDailyLog() {
+            const list = document.getElementById('daily-log-list');
+            const items = state.dailyMeals.filter(m => m.date === state.viewDate);
+            list.innerHTML = items.length === 0 ? '<div class="p-8 text-center text-slate-400 text-xs italic">No foods logged.</div>' : '';
+            
+            items.forEach(m => {
+                const row = document.createElement('div');
+                row.className = "p-4 flex justify-between items-center";
+                row.innerHTML = `
+                    <div><p class="font-bold text-sm">${m.name}</p><p class="text-[10px] text-slate-400">${m.calories} kcal • ${m.protein}g protein</p></div>
+                    <button onclick="deleteMeal(${m.id})" class="text-slate-200"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                `;
+                list.appendChild(row);
             });
             lucide.createIcons();
         }
 
         function deleteMeal(id) {
-            state.nutrition.dailyMeals = state.nutrition.dailyMeals.filter(m => m.id !== id);
-            saveToStorage();
-            renderNutrition();
-            updateDashboard();
+            state.dailyMeals = state.dailyMeals.filter(m => m.id !== id);
+            saveState();
+            renderDailyLog();
+            renderDashboard();
         }
 
-        // --- Metrics Logic ---
-        document.getElementById('photo-upload').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (f) => {
-                state.metrics.current.photo = f.target.result;
-                document.getElementById('photo-preview').src = f.target.result;
-                document.getElementById('photo-preview-container').classList.remove('hidden');
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
+        // --- SCANNER ---
+        function startScanner() {
+            document.getElementById('btn-start-scan').classList.add('hidden');
+            document.getElementById('scanner-ui').classList.remove('hidden');
+            setScannerFeedback("Accessing camera...");
 
-        function saveMetrics() {
-            const fields = ['weight', 'shoulder', 'chest', 'waist', 'glute', 'arm', 'leg'];
-            const data = { id: state.metrics.editingId || Date.now(), photo: state.metrics.current.photo };
-            fields.forEach(f => data[f] = document.getElementById(`m-${f}`).value);
-            
-            if (state.metrics.editingId) {
-                const idx = state.metrics.history.findIndex(m => m.id === state.metrics.editingId);
-                state.metrics.history[idx] = { ...data, date: state.metrics.history[idx].date, time: state.metrics.history[idx].time };
-            } else {
-                data.date = new Date().toLocaleDateString();
-                data.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                state.metrics.history.unshift(data);
-            }
-            
-            state.metrics.editingId = null;
-            state.metrics.current.photo = null;
-            document.getElementById('photo-preview-container').classList.add('hidden');
-            document.getElementById('metric-form-title').innerText = "New Log";
-            document.getElementById('metric-save-btn-text').innerText = "Log Measurements";
-            fields.forEach(f => document.getElementById(`m-${f}`).value = '');
-            
-            saveToStorage();
-            renderMetrics();
-            updateDashboard();
+            Quagga.init({
+                inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive'), constraints: { facingMode: "environment" } },
+                decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"] }
+            }, (err) => {
+                if(err) { alert("Camera error: " + err); stopScanner(); return; }
+                Quagga.start();
+                setScannerFeedback("Scan barcode...");
+            });
+
+            Quagga.onDetected((res) => {
+                const code = res.codeResult.code;
+                setScannerFeedback("Detected! Fetching...");
+                stopScanner();
+                fetchProduct(code);
+            });
         }
 
-        function renderMetrics() {
-            const container = document.getElementById('metrics-history');
-            container.innerHTML = '';
-            state.metrics.history.forEach(log => {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex gap-4';
-                card.innerHTML = `
-                    ${log.photo ? `<img src="${log.photo}" class="w-16 h-20 rounded-xl object-cover">` : `<div class="w-16 h-20 bg-slate-50 rounded-xl flex items-center justify-center"><i data-lucide="camera" class="text-slate-200"></i></div>`}
-                    <div class="flex-1">
-                        <div class="flex justify-between">
-                            <span class="font-bold text-indigo-900">${log.weight}kg</span>
-                            <div class="flex gap-2">
-                                <button onclick="editMetric(${log.id})" class="text-slate-300 hover:text-indigo-600"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                <button onclick="deleteMetric(${log.id})" class="text-slate-300 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">${log.date} @ ${log.time}</p>
-                        <div class="grid grid-cols-3 gap-1 text-[10px] text-slate-500 font-medium">
-                            <span>WST: ${log.waist}</span><span>CH: ${log.chest}</span><span>LG: ${log.leg}</span>
-                        </div>
+        function stopScanner() {
+            Quagga.stop();
+            document.getElementById('btn-start-scan').classList.remove('hidden');
+            document.getElementById('scanner-ui').classList.add('hidden');
+        }
+
+        function setScannerFeedback(txt) { document.getElementById('scanner-feedback').innerText = txt; }
+
+        function fetchProduct(barcode) {
+            const loader = document.getElementById('fetch-loader');
+            loader.classList.remove('hidden');
+            
+            fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+                .then(r => r.json())
+                .then(data => {
+                    loader.classList.add('hidden');
+                    if(data.status === 1) {
+                        const p = data.product;
+                        const nut = p.nutriments || {};
+                        document.getElementById('form-name').value = p.product_name || `Product ${barcode}`;
+                        document.getElementById('form-cals').value = Math.round(nut['energy-kcal_100g'] || nut['energy-kcal'] || 0);
+                        document.getElementById('form-prot').value = (nut.proteins_100g || nut.proteins || 0).toFixed(1);
+                    } else {
+                        alert("Product not found. Enter details manually.");
+                    }
+                })
+                .catch(() => { loader.classList.add('hidden'); alert("Network error."); });
+        }
+
+        function saveToDatabase() {
+            const name = document.getElementById('form-name').value;
+            const cals = document.getElementById('form-cals').value;
+            const prot = document.getElementById('form-prot').value;
+            if(!name || !cals) return;
+            
+            state.customFoodDb.push({ name, calories: Number(cals), protein: Number(prot || 0) });
+            saveState();
+            renderCustomDb();
+            document.getElementById('form-name').value = '';
+            document.getElementById('form-cals').value = '';
+            document.getElementById('form-prot').value = '';
+            alert("Saved to Database!");
+        }
+
+        function renderCustomDb() {
+            const list = document.getElementById('custom-db-list');
+            list.innerHTML = '';
+            const combined = [
+                { name: "Chicken Breast", calories: 165, protein: 31, type: 'Global' },
+                { name: "Banana", calories: 89, protein: 1.1, type: 'Global' },
+                ...state.customFoodDb.map(f => ({ ...f, type: 'Custom' }))
+            ];
+            combined.forEach(f => {
+                const div = document.createElement('div');
+                div.className = "p-4 flex justify-between items-center";
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm text-slate-700">${f.name}</span>
+                        <span class="text-[9px] text-slate-400">Source: ${f.type}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="text-[10px] font-black bg-orange-50 text-orange-600 px-3 py-1 rounded-full">${f.calories} kcal</div>
+                        <div class="text-[10px] font-black bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full">${f.protein}g P</div>
                     </div>
                 `;
-                container.appendChild(card);
+                list.appendChild(div);
             });
-            lucide.createIcons();
         }
 
-        function editMetric(id) {
-            const log = state.metrics.history.find(m => m.id === id);
-            state.metrics.editingId = id;
-            document.getElementById('metric-form-title').innerText = "Update Log";
-            document.getElementById('metric-save-btn-text').innerText = "Update Entry";
-            ['weight', 'shoulder', 'chest', 'waist', 'glute', 'arm', 'leg'].forEach(f => {
-                document.getElementById(`m-${f}`).value = log[f];
-            });
-            if(log.photo) {
-                state.metrics.current.photo = log.photo;
-                document.getElementById('photo-preview').src = log.photo;
-                document.getElementById('photo-preview-container').classList.remove('hidden');
-            }
-            window.scrollTo(0, 0);
-        }
-
-        function deleteMetric(id) {
-            state.metrics.history = state.metrics.history.filter(m => m.id !== id);
-            saveToStorage();
-            renderMetrics();
-        }
-
-        // --- Settings Logic ---
-        function renderSettings() {
-            const list = document.getElementById('gym-config-list');
-            list.innerHTML = '';
-            Object.keys(state.gymConfig).forEach(k => {
-                const label = document.createElement('label');
-                label.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer';
-                label.innerHTML = `
-                    <span class="font-bold text-sm text-slate-700 capitalize">${k.replace(/([A-Z])/g, ' $1')}</span>
-                    <input type="checkbox" ${state.gymConfig[k] ? 'checked' : ''} onchange="updateGymConfig('${k}', this.checked)" class="w-6 h-6 rounded-lg text-indigo-600">
-                `;
-                list.appendChild(label);
-            });
-            document.getElementById('goal-cals').value = state.nutrition.targets.calories;
-            document.getElementById('goal-prot').value = state.nutrition.targets.protein;
-        }
-
-        function updateGymConfig(key, val) {
-            state.gymConfig[key] = val;
-            saveToStorage();
-        }
-
-        document.getElementById('goal-cals').onchange = (e) => {
-            state.nutrition.targets.calories = Number(e.target.value);
-            saveToStorage();
-            updateDashboard();
-        };
-        document.getElementById('goal-prot').onchange = (e) => {
-            state.nutrition.targets.protein = Number(e.target.value);
-            saveToStorage();
-            updateDashboard();
-        };
-
-        function clearAllData() {
-            if(confirm("Are you sure you want to delete all saved progress? This cannot be undone.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                location.reload();
+        // --- BODY METRICS ---
+        function previewImg(input, imgId) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById(imgId);
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // --- Global Dashboard ---
-        function updateDashboard() {
-            // Dashboard calculations based on viewDate
-            const totals = state.nutrition.dailyMeals
-                .filter(m => m.date === state.viewDate)
-                .reduce((acc, m) => ({
-                    calories: acc.calories + m.calories,
-                    protein: acc.protein + m.protein
-                }), { calories: 0, protein: 0 });
-
-            document.getElementById('dash-cals').innerText = totals.calories;
-            document.getElementById('dash-prot').innerText = totals.protein + 'g';
-            document.querySelectorAll('.target-cals-display').forEach(el => el.innerText = state.nutrition.targets.calories);
-            document.querySelectorAll('.target-prot-display').forEach(el => el.innerText = state.nutrition.targets.protein);
+        function saveMetrics() {
+            const weight = document.getElementById('body-weight').value;
+            const waist = document.getElementById('body-waist').value;
+            if(!weight) return;
             
-            const focus = document.getElementById('focus-select').value;
-            document.getElementById('dash-focus-text').innerText = `Focus: ${focus}`;
+            state.metricsHistory.unshift({
+                id: Date.now(),
+                date: state.viewDate,
+                weight, waist,
+                photoFront: document.getElementById('img-front').src
+            });
+            saveState();
+            alert("Metrics saved!");
+            switchTab('history');
+            setHistoryTab('body');
         }
 
-        // Initialization
-        window.onload = () => {
-            loadState();
-            lucide.createIcons();
-            renderSettings();
-            renderNutrition();
-            renderMetrics();
-            updateDashboard();
-        };
+        // --- HISTORY ---
+        function setHistoryTab(tab) {
+            state.historyTab = tab;
+            ['train', 'nut', 'body'].forEach(k => {
+                document.getElementById('hist-tab-'+k).className = "flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400";
+            });
+            document.getElementById('hist-tab-'+ (tab === 'training' ? 'train' : tab === 'nutrition' ? 'nut' : 'body')).className = "flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-indigo-600 text-white shadow-md";
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            
+            if(state.historyTab === 'training') {
+                state.workoutHistory.forEach(w => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-5 rounded-3xl border border-slate-100 shadow-sm";
+                    div.innerHTML = `
+                        <div class="flex justify-between mb-2"><h4 class="font-bold text-slate-800">${w.focus}</h4><p class="text-[10px] font-bold text-slate-400">${w.date}</p></div>
+                        <div class="space-y-1 border-l-2 border-indigo-100 pl-3">
+                            ${w.exercises.map(ex => `<div class="text-xs font-bold text-slate-600 flex justify-between"><span>${ex.name}</span> <span class="text-indigo-600 font-black">${ex.weights[0] || 0}kg</span></div>`).join('')}
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } else if(state.historyTab === 'nutrition') {
+                const grouped = {};
+                state.dailyMeals.forEach(m => {
+                    if(!grouped[m.date]) grouped[m.date] = { c: 0, p: 0 };
+                    grouped[m.date].c += Number(m.calories);
+                    grouped[m.date].p += Number(m.protein);
+                });
+                const table = document.createElement('div');
+                table.className = "bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden";
+                table.innerHTML = `
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 font-bold uppercase text-[9px]"><tr><th class="p-4">Date</th><th class="p-4">Cals</th><th class="p-4">Prot</th></tr></thead>
+                        <tbody class="divide-y divide-slate-50">
+                            ${Object.keys(grouped).sort().reverse().map(date => `
+                                <tr><td class="p-4 font-bold">${date}</td><td class="p-4 font-black text-indigo-600">${grouped[date].c}</td><td class="p-4 font-black text-emerald-600">${Math.round(grouped[date].p)}g</td></tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                list.appendChild(table);
+            } else {
+                state.metricsHistory.forEach(log => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex gap-4";
+                    div.innerHTML = `
+                        <div class="w-16 h-20 bg-slate-100 rounded-xl overflow-hidden">${log.photoFront ? `<img src="${log.photoFront}" class="w-full h-full object-cover">` : ''}</div>
+                        <div class="flex-1">
+                            <div class="flex justify-between"><span class="font-black text-lg">${log.weight}kg</span></div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${log.date}</p>
+                            <p class="text-[10px] text-slate-400">Waist: ${log.waist}cm</p>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        // --- SETTINGS ---
+        function renderGymConfig() {
+            const grid = document.getElementById('gym-config-grid');
+            grid.innerHTML = '';
+            Object.keys(state.gymConfig).forEach(k => {
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-xl text-[10px] font-black uppercase transition-all ${state.gymConfig[k] ? 'bg-indigo-600 text-white ring-2 ring-indigo-200' : 'bg-slate-50 text-slate-300'}`;
+                btn.innerText = k;
+                btn.onclick = () => { state.gymConfig[k] = !state.gymConfig[k]; saveState(); renderGymConfig(); };
+                grid.appendChild(btn);
+            });
+        }
+
+        function resetData() {
+            if(confirm("Erase all progress?")) { localStorage.clear(); location.reload(); }
+        }
     </script>
 </body>
 </html>
