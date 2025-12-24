@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitTrack Pro V6.8</title>
+    <title>FitTrack Pro V6.9</title>
     <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
@@ -385,6 +385,19 @@
                     </div>
                 </div>
             </div>
+
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-6 tracking-wider">Equipment Profiles</h3>
+                <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
+                    <button onclick="setEquipProfileTab('gym')" id="eqp-tab-gym" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym Profile</button>
+                    <button onclick="setEquipProfileTab('home')" id="eqp-tab-home" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Home Profile</button>
+                </div>
+                
+                <div id="equipment-checklist" class="space-y-3">
+                    <!-- Dynamic Checklist -->
+                </div>
+            </div>
+
             <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold uppercase text-[10px] tracking-widest bg-red-50 rounded-2xl">Purge All Records</button>
         </section>
     </main>
@@ -400,7 +413,6 @@
         </header>
         
         <div class="flex-1 overflow-y-auto p-6 space-y-8">
-            <!-- Independent Date Selectors -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-[9px] font-black uppercase text-indigo-500 tracking-widest block mb-2 text-center">BEFORE</label>
@@ -413,16 +425,11 @@
             </div>
             
             <div id="comparison-view" class="space-y-8">
-                <!-- Weight Comparison -->
                 <div class="grid grid-cols-2 gap-4">
                     <div id="comp-base-weight" class="bg-slate-50 p-6 rounded-3xl text-center border border-indigo-100"></div>
                     <div id="comp-target-weight" class="bg-slate-50 p-6 rounded-3xl text-center border border-rose-100"></div>
                 </div>
-
-                <!-- Measurement Table -->
                 <div id="comp-measurements" class="glass-card rounded-3xl overflow-hidden divide-y divide-slate-100"></div>
-
-                <!-- Photo Comparison -->
                 <div id="comp-photos" class="space-y-4"></div>
             </div>
         </div>
@@ -456,22 +463,51 @@
             activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log',
             workoutEnv: 'gym', viewDate: new Date().toISOString().split('T')[0],
             goals: { calories: 2500, water: 2500 },
-            gymConfig: { gym: { barbell: true, dumbbell: true, cables: true, pinMachine: true, bodyweight: true }, home: { barbell: false, dumbbell: true, cables: false, pinMachine: false, bodyweight: true } },
+            equipProfileTab: 'gym',
+            equipment: {
+                gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, machine: true, bodyweight: true },
+                home: { barbell: false, dumbbell: true, kettlebell: false, cable: false, machine: false, bodyweight: true }
+            },
             dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: []
         };
 
-        const EXERCISE_DB = [ { name: "Barbell Bench Press", focus: "Upper Body (Push)", equipment: "barbell" }, { name: "Overhead Press", focus: "Upper Body (Push)", equipment: "barbell" }, { name: "Lat Pulldown", focus: "Upper Body (Pull)", equipment: "pinMachine" }, { name: "Bodyweight Squats", focus: "Lower Body (Legs)", equipment: "bodyweight" }];
+        const EXERCISE_DB = [
+            { name: "Barbell Bench Press", focus: "Upper Body (Push)", equip: "barbell" },
+            { name: "Dumbbell Press", focus: "Upper Body (Push)", equip: "dumbbell" },
+            { name: "Push Ups", focus: "Upper Body (Push)", equip: "bodyweight" },
+            { name: "Overhead Press", focus: "Upper Body (Push)", equip: "barbell" },
+            { name: "Machine Chest Press", focus: "Upper Body (Push)", equip: "machine" },
+            { name: "Lateral Raises", focus: "Upper Body (Push)", equip: "dumbbell" },
+            
+            { name: "Barbell Rows", focus: "Upper Body (Pull)", equip: "barbell" },
+            { name: "Pull Ups", focus: "Upper Body (Pull)", equip: "bodyweight" },
+            { name: "Cable Lat Pulldown", focus: "Upper Body (Pull)", equip: "cable" },
+            { name: "Dumbbell Bicep Curls", focus: "Upper Body (Pull)", equip: "dumbbell" },
+            { name: "Kettlebell Swings", focus: "Upper Body (Pull)", equip: "kettlebell" },
+            { name: "Machine Seated Row", focus: "Upper Body (Pull)", equip: "machine" },
+
+            { name: "Barbell Squats", focus: "Lower Body (Legs)", equip: "barbell" },
+            { name: "Goblet Squats", focus: "Lower Body (Legs)", equip: "dumbbell" },
+            { name: "Bodyweight Lunges", focus: "Lower Body (Legs)", equip: "bodyweight" },
+            { name: "Leg Press", focus: "Lower Body (Legs)", equip: "machine" },
+            { name: "Kettlebell Deadlift", focus: "Lower Body (Legs)", equip: "kettlebell" },
+            { name: "Calf Raises", focus: "Lower Body (Legs)", equip: "bodyweight" }
+        ];
+
         let currentPhotos = { front: null, side: null, back: null };
+        let timerInterval;
 
         window.onload = () => {
-            const saved = localStorage.getItem('fittrack_v67_storage');
+            const saved = localStorage.getItem('fittrack_v69_storage');
             if (saved) state = { ...state, ...JSON.parse(saved) };
             document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            document.getElementById('set-cal-goal').value = state.goals.calories;
             renderDashboard();
+            renderEquipmentChecklist();
             lucide.createIcons();
         };
 
-        function saveState() { localStorage.setItem('fittrack_v67_storage', JSON.stringify(state)); }
+        function saveState() { localStorage.setItem('fittrack_v69_storage', JSON.stringify(state)); }
 
         function switchTab(tabId) {
             state.activeTab = tabId;
@@ -485,6 +521,159 @@
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
             if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
+            if (tabId === 'settings') renderEquipmentChecklist();
+            lucide.createIcons();
+        }
+
+        // --- EQUIPMENT SETTINGS ---
+        function setEquipProfileTab(profile) {
+            state.equipProfileTab = profile;
+            document.getElementById('eqp-tab-gym').className = `flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${profile==='gym'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('eqp-tab-home').className = `flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${profile==='home'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            renderEquipmentChecklist();
+        }
+
+        function renderEquipmentChecklist() {
+            const container = document.getElementById('equipment-checklist');
+            const profile = state.equipProfileTab;
+            const items = [
+                { id: 'barbell', label: 'Barbells', icon: 'dumbbell' },
+                { id: 'dumbbell', label: 'Dumbbells', icon: 'dumbbell' },
+                { id: 'kettlebell', label: 'Kettlebells', icon: 'target' },
+                { id: 'cable', label: 'Cable Machines', icon: 'unplug' },
+                { id: 'machine', label: 'Pin Machines', icon: 'cpu' },
+                { id: 'bodyweight', label: 'Bodyweight only', icon: 'user' }
+            ];
+            
+            container.innerHTML = items.map(item => `
+                <div class="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="${item.icon}" class="w-4 h-4 text-slate-400"></i>
+                        <span class="font-bold text-sm">${item.label}</span>
+                    </div>
+                    <button onclick="toggleEquipment('${profile}', '${item.id}')" class="w-12 h-6 rounded-full relative transition-colors ${state.equipment[profile][item.id] ? 'bg-indigo-600' : 'bg-slate-200'}">
+                        <div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${state.equipment[profile][item.id] ? 'translate-x-6' : ''}"></div>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function toggleEquipment(profile, equip) {
+            state.equipment[profile][equip] = !state.equipment[profile][equip];
+            saveState();
+            renderEquipmentChecklist();
+        }
+
+        // --- TRAINING LOGIC ---
+        function setWorkoutEnv(env) {
+            state.workoutEnv = env;
+            document.getElementById('env-tab-gym').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env==='gym'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('env-tab-home').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env==='home'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('current-env-label').innerText = env;
+        }
+
+        function startManualWorkout() {
+            document.getElementById('workout-setup').classList.add('hidden');
+            document.getElementById('workout-active').classList.remove('hidden');
+            document.getElementById('active-workout-title').innerText = document.getElementById('workout-focus').value;
+            document.getElementById('exercise-list').innerHTML = '';
+            addExerciseField();
+            startTimer();
+        }
+
+        function generateAIWorkout() {
+            const focus = document.getElementById('workout-focus').value;
+            const env = state.workoutEnv;
+            const availableEquip = state.equipment[env];
+            
+            let pool = EXERCISE_DB.filter(ex => {
+                const matchesFocus = focus === "Full Body" || ex.focus === focus;
+                const hasEquip = availableEquip[ex.equip];
+                return matchesFocus && hasEquip;
+            });
+
+            if (pool.length === 0) {
+                alert("No exercises found for your selected equipment! Check your settings.");
+                return;
+            }
+
+            document.getElementById('workout-setup').classList.add('hidden');
+            document.getElementById('workout-active').classList.remove('hidden');
+            document.getElementById('active-workout-title').innerText = `AI: ${focus}`;
+            const list = document.getElementById('exercise-list');
+            list.innerHTML = '';
+
+            // Pick 5 random
+            const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 5);
+            shuffled.forEach(ex => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-slate-50 rounded-2xl space-y-3 border border-indigo-50";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm text-indigo-600">${ex.name}</span>
+                        <span class="text-[9px] font-black uppercase text-slate-400">${ex.equip}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" placeholder="Sets" class="p-2 bg-white rounded-xl text-xs font-bold outline-none border border-slate-100">
+                        <input type="number" placeholder="Reps" class="p-2 bg-white rounded-xl text-xs font-bold outline-none border border-slate-100">
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            startTimer();
+        }
+
+        function addExerciseField() {
+            const focus = document.getElementById('workout-focus').value;
+            const env = state.workoutEnv;
+            const availableEquip = state.equipment[env];
+            
+            const options = EXERCISE_DB
+                .filter(ex => availableEquip[ex.equip])
+                .map(ex => `<option>${ex.name}</option>`).join('');
+
+            const div = document.createElement('div');
+            div.className = "p-4 bg-slate-50 rounded-2xl space-y-3";
+            div.innerHTML = `
+                <select class="w-full p-2 bg-white rounded-xl text-xs font-bold border border-slate-100">${options}</select>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" placeholder="Sets" class="p-2 bg-white rounded-xl text-xs font-bold outline-none border border-slate-100">
+                    <input type="number" placeholder="Reps" class="p-2 bg-white rounded-xl text-xs font-bold outline-none border border-slate-100">
+                </div>
+            `;
+            document.getElementById('exercise-list').appendChild(div);
+        }
+
+        function startTimer() {
+            let s = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                s++;
+                const hrs = Math.floor(s/3600);
+                const mins = Math.floor((s % 3600)/60);
+                const secs = s % 60;
+                document.getElementById('workout-timer').innerText = 
+                    `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }, 1000);
+        }
+
+        function saveWorkout() {
+            state.workoutHistory.unshift({
+                id: Date.now(),
+                date: state.viewDate,
+                focus: document.getElementById('active-workout-title').innerText,
+                duration: document.getElementById('workout-timer').innerText
+            });
+            saveState();
+            cancelWorkout();
+            switchTab('history');
+        }
+
+        function cancelWorkout() {
+            clearInterval(timerInterval);
+            document.getElementById('workout-setup').classList.remove('hidden');
+            document.getElementById('workout-active').classList.add('hidden');
         }
 
         // --- NUTRITION ---
@@ -609,44 +798,30 @@
             }
         }
 
-        // --- COMPARE SYSTEM (UPDATED) ---
+        // --- COMPARE SYSTEM ---
         function openCompare(defaultId) {
             const modal = document.getElementById('compare-modal');
             const beforeSel = document.getElementById('compare-selector-before');
             const afterSel = document.getElementById('compare-selector-after');
-            
             modal.classList.add('active');
-            
             const options = state.metricsHistory.map(item => `<option value="${item.id}">${item.date}</option>`).join('');
             beforeSel.innerHTML = options;
             afterSel.innerHTML = options;
-            
-            // Set default values: After = newest or clicked, Before = the one before it if exists
             afterSel.value = defaultId || state.metricsHistory[0]?.id;
             const clickedIdx = state.metricsHistory.findIndex(i => i.id == defaultId);
-            if (state.metricsHistory[clickedIdx + 1]) {
-                beforeSel.value = state.metricsHistory[clickedIdx + 1].id;
-            } else {
-                beforeSel.value = state.metricsHistory[state.metricsHistory.length - 1].id;
-            }
-            
+            if (state.metricsHistory[clickedIdx + 1]) beforeSel.value = state.metricsHistory[clickedIdx + 1].id;
+            else beforeSel.value = state.metricsHistory[state.metricsHistory.length - 1].id;
             renderComparison();
         }
 
         function renderComparison() {
             const beforeId = document.getElementById('compare-selector-before').value;
             const afterId = document.getElementById('compare-selector-after').value;
-            
             const base = state.metricsHistory.find(i => i.id == beforeId);
             const target = state.metricsHistory.find(i => i.id == afterId);
-            
             if(!target || !base) return;
-
-            // Weight
             document.getElementById('comp-base-weight').innerHTML = `<span class="text-[9px] font-black text-indigo-400 uppercase block mb-1">Weight</span><span class="text-2xl font-black">${base.weight}kg</span>`;
             document.getElementById('comp-target-weight').innerHTML = `<span class="text-[9px] font-black text-rose-400 uppercase block mb-1">Weight</span><span class="text-2xl font-black">${target.weight}kg</span>`;
-
-            // Measurements
             const labels = { shoulders: 'Shoulders', chest: 'Chest', waist: 'Waist', glutes: 'Glutes', arms: 'Upper Arm', legs: 'Upper Leg' };
             let mHtml = '';
             Object.keys(labels).forEach(key => {
@@ -657,8 +832,6 @@
                     <span class="${diff > 0 ? 'text-emerald-500' : diff < 0 ? 'text-rose-500' : 'text-slate-300'} text-[10px] font-black">${diff > 0 ? '+'+diff : diff}</span></div></div>`;
             });
             document.getElementById('comp-measurements').innerHTML = mHtml;
-
-            // Photos
             let pHtml = '';
             ['front','side','back'].forEach(p => {
                 pHtml += `<div class="space-y-2">
