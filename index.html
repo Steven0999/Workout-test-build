@@ -516,8 +516,8 @@
             goals: { calories: 2500, water: 2500 },
             equipProfileTab: 'gym',
             equipment: {
-                gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, machine: true, bodyweight: true },
-                home: { barbell: false, dumbbell: true, kettlebell: false, cable: false, machine: false, bodyweight: true }
+                gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, pinmachine: true, weightmachine:true, bodyweight: true },
+                home: { barbell: false, dumbbell: true, kettlebell: false, cable: false, pinmachine: false, weightmachine: false, bodyweight: true }
             },
             dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: []
         };
@@ -527,9 +527,17 @@
             { name: "Dumbbell Press", focus: "Upper Body (Push)", equip: "dumbbell" },
             { name: "Push Ups", focus: "Upper Body (Push)", equip: "bodyweight" },
             { name: "Overhead Press", focus: "Upper Body (Push)", equip: "barbell" },
-            { name: "Machine Chest Press", focus: "Upper Body (Push)", equip: "machine" },
+            { name: "Machine Chest Press", focus: "Upper Body (Push)", equip: "pinmachine" },
             { name: "Lateral Raises", focus: "Upper Body (Push)", equip: "dumbbell" },
-            //Incline Barbell Press,
+            { name: "Incline Barbell Press", focus: "Upper Body (Push)", equip: "barbell" },
+            { name: "Incline Dumbbell Press", focus: "Upper Body (Push)", equip: "dumbbell" },
+            { name: "Cable Chestt Press", focus: "Upper Body (Push)", equip: "cable" },
+            { name: "Cable Chest Flies", focus: "Upper Body (Push)", equip: "cable" },
+            
+      
+      
+      
+      
             
             { name: "Barbell Rows", focus: "Upper Body (Pull)", equip: "barbell" },
             { name: "Pull Ups", focus: "Upper Body (Pull)", equip: "bodyweight" },
@@ -593,7 +601,8 @@
                 { id: 'dumbbell', label: 'Dumbbells', icon: 'dumbbell' },
                 { id: 'kettlebell', label: 'Kettlebells', icon: 'target' },
                 { id: 'cable', label: 'Cable Machines', icon: 'unplug' },
-                { id: 'machine', label: 'Pin Machines', icon: 'cpu' },
+                { id: 'pinmachine', label: 'Pin Machines', icon: 'cpu' },
+                { id: 'weightmachine', label: 'Weight Machines', icon: 'cpu' },
                 { id: 'bodyweight', label: 'Bodyweight only', icon: 'user' }
             ];
             
