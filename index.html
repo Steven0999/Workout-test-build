@@ -606,21 +606,35 @@
             <span class="text-[9px] font-black uppercase tracking-tighter">Body</span>
         </button>
     </nav>
-
     <script>
-        const apiKey = ""; // Runtime provides key
+        // --- CONFIGURATION ---
+        // YOU MUST ENTER A VALID GEMINI API KEY HERE FOR AI SCANNING TO WORK
+        const apiKey = "YOUR_GEMINI_API_KEY_HERE"; 
+        
         let html5QrCode; // Global scanner instance
+        let aiStream = null;
+        let timerInterval;
+        let currentPhotos = { front: null, side: null, back: null };
+        let activeWorkoutDate = "";
 
+        // --- STATE MANAGEMENT ---
         let state = {
-            activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log',
-            workoutEnv: 'gym', viewDate: new Date().toISOString().split('T')[0],
+            activeTab: 'dashboard', 
+            historyTab: 'training', 
+            nutritionTab: 'log',
+            workoutEnv: 'gym', 
+            viewDate: new Date().toISOString().split('T')[0],
             goals: { calories: 2500, water: 2500 },
             equipProfileTab: 'gym',
             equipment: {
                 gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, machine: true, resistanceband: false, bodyweight: true },
                 home: { barbell: false, dumbbell: true, kettlebell: false, cable: false, machine: false, resistanceband: true, bodyweight: true }
             },
-            dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: []
+            dailyMeals: [], 
+            waterLogs: {}, 
+            workoutHistory: [], 
+            metricsHistory: [], 
+            customFoodDb: []
         };
 
         const EXERCISE_DB = [
@@ -644,10 +658,7 @@
             { name: "Calf Raises", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" }
         ];
 
-        let currentPhotos = { front: null, side: null, back: null };
-        let timerInterval;
-        let aiStream = null;
-
+        // --- INITIALIZATION ---
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_v69_storage');
             if (saved) state = { ...state, ...JSON.parse(saved) };
@@ -664,15 +675,19 @@
 
         function saveState() { localStorage.setItem('fittrack_v69_storage', JSON.stringify(state)); }
 
+        // --- NAVIGATION ---
         function switchTab(tabId) {
             state.activeTab = tabId;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
+            
             document.querySelectorAll('.nav-item').forEach(n => {
                 const isActive = n.dataset.tab === tabId;
-                n.classList.toggle('text-slate-300', !isActive); n.classList.toggle('text-indigo-600', isActive);
+                n.classList.toggle('text-slate-300', !isActive); 
+                n.classList.toggle('text-indigo-600', isActive);
                 n.querySelector('.nav-bg').classList.toggle('bg-indigo-50', isActive);
             });
+
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
             if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
@@ -680,16 +695,23 @@
             lucide.createIcons();
         }
 
+        // --- DASHBOARD LOGIC ---
         function renderDashboard() {
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
             const cals = today.reduce((a, b) => a + Number(b.calories), 0);
             const prot = today.reduce((a, b) => a + Number(b.protein), 0);
+            
             document.getElementById('dash-calories').innerText = Math.round(cals);
             document.getElementById('dash-protein').innerText = Math.round(prot) + 'g';
+            
+            // Pie Chart
             const progress = Math.min((cals / state.goals.calories) * 534, 534);
             document.getElementById('calorie-progress').style.strokeDashoffset = 534 - progress;
+            
+            // Water
             const water = state.waterLogs[state.viewDate] || 0;
             document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)} Liters`;
+            
             calculateWeeklyVolume();
         }
 
@@ -701,10 +723,12 @@
             monday.setDate(now.getDate() + diffToMon); monday.setHours(0,0,0,0);
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6); sunday.setHours(23,59,59,999);
+
             const weeklyWorkouts = state.workoutHistory.filter(w => {
                 const wDate = new Date(w.date);
                 return wDate >= monday && wDate <= sunday;
             });
+
             const volume = {};
             weeklyWorkouts.forEach(workout => {
                 workout.exercises.forEach(ex => {
@@ -714,6 +738,7 @@
                     volume[muscle] = (volume[muscle] || 0) + setValidCount;
                 });
             });
+
             const container = document.getElementById('muscle-volume-stats');
             if (Object.keys(volume).length === 0) {
                 container.innerHTML = `<p class="col-span-2 text-center text-slate-500 text-xs py-4">No volume recorded for this week.</p>`;
@@ -732,8 +757,13 @@
             }
         }
 
-        function updateWater(ml) { const d = state.viewDate; state.waterLogs[d] = Math.max(0, (state.waterLogs[d] || 0) + ml); saveState(); renderDashboard(); }
+        function updateWater(ml) { 
+            const d = state.viewDate; 
+            state.waterLogs[d] = Math.max(0, (state.waterLogs[d] || 0) + ml); 
+            saveState(); renderDashboard(); 
+        }
 
+        // --- SETTINGS / EQUIPMENT ---
         function setEquipProfileTab(profile) {
             state.equipProfileTab = profile;
             document.getElementById('eqp-tab-gym').className = `flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${profile==='gym'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
@@ -767,10 +797,19 @@
             lucide.createIcons();
         }
 
-        function toggleEquipment(profile, equip) { state.equipment[profile][equip] = !state.equipment[profile][equip]; saveState(); renderEquipmentChecklist(); }
+        function toggleEquipment(profile, equip) { 
+            state.equipment[profile][equip] = !state.equipment[profile][equip]; 
+            saveState(); renderEquipmentChecklist(); 
+        }
 
-        let activeWorkoutDate = "";
+        function resetData() {
+            if(confirm("Are you sure? This will delete all history.")) {
+                localStorage.removeItem('fittrack_v69_storage');
+                location.reload();
+            }
+        }
 
+        // --- WORKOUT LOGIC ---
         function setWorkoutEnv(env) {
             state.workoutEnv = env;
             document.getElementById('env-tab-gym').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env==='gym'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
@@ -795,11 +834,14 @@
             const env = state.workoutEnv;
             const availableEquip = state.equipment[env];
             let pool = EXERCISE_DB.filter(ex => (focus === "Full Body" || ex.focus === focus) && availableEquip[ex.equip]);
+            
             if (pool.length === 0) { alert("No exercises found for your selected equipment!"); return; }
+            
             document.getElementById('workout-setup').classList.add('hidden');
             document.getElementById('workout-active').classList.remove('hidden');
             document.getElementById('active-workout-title').innerText = `AI: ${focus}`;
             document.getElementById('active-workout-date-display').innerText = `Date: ${activeWorkoutDate}`;
+            
             const list = document.getElementById('exercise-list'); list.innerHTML = '';
             pool.sort(() => 0.5 - Math.random()).slice(0, 5).forEach(ex => addExerciseField(ex.name));
             startTimer();
@@ -857,12 +899,23 @@
                 });
                 exercises.push({ name, sets });
             });
-            state.workoutHistory.unshift({ id: Date.now(), date: activeWorkoutDate, focus: document.getElementById('active-workout-title').innerText, duration: document.getElementById('workout-timer').innerText, exercises: exercises });
+            state.workoutHistory.unshift({ 
+                id: Date.now(), 
+                date: activeWorkoutDate, 
+                focus: document.getElementById('active-workout-title').innerText, 
+                duration: document.getElementById('workout-timer').innerText, 
+                exercises: exercises 
+            });
             saveState(); cancelWorkout(); switchTab('history'); renderDashboard();
         }
 
-        function cancelWorkout() { clearInterval(timerInterval); document.getElementById('workout-setup').classList.remove('hidden'); document.getElementById('workout-active').classList.add('hidden'); }
+        function cancelWorkout() { 
+            clearInterval(timerInterval); 
+            document.getElementById('workout-setup').classList.remove('hidden'); 
+            document.getElementById('workout-active').classList.add('hidden'); 
+        }
 
+        // --- NUTRITION LOGIC ---
         function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
         function renderNutrition() {
             document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
@@ -929,15 +982,11 @@
             saveState(); renderDailyLog(); renderDashboard();
         }
 
-        // --- NEW BARCODE SCANNER LOGIC ---
-
+        // --- BARCODE SCANNER ---
         function startScanner() {
-            // Ensure AI scanner is off to prevent camera conflicts
-            stopAIScanner();
-            
+            stopAIScanner(); // Priority cleanup
             document.getElementById('scanner-container').classList.remove('hidden');
 
-            // Initialize if not already created
             if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("scanner-mount");
             }
@@ -948,10 +997,8 @@
                 { facingMode: "environment" }, 
                 config, 
                 (decodedText) => {
-                    // Success callback
                     stopScanner();
-                    
-                    // Fetch from OpenFoodFacts
+                    // OpenFoodFacts API
                     fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
                     .then(r => r.json())
                     .then(d => { 
@@ -960,20 +1007,15 @@
                             document.getElementById('form-cals').value = d.product.nutriments['energy-kcal_100g'] || 0; 
                             document.getElementById('form-prot').value = d.product.nutriments['proteins_100g'] || 0;
                         } else {
-                            alert("Product not found in database. Please enter details manually.");
+                            alert("Product not found. Enter details manually.");
                         }
                     })
-                    .catch(e => {
-                        console.error(e);
-                        alert("Could not fetch product details.");
-                    });
+                    .catch(e => { console.error(e); alert("Connection error."); });
                 },
-                (errorMessage) => {
-                    // Scanning... do nothing on fail
-                }
+                (errorMessage) => {}
             ).catch(err => {
-                console.error("Error starting scanner:", err);
-                alert("Camera permission denied or not available.");
+                console.error(err);
+                alert("Camera permission denied.");
                 document.getElementById('scanner-container').classList.add('hidden'); 
             });
         }
@@ -982,19 +1024,14 @@
             if (html5QrCode && html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
                     document.getElementById('scanner-container').classList.add('hidden');
-                }).catch(err => {
-                    console.error("Failed to stop scanner", err);
-                    document.getElementById('scanner-container').classList.add('hidden');
                 });
             } else {
                 document.getElementById('scanner-container').classList.add('hidden');
             }
         }
 
-        // --- AI SCANNER LOGIC (Updated to coexist) ---
-
+        // --- AI MEAL SCANNER (GEMINI) ---
         async function startAIScanner() {
-            // Ensure barcode scanner is stopped first
             if (html5QrCode && html5QrCode.isScanning) {
                 await html5QrCode.stop();
                 document.getElementById('scanner-container').classList.add('hidden');
@@ -1003,19 +1040,14 @@
             document.getElementById('ai-scan-container').classList.remove('hidden');
             const video = document.getElementById('ai-video');
             const constraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
+            
             try {
                 aiStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = aiStream;
                 video.onloadedmetadata = () => video.play();
             } catch (err) {
-                try {
-                    aiStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    video.srcObject = aiStream;
-                    video.onloadedmetadata = () => video.play();
-                } catch (fallbackErr) {
-                    alert("Unable to access camera.");
-                    stopAIScanner();
-                }
+                alert("Unable to access camera.");
+                stopAIScanner();
             }
         }
 
@@ -1028,4 +1060,174 @@
         }
 
         async function captureAndAnalyzeMeal() {
-            const video = document.
+            // NOTE: YOU NEED A KEY
+            if(!apiKey || apiKey === "") {
+                alert("Please add your Gemini API Key in the code (line 640)");
+                return;
+            }
+
+            const video = document.getElementById('ai-video');
+            const canvas = document.getElementById('ai-capture-canvas');
+            const overlay = document.getElementById('ai-scanner-overlay');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                // Show loading
+                overlay.classList.add('active');
+
+                // Get Image Data
+                const base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+                // Construct Gemini API Payload
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: "Analyze this image. Identify the food item and estimate calories and protein. Return ONLY a JSON object with these keys: 'food_name' (string), 'calories' (integer), 'protein' (integer). Do not wrap in markdown." },
+                            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                        ]
+                    }]
+                };
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+                    
+                    if(data.error) throw new Error(data.error.message);
+
+                    let resultText = data.candidates[0].content.parts[0].text;
+                    // Clean up markdown code blocks if API returns them
+                    resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const result = JSON.parse(resultText);
+
+                    // Populate Fields
+                    document.getElementById('form-name').value = result.food_name || "Unknown";
+                    document.getElementById('form-cals').value = result.calories || 0;
+                    document.getElementById('form-prot').value = result.protein || 0;
+
+                    stopAIScanner();
+                    
+                } catch (error) {
+                    console.error(error);
+                    alert("AI Analysis failed. Please try again or type manually.");
+                    overlay.classList.remove('active');
+                }
+            }
+        }
+
+        // --- BODY METRICS & PHOTOS ---
+        function triggerPhoto(side) { document.getElementById(`file-${side}`).click(); }
+        
+        function handlePhoto(input, side) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentPhotos[side] = e.target.result;
+                    const preview = document.getElementById(`preview-${side}`);
+                    preview.innerHTML = `<img src="${e.target.result}" class="absolute inset-0 w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveMetrics() {
+            const entry = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                weight: document.getElementById('body-weight').value,
+                measurements: {
+                    shoulders: document.getElementById('m-shoulders').value,
+                    chest: document.getElementById('m-chest').value,
+                    waist: document.getElementById('m-waist').value,
+                    glutes: document.getElementById('m-glutes').value,
+                    arms: document.getElementById('m-arms').value,
+                    legs: document.getElementById('m-legs').value,
+                },
+                photos: { ...currentPhotos } // Clone
+            };
+            state.metricsHistory.unshift(entry);
+            saveState();
+            alert("Check-in saved!");
+            // Clear photos after save
+            currentPhotos = { front: null, side: null, back: null };
+            ['front', 'side', 'back'].forEach(s => {
+                document.getElementById(`preview-${s}`).innerHTML = `<i data-lucide="camera" class="text-slate-300 mb-1"></i><span class="text-[8px] font-black uppercase text-slate-400">${s}</span>`;
+            });
+            lucide.createIcons();
+        }
+
+        // --- HISTORY & EDUCATION ---
+        function setHistoryTab(t) { 
+            state.historyTab = t; 
+            document.getElementById('hist-tab-train').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='training'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='nutrition'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('hist-tab-body').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='body'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            renderHistory(); 
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            if (state.historyTab === 'training') {
+                if(state.workoutHistory.length === 0) container.innerHTML = '<p class="text-center text-slate-400 text-xs">No workouts yet.</p>';
+                state.workoutHistory.forEach(w => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-4 rounded-2xl border border-slate-100 space-y-2";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-slate-900">${w.focus}</h4>
+                            <span class="text-[9px] font-black text-slate-400 uppercase">${w.date}</span>
+                        </div>
+                        <p class="text-xs text-slate-500">${w.exercises.length} Exercises • ${w.duration}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            } else if (state.historyTab === 'nutrition') {
+                // Group by date
+                const grouped = state.dailyMeals.reduce((acc, m) => {
+                    if(!acc[m.date]) acc[m.date] = { cals: 0, prot: 0 };
+                    acc[m.date].cals += m.calories;
+                    acc[m.date].prot += m.protein;
+                    return acc;
+                }, {});
+                Object.entries(grouped).forEach(([date, stats]) => {
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                            <span class="font-bold text-sm text-slate-700">${date}</span>
+                            <span class="text-[10px] font-black text-indigo-600 uppercase">${stats.cals} kcal • ${stats.prot}g P</span>
+                        </div>`;
+                });
+            } else if (state.historyTab === 'body') {
+                state.metricsHistory.forEach(m => {
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-sm block">${m.date}</span>
+                                <span class="text-[9px] text-slate-400 uppercase">${m.weight} KG</span>
+                            </div>
+                            ${m.photos.front ? '<i data-lucide="image" class="w-4 h-4 text-indigo-500"></i>' : ''}
+                        </div>`;
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function setEduTab(t) {
+            document.querySelectorAll('.edu-tab-content').forEach(e => e.classList.remove('active'));
+            document.getElementById('edu-content-muscle').classList.add('active'); // Simplified for demo
+            
+            document.getElementById('edu-tab-muscle').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='muscle'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('edu-tab-loss').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='loss'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+            document.getElementById('edu-tab-health').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${t==='health'?'bg-white text-indigo-600 shadow-sm':'text-slate-400'}`;
+        }
+    </script>
+</body>
+</html>
