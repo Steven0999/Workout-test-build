@@ -19,6 +19,10 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
 }
+/* Nutrition toggle buttons */
+#nut-view-log button {
+  transition: all 0.2s ease;
+}
 
 #scanner-mount {
     width: 100%;
