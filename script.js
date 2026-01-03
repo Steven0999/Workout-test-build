@@ -163,6 +163,79 @@ function stopAIScanner() {
     if (aiStream) aiStream.getTracks().forEach(t => t.stop());
     document.getElementById('ai-scan-container').classList.add('hidden');
 }
+// --- FOOD LOG MODE ---
+let foodLogMode = "pack";
+
+function setFoodMode(mode) {
+  foodLogMode = mode;
+
+  document.getElementById('mode-pack').className =
+    `flex-1 py-2 text-xs font-black rounded-lg ${mode==='pack'?'bg-white text-indigo-600':'text-slate-400'}`;
+  document.getElementById('mode-amount').className =
+    `flex-1 py-2 text-xs font-black rounded-lg ${mode==='amount'?'bg-white text-indigo-600':'text-slate-400'}`;
+
+  document.getElementById('amount-input').classList.toggle('hidden', mode !== 'amount');
+}
+
+// --- LOG FOOD ---
+function logFood() {
+  const name = document.getElementById('log-food-name').value;
+  const baseCals = Number(document.getElementById('log-food-cals').value);
+  const baseProt = Number(document.getElementById('log-food-prot').value);
+  const grams = Number(document.getElementById('log-food-grams').value || 100);
+
+  if (!name || !baseCals) return alert("Missing food details");
+
+  let calories = baseCals;
+  let protein = baseProt;
+
+  if (foodLogMode === "amount") {
+    const factor = grams / 100;
+    calories = Math.round(baseCals * factor);
+    protein = Math.round(baseProt * factor);
+  }
+
+  state.dailyMeals.push({
+    name,
+    calories,
+    protein,
+    grams: foodLogMode === "amount" ? grams : null,
+    date: state.viewDate
+  });
+
+  saveState();
+  renderDailyLog();
+  renderDashboard();
+
+  // Reset
+  document.getElementById('log-food-name').value = '';
+  document.getElementById('log-food-cals').value = '';
+  document.getElementById('log-food-prot').value = '';
+  document.getElementById('log-food-grams').value = '';
+}
+
+// --- RENDER DAILY LOG ---
+function renderDailyLog() {
+  const list = document.getElementById('daily-log-list');
+  list.innerHTML = '';
+
+  state.dailyMeals
+    .filter(m => m.date === state.viewDate)
+    .forEach(m => {
+      const div = document.createElement('div');
+      div.className = "bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center";
+      div.innerHTML = `
+        <div>
+          <p class="font-bold">${m.name}</p>
+          <p class="text-xs text-slate-400">
+            ${m.grams ? `${m.grams}g · ` : ''}${m.protein}g protein
+          </p>
+        </div>
+        <span class="font-black">${m.calories} kcal</span>
+      `;
+      list.appendChild(div);
+    });
+}
 
 async function captureAndAnalyzeMeal() {
     if(!apiKey || apiKey.includes("YOUR_")) { alert("Please set your Gemini API Key in script.js"); return; }
