@@ -1,212 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitTrack Pro V6.9</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FitTrack Pro V6.9</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- HTML5 QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
 
-    <link rel="stylesheet" href="style.css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="style.css">
 </head>
+<body class="pb-28 bg-slate-50 font-sans">
 
-<body class="pb-24">
-
-<!-- ================= HEADER ================= -->
+<!-- HEADER -->
 <header class="bg-white/70 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
     <div>
-        <h1 class="text-xl font-extrabold tracking-tight text-orange-400">
-            Vaughan<span class="text-slate-600">Fitness</span>
-        </h1>
-        <div class="flex items-center gap-2">
+        <h1 class="text-xl font-extrabold tracking-tight text-orange-400">Vaughan<span class="text-slate-600">Fitness</span></h1>
+        <div class="flex items-center gap-2 mt-1">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
         </div>
     </div>
     <div class="flex items-center gap-2">
-        <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl">
-            <i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i>
-        </button>
-        <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl">
+        <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
             <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
         </button>
     </div>
 </header>
 
-<!-- ================= MAIN ================= -->
 <main class="max-w-xl mx-auto p-4 space-y-6">
 
-<!-- ================= DASHBOARD ================= -->
+<!-- DASHBOARD -->
 <section id="dashboard" class="tab-content active space-y-6">
-
-    <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center">
+    <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
         <div class="relative w-48 h-48 flex items-center justify-center">
             <svg class="w-full h-full">
-                <circle stroke-width="12" stroke="#e5e7eb" fill="transparent" r="85" cx="96" cy="96" />
-                <circle id="calorie-progress" class="progress-ring-circle text-indigo-600"
-                        stroke-width="12" stroke-dasharray="534" stroke-dashoffset="534"
-                        stroke-linecap="round" stroke="currentColor" fill="transparent"
-                        r="85" cx="96" cy="96" />
+                <circle class="text-slate-100" stroke-width="12" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96"/>
+                <circle id="calorie-progress" class="text-indigo-600 progress-ring-circle" stroke-width="12" stroke-dasharray="534" stroke-dashoffset="534" stroke-linecap="round" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96"/>
             </svg>
             <div class="absolute text-center">
-                <div id="dash-calories" class="text-4xl font-black">0</div>
-                <div class="text-[10px] font-bold text-slate-400 uppercase">Kcal Eaten</div>
+                <div id="dash-calories" class="text-4xl font-black text-slate-900">0</div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kcal Eaten</div>
             </div>
         </div>
-
-        <div class="grid grid-cols-3 w-full gap-4 mt-8 border-t pt-6">
+        <div class="grid grid-cols-3 w-full gap-4 mt-8 border-t border-slate-100 pt-6">
             <div class="text-center">
-                <div id="dash-protein" class="font-bold">0g</div>
+                <div id="dash-protein" class="font-bold text-slate-900">0g</div>
                 <div class="text-[9px] font-black uppercase text-slate-400">Protein</div>
             </div>
-            <div class="text-center border-x">
-                <div id="dash-carbs" class="font-bold">0g</div>
+            <div class="text-center border-x border-slate-100">
+                <div id="dash-carbs" class="font-bold text-slate-900">0g</div>
                 <div class="text-[9px] font-black uppercase text-slate-400">Carbs</div>
             </div>
             <div class="text-center">
-                <div id="dash-fat" class="font-bold">0g</div>
+                <div id="dash-fat" class="font-bold text-slate-900">0g</div>
                 <div class="text-[9px] font-black uppercase text-slate-400">Fats</div>
             </div>
         </div>
     </div>
 
-    <div class="glass-card rounded-[2.5rem] p-6 flex justify-between items-center">
-        <div>
-            <h4 class="font-bold">Hydration</h4>
-            <p id="water-count" class="text-xs text-slate-500">0 / 2.5 Liters</p>
+    <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                <i data-lucide="droplet" class="text-blue-500"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800">Hydration</h4>
+                <p id="water-count" class="text-xs text-slate-500">0 / 2.5 Liters</p>
+            </div>
         </div>
-        <div class="flex gap-2">
-            <button onclick="updateWater(-250)" class="w-10 h-10 bg-slate-100 rounded-xl">-</button>
-            <button onclick="updateWater(250)" class="w-10 h-10 bg-indigo-600 text-white rounded-xl">+</button>
+        <div class="flex items-center gap-2">
+            <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 font-bold">-</button>
+            <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold">+</button>
         </div>
     </div>
-
 </section>
 
-<!-- ================= TRAINING ================= -->
+<!-- TRAINING -->
 <section id="training" class="tab-content space-y-6">
+    <div id="workout-setup" class="space-y-4">
+        <div class="glass-card p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+            <div class="flex bg-slate-100 p-1 rounded-2xl mb-6 mx-auto w-fit">
+                <button onclick="setWorkoutEnv('gym')" id="env-tab-gym" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym</button>
+                <button onclick="setWorkoutEnv('home')" id="env-tab-home" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Home</button>
+            </div>
+            <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold mb-6 appearance-none text-center">
+                <option>Full Body</option>
+                <option>Upper Body (Push)</option>
+                <option>Upper Body (Pull)</option>
+                <option>Lower Body (Legs)</option>
+            </select>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2">
+                    <i data-lucide="plus-circle"></i> Manual
+                </button>
+                <button onclick="generateAIWorkout()" class="p-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2">
+                    <i data-lucide="sparkles"></i> AI Suggest
+                </button>
+            </div>
+        </div>
 
-    <div id="workout-setup" class="glass-card p-6 rounded-[2.5rem] text-center">
-        <h3 class="text-xl font-bold mb-4">Plan Your Session</h3>
-
-        <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl font-bold mb-4">
-            <option>Full Body</option>
-            <option>Upper Body (Push)</option>
-            <option>Upper Body (Pull)</option>
-            <option>Lower Body</option>
-        </select>
-
-        <button onclick="startManualWorkout()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">
-            Start Workout
-        </button>
+        <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="active-workout-title" class="text-xl font-black text-slate-900">Workout</h3>
+                <button onclick="cancelWorkout()" class="text-slate-400 hover:text-red-500"><i data-lucide="x-circle"></i></button>
+            </div>
+            <div id="exercise-list" class="space-y-6 mb-6"></div>
+            <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest mb-4">+ Add Exercise</button>
+            <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold shadow-lg">Finish & Log Session</button>
+        </div>
     </div>
-
-    <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6">
-        <h3 id="active-workout-title" class="text-xl font-black mb-2">Workout</h3>
-        <p id="workout-timer" class="font-mono text-indigo-600">00:00:00</p>
-        <div id="exercise-list" class="space-y-4 mt-6"></div>
-        <button onclick="addExerciseField()" class="w-full border-2 border-dashed rounded-2xl p-4 mt-4">
-            + Add Exercise
-        </button>
-        <button onclick="saveWorkout()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl mt-4">
-            Finish Workout
-        </button>
-    </div>
-
 </section>
 
-<!-- ================= NUTRITION (UPDATED) ================= -->
+<!-- NUTRITION -->
 <section id="nutrition" class="tab-content space-y-6">
-
-    <div class="glass-card p-6 rounded-[2.5rem] space-y-4">
-
-        <input id="log-food-name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold" placeholder="Food name">
-
-        <div class="grid grid-cols-2 gap-3">
-            <input id="log-food-cals" type="number" class="p-4 bg-slate-50 rounded-2xl font-bold"
-                   placeholder="Calories per 100g / pack">
-            <input id="log-food-prot" type="number" class="p-4 bg-slate-50 rounded-2xl font-bold"
-                   placeholder="Protein per 100g / pack">
-        </div>
-
-        <!-- MODE -->
-        <div class="flex bg-slate-100 p-1 rounded-xl">
-            <button id="mode-pack" onclick="setFoodMode('pack')" class="flex-1 py-2 text-xs font-black bg-white rounded-lg text-indigo-600">
-                Per Pack
-            </button>
-            <button id="mode-amount" onclick="setFoodMode('amount')" class="flex-1 py-2 text-xs font-black rounded-lg text-slate-400">
-                By Amount
-            </button>
-        </div>
-
-        <!-- AMOUNT -->
-        <div id="amount-input" class="hidden">
-            <input id="log-food-grams" type="number" class="w-full p-4 bg-slate-50 rounded-2xl font-bold"
-                   placeholder="Amount eaten (grams)">
-        </div>
-
-        <button onclick="logFood()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase">
-            Log Food
-        </button>
-
+    <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+        <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Diary</button>
+        <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Inventory</button>
     </div>
 
-    <div id="daily-log-list" class="space-y-3"></div>
+    <div id="nut-view-log" class="space-y-6">
+        <div class="relative">
+            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+            <input id="food-search" placeholder="Search your database..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm focus:ring-2 ring-indigo-100 outline-none" oninput="handleFoodSearch(this.value)">
+            <div id="food-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-50 shadow-2xl max-h-64 overflow-y-auto"></div>
+        </div>
+        <div id="daily-log-list" class="space-y-3"></div>
+    </div>
 
+    <div id="nut-view-db" class="hidden space-y-6">
+        <div id="custom-db-list" class="divide-y divide-slate-50 max-h-80 overflow-y-auto"></div>
+    </div>
 </section>
 
-<!-- ================= METRICS ================= -->
+<!-- BODY METRICS -->
 <section id="metrics" class="tab-content space-y-6">
-
-    <div class="glass-card p-6 rounded-[2.5rem] space-y-4">
-        <label class="text-xs font-bold">Body Weight (kg)</label>
-        <input id="body-weight" type="number" step="0.1"
-               class="w-full bg-slate-50 p-4 rounded-2xl font-bold">
-
-        <div class="grid grid-cols-2 gap-3">
-            <input id="m-chest" placeholder="Chest (cm)" class="p-4 bg-slate-50 rounded-2xl font-bold">
-            <input id="m-waist" placeholder="Waist (cm)" class="p-4 bg-slate-50 rounded-2xl font-bold">
-            <input id="m-hips" placeholder="Hips (cm)" class="p-4 bg-slate-50 rounded-2xl font-bold">
-            <input id="m-arms" placeholder="Arms (cm)" class="p-4 bg-slate-50 rounded-2xl font-bold">
+    <div class="glass-card p-8 rounded-[3rem] space-y-8">
+        <div>
+            <span class="text-[10px] font-black uppercase text-slate-400 block mb-1">Body Weight</span>
+            <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-slate-900 outline-none">
         </div>
-
-        <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black">
-            Save Check-in
-        </button>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-400">Shoulders</label>
+                <input id="m-shoulders" type="number" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-slate-900 outline-none" placeholder="00">
+            </div>
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-400">Chest</label>
+                <input id="m-chest" type="number" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-slate-900 outline-none" placeholder="00">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-400">Waist</label>
+                <input id="m-waist" type="number" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-slate-900 outline-none" placeholder="00">
+            </div>
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-400">Glutes</label>
+                <input id="m-glutes" type="number" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-slate-900 outline-none" placeholder="00">
+            </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="photo-slot" onclick="triggerPhoto('front')"><input type="file" id="file-front" accept="image/*" class="hidden" onchange="handlePhoto(this,'front')"><i data-lucide="camera" class="text-slate-300"></i></div>
+            <div class="photo-slot" onclick="triggerPhoto('side')"><input type="file" id="file-side" accept="image/*" class="hidden" onchange="handlePhoto(this,'side')"><i data-lucide="camera" class="text-slate-300"></i></div>
+            <div class="photo-slot" onclick="triggerPhoto('back')"><input type="file" id="file-back" accept="image/*" class="hidden" onchange="handlePhoto(this,'back')"><i data-lucide="camera" class="text-slate-300"></i></div>
+        </div>
+        <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-rose-100 mt-4">Log Check-in</button>
     </div>
-
 </section>
 
-<!-- ================= HISTORY ================= -->
-<section id="history" class="tab-content space-y-6">
-    <div id="history-list" class="space-y-4"></div>
-</section>
-
-<!-- ================= SETTINGS ================= -->
+<!-- SETTINGS -->
 <section id="settings" class="tab-content space-y-6">
-    <div class="glass-card p-6 rounded-[2.5rem]">
-        <label class="text-xs font-bold">Daily Calorie Goal</label>
-        <input id="set-cal-goal" type="number" class="w-full bg-slate-50 p-4 rounded-2xl font-bold">
+    <div class="glass-card p-6 rounded-[2.5rem] space-y-4">
+        <h4 class="text-[11px] font-black uppercase text-slate-400 tracking-wider">Calorie & Equipment Goals</h4>
+        <div class="flex flex-col gap-2">
+            <label class="font-black uppercase text-[9px] text-slate-400">Calorie Goal</label>
+            <input type="number" id="set-cal-goal" class="w-full bg-slate-50 p-4 rounded-xl font-bold text-indigo-600 outline-none" onchange="state.goals.calories = Number(this.value); saveState();">
+        </div>
+        <div class="flex flex-col gap-2 mt-4">
+            <h5 class="font-black uppercase text-[9px] text-slate-400">Equipment (Gym)</h5>
+            <div class="grid grid-cols-3 gap-2">
+                <label><input type="checkbox" onchange="updateEquipment('gym','barbell',this.checked)"> Barbell</label>
+                <label><input type="checkbox" onchange="updateEquipment('gym','dumbbell',this.checked)"> Dumbbell</label>
+                <label><input type="checkbox" onchange="updateEquipment('gym','kettlebell',this.checked)"> Kettlebell</label>
+                <label><input type="checkbox" onchange="updateEquipment('gym','cable',this.checked)"> Cable</label>
+                <label><input type="checkbox" onchange="updateEquipment('gym','machine',this.checked)"> Machine</label>
+                <label><input type="checkbox" onchange="updateEquipment('gym','bodyweight',this.checked)"> Bodyweight</label>
+            </div>
+        </div>
+        <div class="flex flex-col gap-2 mt-4">
+            <h5 class="font-black uppercase text-[9px] text-slate-400">Equipment (Home)</h5>
+            <div class="grid grid-cols-3 gap-2">
+                <label><input type="checkbox" onchange="updateEquipment('home','barbell',this.checked)"> Barbell</label>
+                <label><input type="checkbox" onchange="updateEquipment('home','dumbbell',this.checked)"> Dumbbell</label>
+                <label><input type="checkbox" onchange="updateEquipment('home','kettlebell',this.checked)"> Kettlebell</label>
+                <label><input type="checkbox" onchange="updateEquipment('home','cable',this.checked)"> Cable</label>
+                <label><input type="checkbox" onchange="updateEquipment('home','machine',this.checked)"> Machine</label>
+                <label><input type="checkbox" onchange="updateEquipment('home','bodyweight',this.checked)"> Bodyweight</label>
+            </div>
+        </div>
     </div>
-    <button onclick="resetData()" class="w-full bg-red-50 text-red-600 p-5 rounded-2xl font-black uppercase">
-        Reset All Data
-    </button>
+    <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold uppercase text-[10px] tracking-widest bg-red-50 rounded-2xl mt-4">Purge All Records</button>
 </section>
 
 </main>
 
-<!-- ================= NAV ================= -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white/90 border-t px-6 py-4 flex justify-between z-50">
-    <button onclick="switchTab('dashboard')"><i data-lucide="layout-grid"></i></button>
-    <button onclick="switchTab('training')"><i data-lucide="dumbbell"></i></button>
-    <button onclick="switchTab('nutrition')"><i data-lucide="apple"></i></button>
-    <button onclick="switchTab('history')"><i data-lucide="calendar"></i></button>
-    <button onclick="switchTab('metrics')"><i data-lucide="scale"></i></button>
+<!-- NAVIGATION -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
+    <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1.5">
+        <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg bg-indigo-50"><i data-lucide="layout-grid" class="w-6 h-6"></i></div>
+        <span class="text-[9px] font-black uppercase tracking-tighter">Dash</span>
+    </button>
+    <button onclick="switchTab('training')" data-tab="training" class="nav-item text-slate-300 flex flex-col items-center gap-1.5">
+        <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="dumbbell" class="w-6 h-6"></i></div>
+        <span class="text-[9px] font-black uppercase tracking-tighter">Train</span>
+    </button>
+    <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item text-slate-300 flex flex-col items-center gap-1.5">
+        <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="apple" class="w-6 h-6"></i></div>
+        <span class="text-[9px] font-black uppercase tracking-tighter">Eat</span>
+    </button>
+    <button onclick="switchTab('history')" data-tab="history" class="nav-item text-slate-300 flex flex-col items-center gap-1.5">
+        <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="calendar" class="w-6 h-6"></i></div>
+        <span class="text-[9px] font-black uppercase tracking-tighter">Logs</span>
+    </button>
+    <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item text-slate-300 flex flex-col items-center gap-1.5">
+        <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="scale" class="w-6 h-6"></i></div>
+        <span class="text-[9px] font-black uppercase tracking-tighter">Body</span>
+    </button>
 </nav>
 
+<!-- HISTORY SECTION -->
+<section id="history" class="tab-content space-y-6">
+    <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+        <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Training</button>
+        <button onclick="setHistoryTab('nutrition')" id="hist-tab-nut" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Food</button>
+        <button onclick="setHistoryTab('body')" id="hist-tab-body" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Body</button>
+    </div>
+    <div id="history-list" class="space-y-4 max-h-96 overflow-y-auto"></div>
+</section>
+
 <script src="script.js"></script>
-<script>lucide.createIcons();</script>
+<script>
+  // Activate lucide icons
+  lucide.replace();
+</script>
+
 </body>
 </html>
