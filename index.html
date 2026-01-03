@@ -147,14 +147,51 @@
                 <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Inventory</button>
             </div>
 
-            <div id="nut-view-log" class="space-y-6">
-                <div class="relative">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                    <input id="food-search" placeholder="Search your database..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm focus:ring-2 ring-indigo-100 outline-none" oninput="handleFoodSearch(this.value)">
-                    <div id="food-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-50 shadow-2xl max-h-64 overflow-y-auto"></div>
-                </div>
-                <div id="daily-log-list" class="space-y-3"></div>
-            </div>
+            <!-- ONLY nutrition log section shown updated -->
+<div id="nut-view-log" class="space-y-6">
+  <div id="daily-log-list" class="space-y-3"></div>
+
+  <!-- Add Food Modal -->
+  <div class="glass-card p-6 rounded-[2.5rem] space-y-4">
+    <h4 class="font-black text-xs uppercase tracking-widest text-slate-400">
+      Add Food
+    </h4>
+
+    <input id="log-food-name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold" placeholder="Food name">
+
+    <div class="grid grid-cols-2 gap-3">
+      <input id="log-food-cals" type="number" class="p-4 bg-slate-50 rounded-2xl font-bold" placeholder="Calories / pack">
+      <input id="log-food-prot" type="number" class="p-4 bg-slate-50 rounded-2xl font-bold" placeholder="Protein / pack (g)">
+    </div>
+
+    <!-- MODE -->
+    <div class="flex bg-slate-100 p-1 rounded-xl">
+      <button onclick="setFoodMode('pack')" id="mode-pack"
+        class="flex-1 py-2 text-xs font-black rounded-lg bg-white text-indigo-600">
+        Per Pack
+      </button>
+      <button onclick="setFoodMode('amount')" id="mode-amount"
+        class="flex-1 py-2 text-xs font-black rounded-lg text-slate-400">
+        By Amount
+      </button>
+    </div>
+
+    <!-- AMOUNT INPUT -->
+    <div id="amount-input" class="hidden">
+      <input id="log-food-grams" type="number"
+        class="w-full p-4 bg-slate-50 rounded-2xl font-bold"
+        placeholder="Amount (grams)">
+      <p class="text-[10px] text-slate-400 font-bold mt-1 text-center">
+        Values scale automatically
+      </p>
+    </div>
+
+    <button onclick="logFood()"
+      class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest">
+      Log Food
+    </button>
+  </div>
+</div>
 
             <div id="nut-view-db" class="hidden space-y-6">
                 <div id="scanner-container" class="hidden space-y-4">
