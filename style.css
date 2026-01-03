@@ -2,117 +2,127 @@
 
 :root {
     --brand-primary: orange;
-    --brand-secondary: dark grey;
-    --bg-main: black;
+    --brand-secondary: #64748b;
+    --bg-main: #0f172a;
 }
 
-body { 
-    font-family: 'Plus Jakarta Sans', sans-serif; 
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-tap-highlight-color: transparent;
-    background-color: var(--bg-main);
-    color: #1e293b;
+    background-color: #f8fafc;
+    color: #0f172a;
 }
 
+/* Glass Card */
 .glass-card {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
-}
-/* Nutrition toggle buttons */
-#nut-view-log button {
-  transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-#scanner-mount {
-    width: 100%;
-    height: 100%;
-    border-radius: 1.5rem;
-    overflow: hidden;
-    background: #000;
+/* Tabs */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.25s ease-out;
 }
-
-#scanner-mount video {
-    object-fit: cover;
-    border-radius: 1.5rem;
+.tab-content.active {
+    display: block;
 }
-
-#ai-video { width: 100%; height: 100%; object-fit: cover; border-radius: 1.5rem; background: #000; }
-
-.tab-content { display: none; animation: fadeIn 0.3s ease-out; }
-.tab-content.active { display: block; }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Progress Ring */
 .progress-ring-circle {
     transition: stroke-dashoffset 0.35s;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
 }
 
-/* Scanner Feedback Overlays */
+/* Workout Table */
+.workout-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 4px;
+}
+.workout-table th {
+    font-size: 9px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #94a3b8;
+}
+.table-input {
+    width: 100%;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 6px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+}
+
+/* Scanner */
 .scanner-guide {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70%;
-    height: 40%;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    inset: 20%;
+    border: 2px solid rgba(255,255,255,0.6);
     border-radius: 1rem;
-    z-index: 30;
-    box-shadow: 0 0 0 1000px rgba(0,0,0,0.5);
-    pointer-events: none;
+    box-shadow: 0 0 0 999px rgba(0,0,0,0.5);
 }
 
 .scanner-laser {
     position: absolute;
+    left: 10%;
+    right: 10%;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60%;
     height: 2px;
-    background-color: #f43f5e;
-    box-shadow: 0 0 15px #f43f5e;
-    animation: scanning 2s infinite ease-in-out;
-    z-index: 40;
-    pointer-events: none;
+    background: #ef4444;
+    animation: scan 2s infinite;
 }
 
-@keyframes scanning {
-    0%, 100% { transform: translate(-50%, -30px); opacity: 0.2; }
-    50% { transform: translate(-50%, 30px); opacity: 1; }
+@keyframes scan {
+    0% { transform: translateY(-40px); opacity: .2 }
+    50% { transform: translateY(40px); opacity: 1 }
+    100% { transform: translateY(-40px); opacity .2 }
 }
 
+/* Photo Slot */
 .photo-slot {
     aspect-ratio: 3/4;
     background: #f1f5f9;
     border-radius: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
     border: 2px dashed #e2e8f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
     position: relative;
 }
+.photo-slot img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 1.5rem;
+}
 
-.photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
-
-.workout-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
-.workout-table th { text-align: center; font-size: 9px; font-weight: 900; text-transform: uppercase; color: #94a3b8; }
-.table-input { width: 100%; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 4px; text-align: center; outline: none; }
-
+/* Spinner */
 .loading-spinner {
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.3);
     border-top: 3px solid #fff;
+    border-radius: 50%;
     width: 24px;
     height: 24px;
     animation: spin 1s linear infinite;
 }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
