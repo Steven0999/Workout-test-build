@@ -473,6 +473,27 @@
         let currentPhotoType = null;
         let portionSelection = { item: null, mode: 'packet' };
 
+        const EXERCISE_DB = [
+            { name: "Barbell Bench Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "barbell" },
+            { name: "Dumbbell Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "dumbbell" },
+            { name: "Push Ups", focus: "Upper Body (Push)", muscle: "Chest", equip: "bodyweight" },
+            { name: "Overhead Press", focus: "Upper Body (Push)", muscle: "Shoulders", equip: "barbell" },
+            { name: "Machine Chest Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "machine" },
+            { name: "Lateral Raises", focus: "Upper Body (Push)", muscle: "Shoulders", equip: "dumbbell" },
+            { name: "Barbell Rows", focus: "Upper Body (Pull)", muscle: "Back", equip: "barbell" },
+            { name: "Pull Ups", focus: "Upper Body (Pull)", muscle: "Back", equip: "bodyweight" },
+            { name: "Cable Lat Pulldown", focus: "Upper Body (Pull)", muscle: "Back", equip: "cable" },
+            { name: "Dumbbell Bicep Curls", focus: "Upper Body (Pull)", muscle: "Arms", equip: "dumbbell" },
+            { name: "Kettlebell Swings", focus: "Upper Body (Pull)", muscle: "Glutes/Back", equip: "kettlebell" },
+            { name: "Machine Seated Row", focus: "Upper Body (Pull)", muscle: "Back", equip: "machine" },
+            { name: "Barbell Squats", focus: "Lower Body (Legs)", muscle: "Legs", equip: "barbell" },
+            { name: "Goblet Squats", focus: "Lower Body (Legs)", muscle: "Legs", equip: "dumbbell" },
+            { name: "Bodyweight Lunges", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" },
+            { name: "Leg Press", focus: "Lower Body (Legs)", muscle: "Legs", equip: "machine" },
+            { name: "Kettlebell Deadlift", focus: "Lower Body (Legs)", muscle: "Legs", equip: "kettlebell" },
+            { name: "Calf Raises", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" }
+        ];
+
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_v69_storage');
             if (saved) state = { ...state, ...JSON.parse(saved) };
