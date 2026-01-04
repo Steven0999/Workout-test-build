@@ -658,6 +658,8 @@
             { name: "Calf Raises", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" }
         ];
 
+//I AM UP TO HERE ON THE CODING
+
         // --- INITIALIZATION ---
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_v69_storage');
