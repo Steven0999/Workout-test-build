@@ -421,31 +421,31 @@
             <div class="glass-card rounded-[2.5rem] p-6"><h3 class="text-xl font-bold">Training Science</h3><p class="text-sm text-slate-500">Stimulus, Nutrition, Recovery.</p></div>
         </section>
 
-        <!-- SETTINGS TAB (WITH HOME AND GYM EQUIPMENT) -->
+              <!-- SETTINGS TAB -->
         <section id="settings" class="tab-content space-y-6">
-            <div class="glass-card p-6 rounded-[2.5rem] space-y-6">
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Goal Configuration</h3>
-                    <div class="space-y-3">
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Daily Calorie Goal</label>
-                            <input id="set-cal-goal" type="number" class="w-full bg-transparent font-bold outline-none" onchange="state.goals.calories = this.value; saveState();">
-                        </div>
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-6 tracking-wider">Goal Configuration</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+                        <span class="font-bold text-sm">Calorie Goal</span>
+                        <input id="set-cal-goal" type="number" class="w-20 bg-transparent text-right font-bold text-indigo-600 outline-none" onchange="state.goals.calories = this.value; saveState();">
                     </div>
                 </div>
-
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Gym Equipment</h3>
-                    <div id="gym-equip-list" class="grid grid-cols-2 gap-2"></div>
-                </div>
-
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Home Equipment</h3>
-                    <div id="home-equip-list" class="grid grid-cols-2 gap-2"></div>
-                </div>
-
-                <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold bg-red-50 rounded-2xl uppercase text-[10px] tracking-widest">Purge All App Data</button>
             </div>
+
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-6 tracking-wider">Equipment Profiles</h3>
+                <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
+                    <button onclick="setEquipProfileTab('gym')" id="eqp-tab-gym" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym Profile</button>
+                    <button onclick="setEquipProfileTab('home')" id="eqp-tab-home" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Home Profile</button>
+                </div>
+                
+                <div id="equipment-checklist" class="space-y-3">
+                    <!-- Dynamic Checklist -->
+                </div>
+            </div>
+
+            <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold uppercase text-[10px] tracking-widest bg-red-50 rounded-2xl">Purge All Records</button>
         </section>
     </main>
 
