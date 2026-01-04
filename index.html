@@ -332,43 +332,78 @@
         </div>
 
         <!-- BODY TAB (WITH FULL METRICS AND PHOTOS) -->
+       <!-- BODY TAB -->
         <section id="metrics" class="tab-content space-y-6">
             <div class="glass-card p-8 rounded-[3rem] space-y-8">
-                <div class="bg-slate-50 p-6 rounded-3xl text-center">
-                    <span class="text-[10px] font-black uppercase text-slate-400 block">Body Weight (kg)</span>
-                    <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-transparent text-center text-4xl font-black outline-none">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-2xl"><label class="text-[9px] font-black text-slate-400 block uppercase">Waist (cm)</label><input id="m-waist" type="number" class="w-full bg-transparent font-bold text-lg"></div>
-                    <div class="bg-slate-50 p-4 rounded-2xl"><label class="text-[9px] font-black text-slate-400 block uppercase">Chest (cm)</label><input id="m-chest" type="number" class="w-full bg-transparent font-bold text-lg"></div>
-                    <div class="bg-slate-50 p-4 rounded-2xl"><label class="text-[9px] font-black text-slate-400 block uppercase">Arms (cm)</label><input id="m-arms" type="number" class="w-full bg-transparent font-bold text-lg"></div>
-                    <div class="bg-slate-50 p-4 rounded-2xl"><label class="text-[9px] font-black text-slate-400 block uppercase">Thighs (cm)</label><input id="m-thighs" type="number" class="w-full bg-transparent font-bold text-lg"></div>
-                </div>
-
-                <div class="space-y-4">
-                    <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Progress Photos</h4>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="photo-slot" onclick="triggerPhoto('front')">
-                            <img id="img-front" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
-                        </div>
-                        <div class="photo-slot" onclick="triggerPhoto('side')">
-                            <img id="img-side" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
-                        </div>
-                        <div class="photo-slot" onclick="triggerPhoto('back')">
-                            <img id="img-back" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Core Stats</h3>
+                    <div class="bg-slate-50 p-6 rounded-3xl text-center">
+                        <span class="text-[10px] font-black uppercase text-slate-400 block mb-1">Body Weight</span>
+                        <div class="flex items-center justify-center gap-2">
+                            <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-24 bg-transparent text-center text-4xl font-black outline-none text-slate-900">
+                            <span class="text-sm font-bold text-slate-400">KG</span>
                         </div>
                     </div>
-                    <input type="file" id="photo-input" class="hidden" accept="image/*">
                 </div>
 
-                <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-100">Log Check-in</button>
+                <div>
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Tape Measurements (CM)</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Shoulders</label>
+                            <input id="m-shoulders" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Chest</label>
+                            <input id="m-chest" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Waist</label>
+                            <input id="m-waist" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Glutes</label>
+                            <input id="m-glutes" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Upper Arm</label>
+                            <input id="m-arms" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <label class="text-[9px] font-black uppercase text-slate-400">Upper Leg</label>
+                            <input id="m-legs" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Progress Photos</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="photo-slot" onclick="triggerPhoto('front')">
+                            <input type="file" id="file-front" accept="image/*" class="hidden" onchange="handlePhoto(this, 'front')">
+                            <div id="preview-front" class="flex flex-col items-center">
+                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
+                                <span class="text-[8px] font-black uppercase text-slate-400">Front</span>
+                            </div>
+                        </div>
+                        <div class="photo-slot" onclick="triggerPhoto('side')">
+                            <input type="file" id="file-side" accept="image/*" class="hidden" onchange="handlePhoto(this, 'side')">
+                            <div id="preview-side" class="flex flex-col items-center">
+                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
+                                <span class="text-[8px] font-black uppercase text-slate-400">Side</span>
+                            </div>
+                        </div>
+                        <div class="photo-slot" onclick="triggerPhoto('back')">
+                            <input type="file" id="file-back" accept="image/*" class="hidden" onchange="handlePhoto(this, 'back')">
+                            <div id="preview-back" class="flex flex-col items-center">
+                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
+                                <span class="text-[8px] font-black uppercase text-slate-400">Back</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-rose-100">Log Check-in</button>
             </div>
         </section>
 
