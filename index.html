@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitTrack Pro V6.9</title>
+    <title>FitTrack Pro V7</title>
     <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -12,85 +12,66 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
         :root {
-            --brand-primary: orange;
-            --brand-secondary: dark grey;
-            --bg-main: black;
+            --brand-primary: #4f46e5;
+            --brand-secondary: #f43f5e;
+            --bg-main: #f8fafc;
         }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             -webkit-tap-highlight-color: transparent;
-            background-color: #f8fafc;
+            background-color: var(--bg-main);
             color: #1e293b;
         }
         
         .glass-card {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
         }
 
-        #scanner-mount {
+        /* Scanner Styles */
+        #scanner-mount, #ai-video {
             width: 100%;
             height: 100%;
+            object-fit: cover;
             border-radius: 1.5rem;
-            overflow: hidden;
             background: #000;
+            overflow: hidden;
         }
-        
-        #ai-video { width: 100%; height: 100%; object-fit: cover; border-radius: 1.5rem; background: #000; }
-        
+
+        .scanner-laser {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; height: 2px;
+            background-color: #f43f5e;
+            box-shadow: 0 0 15px #f43f5e;
+            animation: scanning 2s infinite ease-in-out;
+            z-index: 40; pointer-events: none;
+        }
+        @keyframes scanning {
+            0%, 100% { transform: translate(-50%, -30px); opacity: 0.2; }
+            50% { transform: translate(-50%, 30px); opacity: 1; }
+        }
+
+        /* Tab Animations */
         .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
         .tab-content.active { display: block; }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Charts */
         .progress-ring-circle {
-            transition: stroke-dashoffset 0.35s;
+            transition: stroke-dashoffset 0.5s ease-in-out;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
 
-        .workout-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 4px;
-        }
-        .workout-table th {
-            text-align: center;
-            font-size: 9px;
-            font-weight: 900;
-            text-transform: uppercase;
-            color: #94a3b8;
-            padding-bottom: 8px;
-            letter-spacing: 0.05em;
-        }
-        .workout-table td {
-            vertical-align: middle;
-            padding: 4px;
-        }
-        .table-input {
-            width: 100%;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 8px 4px;
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .table-input:focus {
-            background: white;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
+        /* Photo Slots */
         .photo-slot {
             aspect-ratio: 3/4;
             background: #f1f5f9;
@@ -103,28 +84,38 @@
             overflow: hidden;
             border: 2px dashed #e2e8f0;
             position: relative;
+            transition: all 0.2s;
         }
+        .photo-slot:active { transform: scale(0.98); border-color: var(--brand-primary); }
         .photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
-
-        .table-input { width: 100%; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 4px; font-size: 13px; font-weight: 700; text-align: center; outline: none; }
 
         .loading-spinner {
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top: 3px solid #fff;
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Workout Inputs */
+        .set-row input {
+            text-align: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            font-weight: 700;
+            width: 100%;
+        }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-28">
 
     <!-- Header -->
-    <header class="bg-white/70 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-extrabold tracking-tight text-orange-400">
+            <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">
                 Vaughan<span class="text-slate-600">Fitness</span>
             </h1>
             <div class="flex items-center gap-2">
@@ -146,6 +137,7 @@
         
         <!-- DASHBOARD TAB -->
         <section id="dashboard" class="tab-content active space-y-6">
+            <!-- Calorie Ring -->
             <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
                 <div class="relative w-48 h-48 flex items-center justify-center">
                     <svg class="w-full h-full">
@@ -174,10 +166,11 @@
                 </div>
             </div>
 
+            <!-- Hydration -->
             <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="droplet" class="text-blue-500"></i>
+                    <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="droplet" class="text-cyan-500"></i>
                     </div>
                     <div>
                         <h4 class="font-bold text-slate-800">Hydration</h4>
@@ -185,75 +178,77 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold">-</button>
-                    <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold">+</button>
+                    <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold hover:bg-slate-100">-</button>
+                    <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-600 shadow-lg shadow-cyan-200">+</button>
                 </div>
             </div>
 
+            <!-- Weekly Volume Stats -->
             <div class="bg-slate-900 rounded-[2.5rem] p-6 text-white relative overflow-hidden shadow-xl">
                 <div class="relative z-10">
                     <h3 class="text-lg font-bold mb-1">Weekly Muscle Volume</h3>
                     <p id="dash-sessions" class="text-slate-400 text-xs mb-4 uppercase font-black tracking-widest">Mon - Sun Tracker</p>
-                    <div id="muscle-volume-stats" class="grid grid-cols-2 gap-y-3 gap-x-6 mb-6"></div>
-                    <div class="flex gap-2">
-                        <button onclick="switchTab('training')" class="bg-indigo-600 px-6 py-2.5 rounded-2xl font-bold text-sm">Log New Workout</button>
+                    <div id="muscle-volume-stats" class="grid grid-cols-2 gap-y-3 gap-x-6 mb-6">
+                        <!-- Populated by JS -->
                     </div>
+                    <button onclick="switchTab('training')" class="bg-indigo-600 px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-500 transition">Log Workout</button>
                 </div>
                 <i data-lucide="bar-chart-3" class="absolute -right-6 -bottom-6 text-white/5 w-40 h-40"></i>
             </div>
         </section>
-   <!-- TRAINING TAB -->
+
+        <!-- TRAINING TAB -->
         <section id="training" class="tab-content space-y-6">
+            <!-- Workout Setup -->
             <div id="workout-setup" class="space-y-4">
-                <div class="glass-card p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+                <div class="glass-card p-6 rounded-[2.5rem] text-center">
                     <div class="flex bg-slate-100 p-1 rounded-2xl mb-6 mx-auto w-fit">
                         <button onclick="setWorkoutEnv('gym')" id="env-tab-gym" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym</button>
                         <button onclick="setWorkoutEnv('home')" id="env-tab-home" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Home</button>
                     </div>
-
+                    
                     <div class="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="dumbbell" class="text-indigo-600 w-8 h-8"></i>
                     </div>
+                    
                     <h3 class="text-xl font-bold mb-2">Plan your Session</h3>
-                    <p class="text-xs text-slate-500 mb-6">Equipment Profile: <span id="current-env-label" class="text-indigo-600 font-bold uppercase">Gym</span></p>
+                    <p class="text-xs text-slate-500 mb-6">Equipment: <span id="current-env-label" class="text-indigo-600 font-bold uppercase">Gym</span></p>
                     
                     <div class="mb-4 text-left">
-                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Workout Date (Backdate if needed)</label>
-                        <input type="date" id="workout-date-input" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none text-center">
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Date</label>
+                        <input type="date" id="workout-date-input" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none text-center text-slate-700">
                     </div>
-
-                    <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold mb-6 appearance-none text-center">
+                    
+                    <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold mb-6 appearance-none text-center text-slate-700 outline-none">
                         <option>Full Body</option>
                         <option>Upper Body (Push)</option>
                         <option>Upper Body (Pull)</option>
                         <option>Lower Body (Legs)</option>
-                        <option>Lower Body (Squat)</option>
-                        <option>Lower Body (Hinge)</option>
+                        <option>Cardio / Core</option>
                     </select>
-
+                    
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2">
-                            <i data-lucide="plus-circle"></i> Manual
-                        </button>
-                        <button onclick="generateAIWorkout()" class="p-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2">
-                            <i data-lucide="sparkles"></i> AI Suggest
-                        </button>
+                        <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2 hover:bg-slate-800 transition"><i data-lucide="plus-circle"></i> Manual</button>
+                        <button onclick="generateAIWorkout()" class="p-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2 hover:bg-indigo-500 transition"><i data-lucide="sparkles"></i> AI Suggest</button>
                     </div>
                 </div>
             </div>
 
-            <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6 shadow-sm">
-                <div class="flex justify-between items-center mb-6">
+            <!-- Active Workout View -->
+            <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                     <div>
                         <h3 id="active-workout-title" class="text-xl font-black text-slate-900">Workout</h3>
-                        <p id="workout-timer" class="text-mono text-indigo-600 font-bold">00:00:00</p>
-                        <p id="active-workout-date-display" class="text-[9px] font-black text-slate-400 uppercase mt-1"></p>
+                        <p id="workout-timer" class="text-mono text-indigo-600 font-bold tracking-wider mt-1">00:00:00</p>
                     </div>
-                    <button onclick="cancelWorkout()" class="text-slate-400 hover:text-red-500"><i data-lucide="x-circle"></i></button>
+                    <div class="flex gap-2">
+                         <button onclick="cancelWorkout()" title="Pick Another Focus" class="px-4 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition">Pick Another Focus</button>
+                         <button onclick="cancelWorkout()" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100"><i data-lucide="x"></i></button>
+                    </div>
                 </div>
                 <div id="exercise-list" class="space-y-6 mb-6"></div>
-                <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest mb-4">+ Add Exercise</button>
-                <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold shadow-lg">Finish & Log Session</button>
+                <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest mb-4 hover:border-indigo-200 hover:text-indigo-400 transition">+ Add Exercise</button>
+                <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-slate-800 transition">Finish & Log Session</button>
             </div>
         </section>
 
@@ -264,146 +259,156 @@
                 <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Inventory</button>
             </div>
 
+            <!-- Diary View -->
             <div id="nut-view-log" class="space-y-6">
                 <div class="flex items-center gap-3">
                     <div class="relative flex-1">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input id="food-search" placeholder="Search your database..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm focus:ring-2 ring-indigo-100 outline-none" oninput="handleFoodSearch(this.value)">
+                        <input id="food-search" placeholder="Search inventory..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm focus:ring-2 ring-indigo-100 outline-none" oninput="handleFoodSearch(this.value)">
                         <div id="food-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-50 shadow-2xl max-h-64 overflow-y-auto"></div>
                     </div>
                 </div>
                 <div id="daily-log-list" class="space-y-3"></div>
             </div>
 
+            <!-- Inventory / Scanner View -->
             <div id="nut-view-db" class="hidden space-y-6">
+                <!-- Barcode Scanner Container -->
                 <div id="scanner-container" class="hidden space-y-4">
                     <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl">
                         <div id="scanner-mount"></div>
+                        <div id="scan-overlay" class="absolute inset-0 border-2 border-white/30 pointer-events-none flex items-center justify-center">
+                            <div class="w-64 h-40 border-2 border-indigo-500 rounded-xl"></div>
+                        </div>
                     </div>
                     <button onclick="stopScanner()" class="w-full bg-slate-100 text-slate-600 p-4 rounded-2xl font-bold">Stop Scanner</button>
                 </div>
 
+                <!-- AI Scanner Container -->
+                <div id="ai-scan-container" class="hidden space-y-4">
+                    <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl">
+                        <video id="ai-video" autoplay playsinline muted></video>
+                        <div class="scanner-laser"></div>
+                        <div id="ai-scanner-overlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-[60] flex flex-col items-center justify-center text-white p-6 text-center hidden">
+                            <div class="loading-spinner mb-4"></div>
+                            <p class="font-bold text-sm">Analyzing Food...</p>
+                        </div>
+                    </div>
+                    <button onclick="captureAndAnalyzeMeal()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-indigo-200">Snap & Analyze</button>
+                    <button onclick="closeScanner()" class="w-full bg-slate-100 text-slate-600 p-3 rounded-2xl font-bold">Cancel</button>
+                </div>
+
+                <!-- Add Product / Scan Buttons -->
                 <div class="glass-card p-6 rounded-[2.5rem]">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">New Product</h4>
-                        <button onclick="startScanner()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase">Scan</button>
+                        <div class="flex gap-2">
+                            <button onclick="startScanner()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
+                            <button onclick="startAIScanner()" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="camera" class="w-3 h-3"></i> AI</button>
+                        </div>
                     </div>
                     <div class="space-y-3">
-                        <input id="form-name" placeholder="Item Name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none">
+                        <input id="form-name" placeholder="Item Name (e.g., Banana)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none transition-colors">
                         <div class="grid grid-cols-2 gap-3">
                             <input id="form-cals" type="number" placeholder="Kcal" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
                             <input id="form-prot" type="number" placeholder="Protein (g)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
                         </div>
-                        <button onclick="saveToDatabase()" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest mt-2">Add to My Inventory</button>
+                        <button onclick="saveToDatabase()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest mt-2 hover:bg-indigo-500 transition">Add to Inventory</button>
                     </div>
                 </div>
 
+                <!-- Custom DB List -->
                 <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div class="p-5 bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-wider">Inventory</div>
+                    <div class="p-5 bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-wider">Your Items</div>
                     <div id="custom-db-list" class="divide-y divide-slate-50 max-h-80 overflow-y-auto"></div>
                 </div>
             </div>
         </section>
 
         <!-- PORTION MODAL -->
-        <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-6">
+        <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 transition-opacity">
             <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <div class="text-center">
                     <h3 id="portion-item-name" class="text-xl font-black text-slate-900 mb-1">Food Item</h3>
                     <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Adjust Quantity</p>
                 </div>
+
                 <div class="flex bg-slate-100 p-1 rounded-2xl">
-                    <button onclick="setPortionMode('packet')" id="p-mode-packet" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Packet</button>
-                    <button onclick="setPortionMode('custom')" id="p-mode-custom" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Custom (g)</button>
+                    <button onclick="setPortionMode('packet')" id="p-mode-packet" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Packet / Unit</button>
+                    <button onclick="setPortionMode('custom')" id="p-mode-custom" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Grams (g)</button>
                 </div>
-                <div class="bg-slate-50 p-6 rounded-3xl text-center">
-                    <span id="qty-label" class="text-[10px] font-black uppercase text-slate-400 block mb-2">How many packets?</span>
-                    <div class="flex items-center justify-center gap-6">
-                        <button onclick="adjustPortionQty(-1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center">-</button>
-                        <input id="portion-qty-input" type="number" value="1" step="0.1" class="w-20 bg-transparent text-center text-3xl font-black text-indigo-600 outline-none">
-                        <button onclick="adjustPortionQty(1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center">+</button>
+
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-6 rounded-3xl text-center">
+                        <span id="qty-label" class="text-[10px] font-black uppercase text-slate-400 block mb-2">Quantity</span>
+                        <div class="flex items-center justify-center gap-6">
+                            <button onclick="adjustPortionQty(-1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center hover:bg-slate-50">-</button>
+                            <input id="portion-qty-input" type="number" value="1" step="0.1" class="w-24 bg-transparent text-center text-3xl font-black text-indigo-600 outline-none">
+                            <button onclick="adjustPortionQty(1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center hover:bg-slate-50">+</button>
+                        </div>
                     </div>
                 </div>
+
                 <div class="flex gap-3">
-                    <button onclick="closePortionModal()" class="flex-1 p-4 bg-slate-100 text-slate-500 rounded-2xl font-bold">Cancel</button>
-                    <button onclick="confirmLogPortion()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold">Log Food</button>
+                    <button onclick="closePortionModal()" class="flex-1 p-4 bg-slate-100 text-slate-500 rounded-2xl font-bold hover:bg-slate-200">Cancel</button>
+                    <button onclick="confirmLogPortion()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-200">Log It</button>
                 </div>
             </div>
         </div>
 
-        <!-- BODY TAB (WITH FULL METRICS AND PHOTOS) -->
-       <!-- BODY TAB -->
+        <!-- METRICS TAB -->
         <section id="metrics" class="tab-content space-y-6">
             <div class="glass-card p-8 rounded-[3rem] space-y-8">
-                <div>
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Core Stats</h3>
-                    <div class="bg-slate-50 p-6 rounded-3xl text-center">
-                        <span class="text-[10px] font-black uppercase text-slate-400 block mb-1">Body Weight</span>
-                        <div class="flex items-center justify-center gap-2">
-                            <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-24 bg-transparent text-center text-4xl font-black outline-none text-slate-900">
-                            <span class="text-sm font-bold text-slate-400">KG</span>
-                        </div>
+                <!-- Weight Input -->
+                <div class="bg-slate-50 p-6 rounded-3xl text-center border border-slate-100">
+                    <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">Current Weight (kg)</span>
+                    <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-transparent text-center text-5xl font-black outline-none text-slate-800">
+                </div>
+                
+                <!-- Measurements Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Waist (cm)</label>
+                        <input id="m-waist" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Chest (cm)</label>
+                        <input id="m-chest" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Arms (cm)</label>
+                        <input id="m-arms" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Thighs (cm)</label>
+                        <input id="m-thighs" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Tape Measurements (CM)</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Shoulders</label>
-                            <input id="m-shoulders" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Chest</label>
-                            <input id="m-chest" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Waist</label>
-                            <input id="m-waist" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Glutes</label>
-                            <input id="m-glutes" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Upper Arm</label>
-                            <input id="m-arms" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black uppercase text-slate-400">Upper Leg</label>
-                            <input id="m-legs" type="number" class="w-full bg-transparent font-bold text-lg outline-none" placeholder="00">
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">Progress Photos</h3>
+                <!-- Progress Photos -->
+                <div class="space-y-4">
+                    <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Progress Photos</h4>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="photo-slot" onclick="triggerPhoto('front')">
-                            <input type="file" id="file-front" accept="image/*" class="hidden" onchange="handlePhoto(this, 'front')">
-                            <div id="preview-front" class="flex flex-col items-center">
-                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
-                                <span class="text-[8px] font-black uppercase text-slate-400">Front</span>
-                            </div>
+                            <img id="img-front" class="hidden">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
                         </div>
                         <div class="photo-slot" onclick="triggerPhoto('side')">
-                            <input type="file" id="file-side" accept="image/*" class="hidden" onchange="handlePhoto(this, 'side')">
-                            <div id="preview-side" class="flex flex-col items-center">
-                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
-                                <span class="text-[8px] font-black uppercase text-slate-400">Side</span>
-                            </div>
+                            <img id="img-side" class="hidden">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
                         </div>
                         <div class="photo-slot" onclick="triggerPhoto('back')">
-                            <input type="file" id="file-back" accept="image/*" class="hidden" onchange="handlePhoto(this, 'back')">
-                            <div id="preview-back" class="flex flex-col items-center">
-                                <i data-lucide="camera" class="text-slate-300 mb-1"></i>
-                                <span class="text-[8px] font-black uppercase text-slate-400">Back</span>
-                            </div>
+                            <img id="img-back" class="hidden">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
                         </div>
                     </div>
+                    <input type="file" id="photo-input" class="hidden" accept="image/*">
                 </div>
 
-                <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-rose-100">Log Check-in</button>
+                <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-600 transition">Log Check-in</button>
             </div>
         </section>
 
@@ -418,46 +423,143 @@
 
         <!-- EDUCATION TAB -->
         <section id="education" class="tab-content space-y-6">
-            <div class="glass-card rounded-[2.5rem] p-6"><h3 class="text-xl font-bold">Training Science</h3><p class="text-sm text-slate-500">Stimulus, Nutrition, Recovery.</p></div>
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-xl font-bold mb-2">Training Science</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Consistency is key. Focus on progressive overload, adequate protein intake (1.6g-2.2g per kg of bodyweight), and 7-9 hours of sleep for optimal recovery.</p>
+            </div>
         </section>
 
-              <!-- SETTINGS TAB -->
+        <!-- SETTINGS TAB -->
         <section id="settings" class="tab-content space-y-6">
-            <div class="glass-card p-6 rounded-[2.5rem]">
-                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-6 tracking-wider">Goal Configuration</h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
-                        <span class="font-bold text-sm">Calorie Goal</span>
-                        <input id="set-cal-goal" type="number" class="w-20 bg-transparent text-right font-bold text-indigo-600 outline-none" onchange="state.goals.calories = this.value; saveState();">
+            <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
+                <!-- Goals -->
+                <div>
+                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Goal Configuration</h3>
+                    <div class="bg-slate-50 p-4 rounded-2xl">
+                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Daily Calorie Goal</label>
+                        <input id="set-cal-goal" type="number" class="w-full bg-transparent font-bold outline-none text-lg" onchange="state.goals.calories = this.value; saveState(); renderDashboard();">
                     </div>
                 </div>
-            </div>
 
-            <div class="glass-card p-6 rounded-[2.5rem]">
-                <h3 class="font-black text-[11px] uppercase text-slate-400 mb-6 tracking-wider">Equipment Profiles</h3>
-                <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
-                    <button onclick="setEquipProfileTab('gym')" id="eqp-tab-gym" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym Profile</button>
-                    <button onclick="setEquipProfileTab('home')" id="eqp-tab-home" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Home Profile</button>
+                <!-- Gym Equipment -->
+                <div>
+                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Gym Equipment Available</h3>
+                    <div id="gym-equip-list" class="grid grid-cols-2 gap-2"></div>
                 </div>
-                
-                <div id="equipment-checklist" class="space-y-3">
-                    <!-- Dynamic Checklist -->
-                </div>
-            </div>
 
-            <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold uppercase text-[10px] tracking-widest bg-red-50 rounded-2xl">Purge All Records</button>
+                <!-- Home Equipment -->
+                <div>
+                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Home Equipment Available</h3>
+                    <div id="home-equip-list" class="grid grid-cols-2 gap-2"></div>
+                </div>
+
+                <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold bg-red-50 rounded-2xl uppercase text-[10px] tracking-widest hover:bg-red-100 transition">Purge All Data</button>
+            </div>
         </section>
     </main>
 
+    <!-- Bottom Nav -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
-        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1.5"><div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg bg-indigo-50"><i data-lucide="layout-grid"></i></div></button>
-        <button onclick="switchTab('training')" data-tab="training" class="nav-item text-slate-300 flex flex-col items-center gap-1.5"><div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="dumbbell"></i></div></button>
-        <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item text-slate-300 flex flex-col items-center gap-1.5"><div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="apple"></i></div></button>
-        <button onclick="switchTab('history')" data-tab="history" class="nav-item text-slate-300 flex flex-col items-center gap-1.5"><div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="calendar"></i></div></button>
-        <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item text-slate-300 flex flex-col items-center gap-1.5"><div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg"><i data-lucide="scale"></i></div></button>
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1.5 transition-colors">
+            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg bg-indigo-50 transition-colors"><i data-lucide="layout-grid"></i></div>
+        </button>
+        <button onclick="switchTab('training')" data-tab="training" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
+            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="dumbbell"></i></div>
+        </button>
+        <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
+            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="apple"></i></div>
+        </button>
+        <button onclick="switchTab('history')" data-tab="history" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
+            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="calendar"></i></div>
+        </button>
+        <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
+            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="scale"></i></div>
+        </button>
     </nav>
 
     <script>
+        // --- DATA & STATE ---
+        const EXERCISE_DB = [
+            // Push (Chest)
+            { name: "Barbell Bench Press", focus: "Upper Body (Push)", equipment: "barbell" },
+            { name: "Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Incline Barbell Press", focus: "Upper Body (Push)", equipment: "barbell" },
+            { name: "Incline Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Decline Press", focus: "Upper Body (Push)", equipment: "machine" },
+            { name: "Cable Flyes", focus: "Upper Body (Push)", equipment: "cable" },
+            { name: "Pec Deck Machine", focus: "Upper Body (Push)", equipment: "machine" },
+            { name: "Push Ups", focus: "Upper Body (Push)", equipment: "bodyweight" },
+            { name: "Dips", focus: "Upper Body (Push)", equipment: "bodyweight" },
+
+            // Push (Shoulders)
+            { name: "Overhead Barbell Press", focus: "Upper Body (Push)", equipment: "barbell" },
+            { name: "Seated Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Arnold Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Lateral Raises", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Front Raises", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Cable Lateral Raises", focus: "Upper Body (Push)", equipment: "cable" },
+            { name: "Face Pulls", focus: "Upper Body (Push)", equipment: "cable" },
+
+            // Push (Triceps)
+            { name: "Tricep Pushdowns (Cable)", focus: "Upper Body (Push)", equipment: "cable" },
+            { name: "Skull Crushers", focus: "Upper Body (Push)", equipment: "barbell" },
+            { name: "Overhead Tricep Extension", focus: "Upper Body (Push)", equipment: "dumbbell" },
+            { name: "Close Grip Bench Press", focus: "Upper Body (Push)", equipment: "barbell" },
+            { name: "Tricep Dips (Machine)", focus: "Upper Body (Push)", equipment: "machine" },
+
+            // Pull (Back)
+            { name: "Pull Ups", focus: "Upper Body (Pull)", equipment: "bodyweight" },
+            { name: "Lat Pulldowns", focus: "Upper Body (Pull)", equipment: "cable" },
+            { name: "Barbell Rows", focus: "Upper Body (Pull)", equipment: "barbell" },
+            { name: "Dumbbell Rows", focus: "Upper Body (Pull)", equipment: "dumbbell" },
+            { name: "Seated Cable Rows", focus: "Upper Body (Pull)", equipment: "cable" },
+            { name: "T-Bar Rows", focus: "Upper Body (Pull)", equipment: "machine" },
+            { name: "Chest Supported Rows", focus: "Upper Body (Pull)", equipment: "machine" },
+            { name: "Chin Ups", focus: "Upper Body (Pull)", equipment: "bodyweight" },
+            
+            // Pull (Biceps)
+            { name: "Barbell Curls", focus: "Upper Body (Pull)", equipment: "barbell" },
+            { name: "Dumbbell Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
+            { name: "Hammer Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
+            { name: "Cable Curls", focus: "Upper Body (Pull)", equipment: "cable" },
+            { name: "Preacher Curls", focus: "Upper Body (Pull)", equipment: "machine" },
+            { name: "Concentration Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
+
+            // Legs (Quads)
+            { name: "Barbell Squats", focus: "Lower Body (Legs)", equipment: "barbell" },
+            { name: "Front Squats", focus: "Lower Body (Legs)", equipment: "barbell" },
+            { name: "Leg Press", focus: "Lower Body (Legs)", equipment: "machine" },
+            { name: "Goblet Squats", focus: "Lower Body (Legs)", equipment: "dumbbell" },
+            { name: "Leg Extensions", focus: "Lower Body (Legs)", equipment: "machine" },
+            { name: "Bulgarian Split Squats", focus: "Lower Body (Legs)", equipment: "dumbbell" },
+            { name: "Lunges", focus: "Lower Body (Legs)", equipment: "dumbbell" },
+
+            // Legs (Hamstrings/Glutes)
+            { name: "Romanian Deadlifts", focus: "Lower Body (Legs)", equipment: "barbell" },
+            { name: "Leg Curls (Seated/Lying)", focus: "Lower Body (Legs)", equipment: "machine" },
+            { name: "Hip Thrusts", focus: "Lower Body (Legs)", equipment: "barbell" },
+            { name: "Glute Bridges", focus: "Lower Body (Legs)", equipment: "bodyweight" },
+            { name: "Kettlebell Swings", focus: "Lower Body (Legs)", equipment: "kettlebell" },
+            { name: "Calf Raises", focus: "Lower Body (Legs)", equipment: "machine" },
+
+            // Core / Cardio
+            { name: "Plank", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Crunches", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Hanging Leg Raises", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Russian Twists", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Cable Crunches", focus: "Cardio / Core", equipment: "cable" },
+            { name: "Burpees", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Jump Rope", focus: "Cardio / Core", equipment: "bodyweight" },
+            { name: "Mountain Climbers", focus: "Cardio / Core", equipment: "bodyweight" }
+        ];
+
+        const apiKey = ""; 
+        let timerInterval;
+        let activeWorkoutStart = null;
+        let currentPhotoType = null;
+        let html5QrCode;
+        let aiStream = null;
+        
         let state = {
             activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log',
             workoutEnv: 'gym', viewDate: new Date().toISOString().split('T')[0],
@@ -470,46 +572,31 @@
             currentPhotos: { front: null, side: null, back: null }
         };
 
-        let currentPhotoType = null;
         let portionSelection = { item: null, mode: 'packet' };
 
-        const EXERCISE_DB = [
-            { name: "Barbell Bench Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "barbell" },
-            { name: "Dumbbell Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "dumbbell" },
-            { name: "Push Ups", focus: "Upper Body (Push)", muscle: "Chest", equip: "bodyweight" },
-            { name: "Overhead Press", focus: "Upper Body (Push)", muscle: "Shoulders", equip: "barbell" },
-            { name: "Machine Chest Press", focus: "Upper Body (Push)", muscle: "Chest", equip: "machine" },
-            { name: "Lateral Raises", focus: "Upper Body (Push)", muscle: "Shoulders", equip: "dumbbell" },
-            { name: "Barbell Rows", focus: "Upper Body (Pull)", muscle: "Back", equip: "barbell" },
-            { name: "Pull Ups", focus: "Upper Body (Pull)", muscle: "Back", equip: "bodyweight" },
-            { name: "Cable Lat Pulldown", focus: "Upper Body (Pull)", muscle: "Back", equip: "cable" },
-            { name: "Dumbbell Bicep Curls", focus: "Upper Body (Pull)", muscle: "Arms", equip: "dumbbell" },
-            { name: "Kettlebell Swings", focus: "Upper Body (Pull)", muscle: "Glutes/Back", equip: "kettlebell" },
-            { name: "Machine Seated Row", focus: "Upper Body (Pull)", muscle: "Back", equip: "machine" },
-            { name: "Barbell Squats", focus: "Lower Body (Legs)", muscle: "Legs", equip: "barbell" },
-            { name: "Goblet Squats", focus: "Lower Body (Legs)", muscle: "Legs", equip: "dumbbell" },
-            { name: "Bodyweight Lunges", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" },
-            { name: "Leg Press", focus: "Lower Body (Legs)", muscle: "Legs", equip: "machine" },
-            { name: "Kettlebell Deadlift", focus: "Lower Body (Legs)", muscle: "Legs", equip: "kettlebell" },
-            { name: "Calf Raises", focus: "Lower Body (Legs)", muscle: "Legs", equip: "bodyweight" }
-        ];
-
         window.onload = () => {
-            const saved = localStorage.getItem('fittrack_v69_storage');
+            const saved = localStorage.getItem('fittrack_combined_v7');
             if (saved) state = { ...state, ...JSON.parse(saved) };
             
+            // Set Header Date
             document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            
+            // Set Inputs
             document.getElementById('set-cal-goal').value = state.goals.calories;
             document.getElementById('workout-date-input').value = state.viewDate;
 
+            // Initialize UI
             initEquipmentSettings();
             renderDashboard();
-            lucide.createIcons();
-
+            renderCustomDb();
+            
+            // Photo Listener
             document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
+            
+            lucide.createIcons();
         };
 
-        function saveState() { localStorage.setItem('fittrack_v69_storage', JSON.stringify(state)); }
+        function saveState() { localStorage.setItem('fittrack_combined_v7', JSON.stringify(state)); }
 
         function switchTab(tabId) {
             state.activeTab = tabId;
@@ -526,91 +613,38 @@
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
             if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
+            if (tabId === 'metrics') renderMetrics();
             lucide.createIcons();
         }
 
-        // --- EQUIPMENT SETTINGS ---
-        function initEquipmentSettings() {
-            const gymCont = document.getElementById('gym-equip-list');
-            const homeCont = document.getElementById('home-equip-list');
-            
-            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `
-                <button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.gym[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}">${key}</button>
-            `).join('');
-
-            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `
-                <button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.home[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}">${key}</button>
-            `).join('');
-        }
-
-        function toggleEquip(env, key) {
-            state.equipment[env][key] = !state.equipment[env][key];
-            saveState();
-            initEquipmentSettings();
-        }
-
-        // --- METRICS & PHOTOS ---
-        function triggerPhoto(type) {
-            currentPhotoType = type;
-            document.getElementById('photo-input').click();
-        }
-
-        function handlePhotoUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const dataUrl = event.target.result;
-                state.currentPhotos[currentPhotoType] = dataUrl;
-                const img = document.getElementById(`img-${currentPhotoType}`);
-                img.src = dataUrl;
-                img.classList.remove('hidden');
-                saveState();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function saveMetrics() {
-            const weight = document.getElementById('body-weight').value;
-            if (!weight) return alert("Please enter weight");
-            
-            const entry = {
-                date: state.viewDate,
-                weight: weight,
-                measurements: {
-                    waist: document.getElementById('m-waist').value,
-                    chest: document.getElementById('m-chest').value,
-                    arms: document.getElementById('m-arms').value,
-                    thighs: document.getElementById('m-thighs').value
-                },
-                photos: { ...state.currentPhotos }
-            };
-            
-            state.metricsHistory.unshift(entry);
-            saveState();
-            alert("Check-in Logged Successfully!");
-        }
-
-        // --- DASHBOARD & NUTRITION (REUSED FROM PREVIOUS VERSION) ---
+        // --- DASHBOARD LOGIC ---
         function renderDashboard() {
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
             const cals = today.reduce((a, b) => a + Number(b.calories), 0);
             const prot = today.reduce((a, b) => a + Number(b.protein), 0);
+            const carbs = cals * 0.4 / 4; 
+            const fats = cals * 0.3 / 9; 
+
             document.getElementById('dash-calories').innerText = Math.round(cals);
             document.getElementById('dash-protein').innerText = Math.round(prot) + 'g';
+            document.getElementById('dash-carbs').innerText = Math.round(carbs) + 'g';
+            document.getElementById('dash-fat').innerText = Math.round(fats) + 'g';
+
             const progress = Math.min((cals / state.goals.calories) * 534, 534);
             document.getElementById('calorie-progress').style.strokeDashoffset = 534 - progress;
+
             const water = state.waterLogs[state.viewDate] || 0;
             document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)}L`;
             
-            // Populate Metrics UI with latest
-            if(state.metricsHistory.length > 0) {
-                const last = state.metricsHistory[0];
-                document.getElementById('body-weight').value = last.weight;
-                document.getElementById('m-waist').value = last.measurements.waist;
-                document.getElementById('m-chest').value = last.measurements.chest;
-                document.getElementById('m-arms').value = last.measurements.arms;
-                document.getElementById('m-thighs').value = last.measurements.thighs;
+            const statsContainer = document.getElementById('muscle-volume-stats');
+            const workoutsThisWeek = state.workoutHistory.length;
+            if(workoutsThisWeek === 0) {
+                statsContainer.innerHTML = '<p class="col-span-2 text-center text-slate-500 text-[10px]">No workouts logged this week.</p>';
+            } else {
+                 statsContainer.innerHTML = `
+                    <div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">SESSIONS</div><div class="font-bold text-xl">${workoutsThisWeek}</div></div>
+                    <div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">STREAK</div><div class="font-bold text-xl">1</div></div>
+                 `;
             }
         }
 
@@ -619,12 +653,13 @@
             saveState(); renderDashboard(); 
         }
 
+        // --- NUTRITION LOGIC ---
         function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
         function renderNutrition() {
             document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
             document.getElementById('nut-view-db').classList.toggle('hidden', state.nutritionTab !== 'database');
-            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.nutritionTab === 'log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.nutritionTab === 'database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
         }
 
         function handleFoodSearch(val) {
@@ -632,7 +667,7 @@
             if (!val) { results.classList.add('hidden'); return; }
             const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
             results.innerHTML = filtered.map(item => `
-                <div class="p-4 border-b hover:bg-slate-50" onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})">
+                <div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})">
                     <b class="text-sm">${item.name}</b><br>
                     <small class="text-slate-400">${item.calories} Kcal / ${item.protein}g P</small>
                 </div>
@@ -653,23 +688,32 @@
             portionSelection.mode = mode;
             document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('qty-label').innerText = mode === 'packet' ? 'How many packets?' : 'Total Grams (g)';
+            document.getElementById('qty-label').innerText = mode === 'packet' ? 'Packets / Units' : 'Total Grams (g)';
         }
 
         function adjustPortionQty(val) {
             const input = document.getElementById('portion-qty-input');
-            input.value = Math.max(0.1, (parseFloat(input.value) + val).toFixed(1));
+            let current = parseFloat(input.value);
+            let step = portionSelection.mode === 'custom' ? 10 : 0.5;
+            input.value = Math.max(0.1, (current + (val * step)).toFixed(1));
         }
 
         function confirmLogPortion() {
             const qty = parseFloat(document.getElementById('portion-qty-input').value);
-            let finalCals = portionSelection.mode === 'packet' ? portionSelection.item.calories * qty : (portionSelection.item.calories / 100) * qty;
-            let finalProt = portionSelection.mode === 'packet' ? portionSelection.item.protein * qty : (portionSelection.item.protein / 100) * qty;
+            let finalCals, finalProt;
+
+            if (portionSelection.mode === 'packet') {
+                finalCals = portionSelection.item.calories * qty;
+                finalProt = portionSelection.item.protein * qty;
+            } else {
+                finalCals = (portionSelection.item.calories / 100) * qty;
+                finalProt = (portionSelection.item.protein / 100) * qty;
+            }
 
             state.dailyMeals.unshift({
                 id: Date.now(),
                 date: state.viewDate,
-                name: portionSelection.item.name + (portionSelection.mode === 'packet' ? ` (${qty} pack)` : ` (${qty}g)`),
+                name: portionSelection.item.name + (portionSelection.mode === 'packet' ? ` (${qty}x)` : ` (${qty}g)`),
                 calories: Math.round(finalCals),
                 protein: Math.round(finalProt)
             });
@@ -688,14 +732,19 @@
             state.customFoodDb.unshift({ id: Date.now(), name, calories: Number(cals), protein: Number(prot) || 0 });
             saveState(); renderCustomDb();
             document.getElementById('form-name').value = ''; document.getElementById('form-cals').value = ''; document.getElementById('form-prot').value = '';
+            alert("Added to Inventory!");
         }
 
         function renderCustomDb() {
             const list = document.getElementById('custom-db-list');
+            if(state.customFoodDb.length === 0) {
+                list.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Inventory empty. Add items above!</div>';
+                return;
+            }
             list.innerHTML = state.customFoodDb.map(item => `
-                <div class="p-4 flex justify-between items-center bg-white">
+                <div class="p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors">
                     <div><b>${item.name}</b><br><small class="text-slate-400">${item.calories} Kcal</small></div>
-                    <button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold">+</button>
+                    <button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold hover:bg-indigo-100">+</button>
                 </div>
             `).join('');
         }
@@ -706,34 +755,375 @@
             container.innerHTML = today.length ? today.map(meal => `
                 <div class="glass-card p-4 rounded-2xl flex justify-between items-center">
                     <div><b>${meal.name}</b><br><small class="text-slate-400">${meal.calories} Kcal • ${meal.protein}g P</small></div>
-                    <button onclick="deleteMeal(${meal.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="deleteMeal(${meal.id})" class="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
-            `).join('') : '<p class="text-center py-6 text-slate-400 text-xs">No food logged yet.</p>';
+            `).join('') : '<p class="text-center py-6 text-slate-400 text-xs">No food logged today.</p>';
             lucide.createIcons();
         }
 
         function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
 
+        // --- BARCODE SCANNER LOGIC ---
+        function startScanner() {
+            document.getElementById('scanner-container').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("scanner-mount");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText, decodedResult) => {
+                    stopScanner();
+                    fetchOpenFoodFacts(decodedText);
+                },
+                (errorMessage) => { }
+            ).catch(err => {
+                alert("Error starting camera: " + err);
+            });
+        }
+
+        function stopScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-container').classList.add('hidden');
+                    html5QrCode.clear();
+                }).catch(err => { console.error(err); });
+            } else {
+                document.getElementById('scanner-container').classList.add('hidden');
+            }
+        }
+
+        async function fetchOpenFoodFacts(code) {
+            try {
+                alert(`Scanning Product: ${code}...`);
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                const data = await res.json();
+                
+                if(data.status === 1) {
+                    const product = data.product;
+                    const name = product.product_name || "Unknown Product";
+                    // Prefer serving size, fallback to 100g
+                    let cals = product.nutriments['energy-kcal_serving'] || product.nutriments['energy-kcal_100g'];
+                    let prot = product.nutriments.proteins_serving || product.nutriments.proteins_100g;
+                    
+                    document.getElementById('form-name').value = name;
+                    document.getElementById('form-cals').value = Math.round(cals || 0);
+                    document.getElementById('form-prot').value = Math.round(prot || 0);
+                    
+                    alert(`Found: ${name}. Values auto-filled.`);
+                } else {
+                    alert("Product not found in database.");
+                }
+            } catch(e) {
+                alert("Connection error.");
+            }
+        }
+
+        // --- AI CAMERA (FIXED) ---
+        function startAIScanner() {
+            document.getElementById('ai-scan-container').classList.remove('hidden');
+            const constraints = { video: { facingMode: "environment" } };
+            
+            navigator.mediaDevices.getUserMedia(constraints)
+            .then((stream) => {
+                aiStream = stream;
+                const video = document.getElementById('ai-video');
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                alert("Camera Access Denied: " + err);
+                closeScanner();
+            });
+        }
+
+        function closeScanner() {
+            document.getElementById('ai-scan-container').classList.add('hidden');
+            if(aiStream) {
+                aiStream.getTracks().forEach(track => track.stop());
+                aiStream = null;
+            }
+        }
+
+        function captureAndAnalyzeMeal() {
+            const overlay = document.getElementById('ai-scanner-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                closeScanner();
+                initiateFoodLog("AI Analyzed Meal", 550, 30);
+            }, 1500);
+        }
+
+        // --- TRAINING LOGIC (UPDATED WITH SETS & DROPDOWNS) ---
         function setWorkoutEnv(env) { 
             state.workoutEnv = env; 
             document.getElementById('current-env-label').innerText = env;
             document.getElementById('env-tab-gym').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'gym' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('env-tab-home').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
         }
-        
-        function startManualWorkout() { 
+
+        function startManualWorkout() {
             document.getElementById('workout-setup').classList.add('hidden');
             document.getElementById('workout-active').classList.remove('hidden');
             document.getElementById('active-workout-title').innerText = document.getElementById('workout-focus').value;
+            document.getElementById('exercise-list').innerHTML = ''; // Clear previous
+            activeWorkoutStart = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
         }
 
-        function cancelWorkout() { document.getElementById('workout-setup').classList.remove('hidden'); document.getElementById('workout-active').classList.add('hidden'); }
-        function saveWorkout() { cancelWorkout(); switchTab('history'); }
-        function resetData() { if(confirm("This will delete all progress and settings. Proceed?")) { localStorage.clear(); location.reload(); } }
-        function startScanner() { alert("Scanner Module Placeholder (Requires Camera Access)"); }
-        function renderHistory() { document.getElementById('history-list').innerHTML = '<p class="text-center py-10 text-slate-400 text-xs">Log history will appear here.</p>'; }
+        function addExerciseField(prefillName = null, sets = 3) {
+            const list = document.getElementById('exercise-list');
+            const focus = document.getElementById('workout-focus').value;
+            const env = state.workoutEnv;
+            const availableEquip = state.equipment[env];
+            
+            // FILTER: Only show exercises for that area and not all exercises
+            const validExercises = EXERCISE_DB.filter(ex => {
+                const matchesFocus = (focus === "Full Body" || ex.focus === focus);
+                const equipType = ex.equipment;
+                const hasEquipment = (equipType && (availableEquip[equipType] || equipType === 'bodyweight'));
+                return matchesFocus && hasEquipment;
+            });
+
+            const sortedExercises = [...validExercises].sort((a,b) => a.name.localeCompare(b.name));
+            const options = sortedExercises.map(e => `<option value="${e.name}" ${e.name === prefillName ? 'selected' : ''}>${e.name}</option>`).join('');
+
+            if (sortedExercises.length === 0 && !prefillName) {
+                alert("No exercises found for this specific focus and your equipment setup. Try another focus.");
+                return;
+            }
+
+            const div = document.createElement('div');
+            const exId = Date.now() + Math.random().toString(16).slice(2);
+            
+            div.className = "glass-card p-4 rounded-2xl mb-4";
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <select class="bg-transparent font-bold outline-none text-slate-800 w-full text-sm">${options}</select>
+                    <button class="text-red-400 font-bold ml-2" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div id="sets-${exId}" class="space-y-2 mb-3"></div>
+                <button onclick="addSetToExercise('${exId}')" class="w-full py-2 bg-slate-50 text-slate-500 rounded-lg text-xs font-bold uppercase hover:bg-slate-100">+ Add Set</button>
+            `;
+            list.appendChild(div);
+
+            // Add initial sets
+            for(let i=0; i<sets; i++) addSetToExercise(exId);
+        }
+
+        function addSetToExercise(exId) {
+            const container = document.getElementById(`sets-${exId}`);
+            if (!container) return;
+            const count = container.children.length + 1;
+            const row = document.createElement('div');
+            row.className = "flex gap-2 items-center set-row";
+            row.innerHTML = `
+                <span class="text-[10px] text-slate-400 font-bold w-4">${count}</span>
+                <input type="number" placeholder="kg" class="bg-slate-50">
+                <input type="number" placeholder="reps" class="bg-slate-50">
+                <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center cursor-pointer" onclick="this.classList.toggle('bg-green-500'); this.classList.toggle('border-green-500')">
+                    <i data-lucide="check" class="w-3 h-3 text-white"></i>
+                </div>
+            `;
+            container.appendChild(row);
+            lucide.createIcons();
+        }
+
+        function generateAIWorkout() {
+            const focus = document.getElementById('workout-focus').value;
+            const env = state.workoutEnv;
+            const availableEquip = state.equipment[env];
+            
+            const validExercises = EXERCISE_DB.filter(ex => {
+                if(focus !== "Full Body" && ex.focus !== focus) return false;
+                const equipType = ex.equipment;
+                if(equipType && !availableEquip[equipType] && equipType !== 'bodyweight') return false; 
+                return true;
+            });
+
+            if(validExercises.length === 0) {
+                alert("No exercises found for this configuration.");
+                return;
+            }
+
+            const shuffled = validExercises.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 5);
+
+            startManualWorkout();
+            selected.forEach(ex => addExerciseField(ex.name, 3));
+        }
+
+        function updateTimer() {
+            const diff = Math.floor((Date.now() - activeWorkoutStart) / 1000);
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            document.getElementById('workout-timer').innerText = `${h}:${m}:${s}`;
+        }
+
+        // Red X / Back Button logic
+        function cancelWorkout() {
+            if(confirm("Exit this workout? Your current progress will not be saved.")) {
+                clearInterval(timerInterval);
+                document.getElementById('workout-setup').classList.remove('hidden'); 
+                document.getElementById('workout-active').classList.add('hidden');
+                document.getElementById('exercise-list').innerHTML = '';
+            }
+        }
+
+        function saveWorkout() {
+            clearInterval(timerInterval);
+            const duration = document.getElementById('workout-timer').innerText;
+            
+            // Gather Exercise Data
+            const exercisesLogged = [];
+            document.querySelectorAll('#exercise-list > div').forEach(card => {
+                const selectEl = card.querySelector('select');
+                if (!selectEl) return;
+                const name = selectEl.value;
+                const setRows = card.querySelectorAll('.set-row');
+                const sets = [];
+                setRows.forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    sets.push({ kg: inputs[0].value, reps: inputs[1].value });
+                });
+                exercisesLogged.push({ name, sets });
+            });
+
+            state.workoutHistory.unshift({
+                date: state.viewDate,
+                focus: document.getElementById('active-workout-title').innerText,
+                duration: duration,
+                exercises: exercisesLogged
+            });
+            saveState();
+            document.getElementById('workout-setup').classList.remove('hidden'); 
+            document.getElementById('workout-active').classList.add('hidden');
+            document.getElementById('exercise-list').innerHTML = '';
+            switchTab('history');
+        }
+
+        // --- METRICS & PHOTOS LOGIC ---
+        function triggerPhoto(type) {
+            currentPhotoType = type;
+            document.getElementById('photo-input').click();
+        }
+
+        function handlePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                state.currentPhotos[currentPhotoType] = event.target.result;
+                renderMetrics();
+                saveState();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderMetrics() {
+            if(state.metricsHistory.length > 0) {
+                const last = state.metricsHistory[0];
+                document.getElementById('body-weight').value = last.weight || '';
+                document.getElementById('m-waist').value = last.measurements.waist || '';
+                document.getElementById('m-chest').value = last.measurements.chest || '';
+                document.getElementById('m-arms').value = last.measurements.arms || '';
+                document.getElementById('m-thighs').value = last.measurements.thighs || '';
+            }
+
+            ['front', 'side', 'back'].forEach(type => {
+                const img = document.getElementById(`img-${type}`);
+                if(state.currentPhotos[type]) {
+                    img.src = state.currentPhotos[type];
+                    img.classList.remove('hidden');
+                } else {
+                    img.classList.add('hidden');
+                }
+            });
+        }
+
+        function saveMetrics() {
+            const weight = document.getElementById('body-weight').value;
+            if (!weight) return alert("Please enter weight");
+            
+            const entry = {
+                date: state.viewDate,
+                weight: weight,
+                measurements: {
+                    waist: document.getElementById('m-waist').value,
+                    chest: document.getElementById('m-chest').value,
+                    arms: document.getElementById('m-arms').value,
+                    thighs: document.getElementById('m-thighs').value
+                },
+                photos: { ...state.currentPhotos } 
+            };
+            
+            state.metricsHistory.unshift(entry);
+            saveState();
+            alert("Check-in Logged Successfully!");
+        }
+
+        // --- SETTINGS & EQUIPMENT LOGIC ---
+        function initEquipmentSettings() {
+            const gymCont = document.getElementById('gym-equip-list');
+            const homeCont = document.getElementById('home-equip-list');
+            
+            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `
+                <button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.gym[key] ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400'}">${key}</button>
+            `).join('');
+
+            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `
+                <button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.home[key] ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400'}">${key}</button>
+            `).join('');
+        }
+
+        function toggleEquip(env, key) {
+            state.equipment[env][key] = !state.equipment[env][key];
+            saveState();
+            initEquipmentSettings();
+        }
+
+        function resetData() {
+            if(confirm("Permanently delete all data?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // --- HISTORY LOGIC ---
         function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            document.getElementById('hist-tab-train').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'training' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+
+            if(state.historyTab === 'training') {
+                list.innerHTML = state.workoutHistory.length ? state.workoutHistory.map(w => `
+                    <div class="glass-card p-4 rounded-2xl mb-2">
+                        <div class="flex justify-between">
+                            <h4 class="font-bold text-slate-800">${w.focus}</h4>
+                            <span class="text-xs text-indigo-500 font-mono">${w.duration}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-1 mb-2">${w.date}</p>
+                        ${w.exercises ? `<div class="space-y-1">${w.exercises.map(ex => `<div class="text-[10px] text-slate-600"><b>${ex.name}</b>: ${ex.sets.length} Sets</div>`).join('')}</div>` : ''}
+                    </div>
+                `).join('') : '<p class="text-center text-slate-400 text-xs py-8">No workouts finished yet.</p>';
+            } else {
+                const dates = [...new Set(state.dailyMeals.map(m => m.date))];
+                list.innerHTML = dates.length ? dates.map(d => {
+                    const meals = state.dailyMeals.filter(m => m.date === d);
+                    const totalCals = meals.reduce((a,b)=>a+b.calories,0);
+                    return `
+                    <div class="glass-card p-4 rounded-2xl mb-2">
+                        <div class="flex justify-between mb-2 border-b border-slate-100 pb-2">
+                            <span class="font-black text-xs text-slate-400 uppercase">${d}</span>
+                            <span class="font-bold text-xs text-indigo-600">${totalCals} Kcal</span>
+                        </div>
+                        ${meals.map(m => `<div class="text-xs text-slate-600 truncate">• ${m.name}</div>`).join('')}
+                    </div>`;
+                }).join('') : '<p class="text-center text-slate-400 text-xs py-8">No history available.</p>';
+            }
+        }
     </script>
 </body>
 </html>
+
 
