@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vaughan Fitness</title>
-    <!-- Dependencies -->
+    <title>FitTrack Pro V8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -126,15 +125,34 @@
             overflow-y: auto;
             scrollbar-width: thin;
         }
+
+        /* Muscle Selection Styling */
+        .muscle-chip {
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        .muscle-chip.selected {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        /* Updated Core Grid */
+        .core-input-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.35rem;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="pb-28">
 
-    <!-- Header -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-extrabold tracking-tight text-orange-400">
-                Vaughan<span class="text-grey-400">Fitness</span>
+            <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">
+                Vaughan<span class="text-slate-600">Fitness</span>
             </h1>
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -145,7 +163,6 @@
             <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl hover:bg-indigo-100 transition-colors">
                 <i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i>
             </button>
-            <!-- NEW TUTORIAL BUTTON -->
             <button onclick="openTutorial()" class="px-4 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-100 transition-colors font-bold text-xs uppercase tracking-wider">
                 Tutorial
             </button>
@@ -157,9 +174,7 @@
 
     <main class="max-w-xl mx-auto p-4 space-y-6">
         
-        <!-- DASHBOARD TAB -->
         <section id="dashboard" class="tab-content active space-y-6">
-            <!-- Calorie Ring -->
             <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
                 <div class="relative w-48 h-48 flex items-center justify-center">
                     <svg class="w-full h-full">
@@ -188,7 +203,6 @@
                 </div>
             </div>
 
-            <!-- Hydration -->
             <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center">
@@ -205,23 +219,18 @@
                 </div>
             </div>
 
-            <!-- Weekly Volume Stats -->
             <div class="bg-slate-900 rounded-[2.5rem] p-6 text-white relative overflow-hidden shadow-xl">
                 <div class="relative z-10">
                     <h3 class="text-lg font-bold mb-1">Weekly Muscle Volume</h3>
                     <p id="dash-sessions" class="text-slate-400 text-xs mb-4 uppercase font-black tracking-widest">Mon - Sun Tracker</p>
-                    <div id="muscle-volume-stats" class="grid grid-cols-2 gap-y-3 gap-x-6 mb-6">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div id="muscle-volume-stats" class="grid grid-cols-2 gap-y-3 gap-x-6 mb-6"></div>
                     <button onclick="switchTab('training')" class="bg-indigo-600 px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-500 transition">Log Workout</button>
                 </div>
                 <i data-lucide="bar-chart-3" class="absolute -right-6 -bottom-6 text-white/5 w-40 h-40"></i>
             </div>
         </section>
 
-        <!-- TRAINING TAB -->
         <section id="training" class="tab-content space-y-6">
-            <!-- Workout Setup -->
             <div id="workout-setup" class="space-y-4">
                 <div class="glass-card p-6 rounded-[2.5rem] text-center">
                     <div class="flex bg-slate-100 p-1 rounded-2xl mb-6 mx-auto w-fit">
@@ -234,20 +243,55 @@
                     </div>
                     
                     <h3 class="text-xl font-bold mb-2">Plan your Session</h3>
-                    <p class="text-xs text-slate-500 mb-6">Equipment: <span id="current-env-label" class="text-indigo-600 font-bold uppercase">Gym</span></p>
+                    <p class="text-xs text-slate-500 mb-4">Equipment: <span id="current-env-label" class="text-indigo-600 font-bold uppercase">Gym</span></p>
                     
                     <div class="mb-4 text-left">
                         <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Date</label>
                         <input type="date" id="workout-date-input" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none text-center text-slate-700">
                     </div>
-                    
-                    <select id="workout-focus" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold mb-6 appearance-none text-center text-slate-700 outline-none">
-                        <option>Full Body</option>
-                        <option>Upper Body (Push)</option>
-                        <option>Upper Body (Pull)</option>
-                        <option>Lower Body (Legs)</option>
-                        <option>Cardio / Core</option>
-                    </select>
+
+                    <div class="mb-4 text-left">
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Focus</label>
+                        <select id="workout-focus" onchange="toggleSpecificMuscleGrid()" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold appearance-none text-center text-slate-700 outline-none">
+                            <option>Full Body</option>
+                            <option>Upper Body</option>
+                            <option>Lower Body/Legs</option>
+                            <option>Push</option>
+                            <option>Pull</option>
+                            <option>Squat</option>
+                            <option>Hinge</option>
+                            <option>Specific Muscle</option>
+                        </select>
+                    </div>
+
+                    <div id="muscle-selection-container" class="mb-4 text-left hidden">
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Select Muscles</label>
+                        <div id="muscle-selection-grid" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-2xl mb-6 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-black uppercase text-slate-500">Add Cardio</span>
+                            <input type="checkbox" id="add-cardio-check" onchange="toggleCardioOptions()" class="w-5 h-5 accent-indigo-600">
+                        </div>
+                        <div id="cardio-options" class="hidden space-y-2 pt-2 border-t border-slate-200">
+                            <select id="cardio-type" class="w-full p-2 bg-white rounded-lg text-xs font-bold outline-none">
+                                <option>Steady State</option>
+                                <option>HIIT Training</option>
+                            </select>
+                            <select id="cardio-exercise" class="w-full p-2 bg-white rounded-lg text-xs font-bold outline-none">
+                                <option>Treadmill</option>
+                                <option>Rowing</option>
+                                <option>Bike</option>
+                                <option>Assult Bike</option>
+                                <option>Ski-Erg</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between pt-2">
+                            <span class="text-[10px] font-black uppercase text-slate-500">Add Core</span>
+                            <input type="checkbox" id="add-core-check" class="w-5 h-5 accent-indigo-600">
+                        </div>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2 hover:bg-slate-800 transition"><i data-lucide="plus-circle"></i> Manual</button>
@@ -256,7 +300,6 @@
                 </div>
             </div>
 
-            <!-- Active Workout View -->
             <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6">
                 <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                     <div>
@@ -264,24 +307,25 @@
                         <p id="workout-timer" class="text-mono text-indigo-600 font-bold tracking-wider mt-1">00:00:00</p>
                     </div>
                     <div class="flex gap-2">
-                         <button onclick="cancelWorkout()" title="Pick Another Focus" class="px-4 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition">Pick Another Focus</button>
                          <button onclick="cancelWorkout()" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100"><i data-lucide="x"></i></button>
                     </div>
                 </div>
+                
                 <div id="exercise-list" class="space-y-6 mb-6"></div>
+                
+                <div id="extra-active-section" class="space-y-6 mb-6"></div>
+
                 <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest mb-4 hover:border-indigo-200 hover:text-indigo-400 transition">+ Add Exercise</button>
                 <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-slate-800 transition">Finish & Log Session</button>
             </div>
         </section>
 
-        <!-- NUTRITION TAB -->
         <section id="nutrition" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Diary</button>
                 <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Inventory</button>
             </div>
 
-            <!-- Diary View -->
             <div id="nut-view-log" class="space-y-6">
                 <div class="flex items-center gap-3">
                     <div class="relative flex-1">
@@ -291,16 +335,12 @@
                     </div>
                 </div>
                 <div id="daily-log-list" class="space-y-3"></div>
-                
-                <!-- NEW SAVE LOG BUTTON -->
                 <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2">
                     <i data-lucide="save"></i> Save Daily Log
                 </button>
             </div>
 
-            <!-- Inventory / Scanner View -->
             <div id="nut-view-db" class="hidden space-y-6">
-                <!-- Barcode Scanner Container -->
                 <div id="scanner-container" class="hidden space-y-4">
                     <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl">
                         <div id="scanner-mount"></div>
@@ -311,7 +351,6 @@
                     <button onclick="stopScanner()" class="w-full bg-slate-100 text-slate-600 p-4 rounded-2xl font-bold">Stop Scanner</button>
                 </div>
 
-                <!-- Add Product / Scan Buttons -->
                 <div class="glass-card p-6 rounded-[2.5rem]">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">Product Catalog</h4>
@@ -329,7 +368,6 @@
                     </div>
                 </div>
 
-                <!-- Custom DB List -->
                 <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                     <div class="p-5 bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-wider">Your Items</div>
                     <div id="custom-db-list" class="divide-y divide-slate-50 max-h-80 overflow-y-auto"></div>
@@ -337,7 +375,6 @@
             </div>
         </section>
 
-        <!-- PORTION MODAL -->
         <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 transition-opacity">
             <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <div class="text-center">
@@ -368,22 +405,18 @@
             </div>
         </div>
 
-        <!-- METRICS TAB -->
         <section id="metrics" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setMetricsTab('checkin')" id="metrics-tab-checkin" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Check-in</button>
                 <button onclick="setMetricsTab('logs')" id="metrics-tab-logs" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Logs</button>
             </div>
 
-            <!-- Check-in View -->
             <div id="metrics-view-checkin" class="glass-card p-8 rounded-[3rem] space-y-8">
-                <!-- Weight Input -->
                 <div class="bg-slate-50 p-6 rounded-3xl text-center border border-slate-100">
                     <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">Current Weight (kg)</span>
                     <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-transparent text-center text-5xl font-black outline-none text-slate-800">
                 </div>
                 
-                <!-- Measurements Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                         <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Waist (cm)</label>
@@ -403,7 +436,6 @@
                     </div>
                 </div>
 
-                <!-- Progress Photos -->
                 <div class="space-y-4">
                     <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Current Check-in Photos</h4>
                     <div class="grid grid-cols-3 gap-3">
@@ -429,9 +461,7 @@
                 <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-600 transition">Log Check-in</button>
             </div>
 
-            <!-- Logs View -->
             <div id="metrics-view-logs" class="hidden space-y-6">
-                <!-- Personal Progress Comparison (Moved to top of Log) -->
                 <div id="progress-card-container" class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl overflow-hidden relative hidden">
                     <div class="relative z-10">
                         <div class="flex justify-between items-center mb-6">
@@ -488,7 +518,6 @@
             </div>
         </section>
 
-        <!-- HISTORY TAB -->
         <section id="history" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Training</button>
@@ -497,7 +526,6 @@
             <div id="history-list" class="space-y-4"></div>
         </section>
 
-        <!-- EDUCATION TAB -->
         <section id="education" class="tab-content space-y-6">
             <div class="glass-card rounded-[2.5rem] p-6">
                 <h3 class="text-xl font-bold mb-2">Training Science</h3>
@@ -505,10 +533,8 @@
             </div>
         </section>
 
-        <!-- SETTINGS TAB -->
         <section id="settings" class="tab-content space-y-6">
             <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
-                <!-- Goals -->
                 <div>
                     <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Goal Configuration</h3>
                     <div class="bg-slate-50 p-4 rounded-2xl">
@@ -516,25 +542,19 @@
                         <input id="set-cal-goal" type="number" class="w-full bg-transparent font-bold outline-none text-lg" onchange="state.goals.calories = this.value; saveState(); renderDashboard();">
                     </div>
                 </div>
-
-                <!-- Gym Equipment -->
                 <div>
                     <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Gym Equipment Available</h3>
                     <div id="gym-equip-list" class="grid grid-cols-2 gap-2"></div>
                 </div>
-
-                <!-- Home Equipment -->
                 <div>
                     <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Home Equipment Available</h3>
                     <div id="home-equip-list" class="grid grid-cols-2 gap-2"></div>
                 </div>
-
                 <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold bg-red-50 rounded-2xl uppercase text-[10px] tracking-widest hover:bg-red-100 transition">Purge All Data</button>
             </div>
         </section>
     </main>
 
-    <!-- Bottom Nav -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
         <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1.5 transition-colors">
             <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg bg-indigo-50 transition-colors"><i data-lucide="layout-grid"></i></div>
@@ -553,20 +573,16 @@
         </button>
     </nav>
 
-    <!-- TUTORIAL MODAL -->
     <div id="tutorial-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-4">
                 <h3 class="text-xl font-black text-slate-900">App Guide</h3>
                 <button onclick="closeTutorial()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">×</button>
             </div>
-            <div id="tutorial-list" class="space-y-2 tutorial-content pr-2">
-                <!-- Populated by JS -->
-            </div>
+            <div id="tutorial-list" class="space-y-2 tutorial-content pr-2"></div>
         </div>
     </div>
 
-    <!-- Generic Edit Modal -->
     <div id="edit-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6">
             <h3 id="edit-modal-title" class="text-xl font-black text-slate-900">Edit Entry</h3>
@@ -581,104 +597,28 @@
     <script>
         // --- DATA & STATE ---
         const EXERCISE_DB = [
-            // Push (Chest)
-            { name: "Barbell Bench Press", focus: "Upper Body (Push)", equipment: "barbell" },
-            { name: "Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Incline Barbell Press", focus: "Upper Body (Push)", equipment: "barbell" },
-            { name: "Incline Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Decline Press", focus: "Upper Body (Push)", equipment: "machine" },
-            { name: "Cable Flyes", focus: "Upper Body (Push)", equipment: "cable" },
-            { name: "Pec Deck Machine", focus: "Upper Body (Push)", equipment: "machine" },
-            { name: "Push Ups", focus: "Upper Body (Push)", equipment: "bodyweight" },
-            { name: "Dips", focus: "Upper Body (Push)", equipment: "bodyweight" },
-
-            // Push (Shoulders)
-            { name: "Overhead Barbell Press", focus: "Upper Body (Push)", equipment: "barbell" },
-            { name: "Seated Dumbbell Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Arnold Press", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Lateral Raises", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Front Raises", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Cable Lateral Raises", focus: "Upper Body (Push)", equipment: "cable" },
-            { name: "Face Pulls", focus: "Upper Body (Push)", equipment: "cable" },
-
-            // Push (Triceps)
-            { name: "Tricep Pushdowns (Cable)", focus: "Upper Body (Push)", equipment: "cable" },
-            { name: "Skull Crushers", focus: "Upper Body (Push)", equipment: "barbell" },
-            { name: "Overhead Tricep Extension", focus: "Upper Body (Push)", equipment: "dumbbell" },
-            { name: "Close Grip Bench Press", focus: "Upper Body (Push)", equipment: "barbell" },
-            { name: "Tricep Dips (Machine)", focus: "Upper Body (Push)", equipment: "machine" },
-
-            // Pull (Back)
-            { name: "Pull Ups", focus: "Upper Body (Pull)", equipment: "bodyweight" },
-            { name: "Lat Pulldowns", focus: "Upper Body (Pull)", equipment: "cable" },
-            { name: "Barbell Rows", focus: "Upper Body (Pull)", equipment: "barbell" },
-            { name: "Dumbbell Rows", focus: "Upper Body (Pull)", equipment: "dumbbell" },
-            { name: "Seated Cable Rows", focus: "Upper Body (Pull)", equipment: "cable" },
-            { name: "T-Bar Rows", focus: "Upper Body (Pull)", equipment: "machine" },
-            { name: "Chest Supported Rows", focus: "Upper Body (Pull)", equipment: "machine" },
-            { name: "Chin Ups", focus: "Upper Body (Pull)", equipment: "bodyweight" },
-            
-            // Pull (Biceps)
-            { name: "Barbell Curls", focus: "Upper Body (Pull)", equipment: "barbell" },
-            { name: "Dumbbell Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
-            { name: "Hammer Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
-            { name: "Cable Curls", focus: "Upper Body (Pull)", equipment: "cable" },
-            { name: "Preacher Curls", focus: "Upper Body (Pull)", equipment: "machine" },
-            { name: "Concentration Curls", focus: "Upper Body (Pull)", equipment: "dumbbell" },
-
-            // Legs (Quads)
-            { name: "Barbell Squats", focus: "Lower Body (Legs)", equipment: "barbell" },
-            { name: "Front Squats", focus: "Lower Body (Legs)", equipment: "barbell" },
-            { name: "Leg Press", focus: "Lower Body (Legs)", equipment: "machine" },
-            { name: "Goblet Squats", focus: "Lower Body (Legs)", equipment: "dumbbell" },
-            { name: "Leg Extensions", focus: "Lower Body (Legs)", equipment: "machine" },
-            { name: "Bulgarian Split Squats", focus: "Lower Body (Legs)", equipment: "dumbbell" },
-            { name: "Lunges", focus: "Lower Body (Legs)", equipment: "dumbbell" },
-
-            // Legs (Hamstrings/Glutes)
-            { name: "Romanian Deadlifts", focus: "Lower Body (Legs)", equipment: "barbell" },
-            { name: "Leg Curls (Seated/Lying)", focus: "Lower Body (Legs)", equipment: "machine" },
-            { name: "Hip Thrusts", focus: "Lower Body (Legs)", equipment: "barbell" },
-            { name: "Glute Bridges", focus: "Lower Body (Legs)", equipment: "bodyweight" },
-            { name: "Kettlebell Swings", focus: "Lower Body (Legs)", equipment: "kettlebell" },
-            { name: "Calf Raises", focus: "Lower Body (Legs)", equipment: "machine" },
-
-            // Core / Cardio
-            { name: "Plank", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Crunches", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Hanging Leg Raises", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Russian Twists", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Cable Crunches", focus: "Cardio / Core", equipment: "cable" },
-            { name: "Burpees", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Jump Rope", focus: "Cardio / Core", equipment: "bodyweight" },
-            { name: "Mountain Climbers", focus: "Cardio / Core", equipment: "bodyweight" }
+            { name: "Barbell Bench Press", focus: ["Full Body", "Upper Body", "Push"], equipment: "barbell", muscles: ["Chest", "Triceps", "Shoulders"] },
+            { name: "Dumbbell Press", focus: ["Full Body", "Upper Body", "Push"], equipment: "dumbbell", muscles: ["Chest", "Triceps"] },
+            { name: "Incline Barbell Press", focus: ["Upper Body", "Push"], equipment: "barbell", muscles: ["Chest", "Shoulders"] },
+            { name: "Pull Ups", focus: ["Full Body", "Upper Body", "Pull"], equipment: "bodyweight", muscles: ["Back", "Biceps"] },
+            { name: "Lat Pulldowns", focus: ["Upper Body", "Pull"], equipment: "cable", muscles: ["Back", "Biceps"] },
+            { name: "Barbell Rows", focus: ["Full Body", "Upper Body", "Pull"], equipment: "barbell", muscles: ["Back", "Biceps"] },
+            { name: "Barbell Squats", focus: ["Full Body", "Lower Body/Legs", "Squat"], equipment: "barbell", muscles: ["Quads", "Glutes"] },
+            { name: "Leg Press", focus: ["Lower Body/Legs", "Squat"], equipment: "machine", muscles: ["Quads"] },
+            { name: "Barbell Deadlift", focus: ["Full Body", "Lower Body/Legs", "Hinge"], equipment: "barbell", muscles: ["Back", "Hamstrings", "Glutes"] },
+            { name: "Romanian Deadlifts", focus: ["Lower Body/Legs", "Hinge"], equipment: "barbell", muscles: ["Hamstrings", "Glutes"] },
+            { name: "Overhead Press", focus: ["Upper Body", "Push"], equipment: "barbell", muscles: ["Shoulders"] },
+            { name: "Lunges", focus: ["Lower Body/Legs", "Squat"], equipment: "dumbbell", muscles: ["Quads", "Glutes"] }
         ];
 
-        // TUTORIAL DATA
+        const CORE_EXERCISES = ["Plank", "Crunches", "Leg Raises", "Russian Twists", "Deadbugs", "Bicycle Crunches", "Hollow Hold", "Bird Dog"];
+        const MUSCLE_LIST = ["Chest", "Back", "Shoulders", "Quads", "Hamstrings", "Glutes", "Triceps", "Biceps", "Core"];
+
         const TUTORIALS = [
-            {
-                title: "Getting Started with VaughanFitness",
-                content: "Welcome to VaughanFitness Pro V8! This app is designed to be your all-in-one companion for strength, nutrition, and physique transformation. To begin, navigate to the Settings tab to set your daily calorie and hydration goals. You should also toggle which equipment you have available in both your Gym and Home environments; this allows the AI suggest feature to pick exercises you can actually perform. On the Dashboard, you'll see a real-time summary of your day including calories, macros, and hydration. The app is built on 'Daily Views', meaning everything you log is pinned to a specific date. You can change the date in the Training tab to log for yesterday or plan for tomorrow. Remember, consistency is the ultimate variable in fitness, so make logging a daily habit before you even enter the gym."
-            },
-            {
-                title: "Logging and Managing Your Training",
-                content: "The Training tab offers two main modes: Gym and Home. Select your environment first, then choose a workout focus like 'Upper Body (Push)' or 'Full Body'. You can manually add exercises or use the 'AI Suggest' button to let the app build a balanced session for you based on your available equipment. Once a workout is active, you can track sets, weight (kg), and repetitions. Use the checkmark icon to mark a set as complete. If you forget to add a specific exercise, just tap '+ Add Exercise'. When finished, tap 'Finish & Log Session' to move the data into your permanent history. In the History tab, you can review past sessions and see your progression over weeks and months, ensuring you are applying progressive overload."
-            },
-            {
-                title: "Nutrition Diary & Inventory System",
-                content: "VaughanFitness uses a two-part nutrition system: the Diary and the Inventory. The Inventory is your personal food database. You can add items manually or use the built-in Barcode Scanner. The Barcode Scanner connects to the OpenFoodFacts database to automatically fetch nutrition data for thousands of products. Once an item is in your Inventory, you can find it using the search bar in the Diary tab. When logging food, you can choose 'Packet/Unit' mode for simple items or 'Grams' mode for precise measurement. A critical new feature is the 'Save Daily Log' button. Once you've logged your meals for the day, hitting save archives the entire day's data into your Food History, allowing you to track your calorie trends over time."
-            },
-            {
-                title: "Physique Metrics & Progress Tracking",
-                content: "The Metrics tab is where you track your physical transformation beyond just the scale. We recommend a full 'Check-in' once a week. Enter your weight and measurements for your waist, chest, arms, and thighs. You can also upload Front, Side, and Back photos directly from your camera. These photos are stored within the specific log entry for visual comparison. In the 'Logs' sub-tab, the app generates a 'Personal Progress' card. This compares your current weight and measurements against your very first log (the 'Start' metrics). This visualizes your total journey, showing you exactly how many centimeters you've lost on your waist or gained on your arms since you began your journey."
-            },
-            {
-                title: "Advanced Settings & Customization",
-                content: "Your fitness journey is personal, which is why the Settings tab is so powerful. Here, you can adjust your Daily Calorie Goal as your needs change (e.g., moving from a bulk to a cut). The equipment toggles are dynamic; if you buy a new set of dumbbells for home, just toggle it on, and the AI will immediately start including dumbbell exercises in your home workout suggestions. If you ever want to start fresh, the 'Purge All Data' button will wipe the local storage clean. Note: This app uses high-performance local browser storage to keep your data private and fast without needing an internet connection. Always ensure you are using the same device/browser to keep your history intact."
-            }
+            { title: "Training Setup", content: "Select your environment (Gym/Home). Choose a focus. If you select 'Specific Muscle', you can pick multiple target areas. Check 'Cardio' or 'Core' to add those finishers to the end of your session." },
+            { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. For core exercises, you can toggle between Reps/Time and bodyweight modes. We've added a weight input to core so you can track weighted planks or crunches!" }
         ];
 
-        const apiKey = ""; 
         let timerInterval;
         let activeWorkoutStart = null;
         let currentPhotoType = null;
@@ -693,7 +633,8 @@
                 home: { dumbbell: false, kettlebell: false, bodyweight: true, bands: false } 
             },
             dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [],
-            currentPhotos: { front: null, side: null, back: null }
+            currentPhotos: { front: null, side: null, back: null },
+            selectedMuscles: []
         };
 
         let portionSelection = { item: null, mode: 'packet' };
@@ -701,22 +642,14 @@
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_combined_v8');
             if (saved) state = { ...state, ...JSON.parse(saved) };
-            
-            // Set Header Date
             document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            
-            // Set Inputs
             document.getElementById('set-cal-goal').value = state.goals.calories;
             document.getElementById('workout-date-input').value = state.viewDate;
-
-            // Initialize UI
             initEquipmentSettings();
             renderDashboard();
             renderCustomDb();
-            
-            // Photo Listener
+            renderMuscleSelection();
             document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
-            
             lucide.createIcons();
         };
 
@@ -726,14 +659,12 @@
             state.activeTab = tabId;
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            
             document.querySelectorAll('.nav-item').forEach(btn => {
                 const icon = btn.querySelector('.nav-bg');
                 const isMatch = btn.getAttribute('data-tab') === tabId;
                 btn.className = `nav-item flex flex-col items-center gap-1.5 ${isMatch ? 'text-indigo-600' : 'text-slate-300'}`;
                 icon.className = `w-12 h-8 rounded-full flex items-center justify-center nav-bg ${isMatch ? 'bg-indigo-50' : ''}`;
             });
-
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
             if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
@@ -741,260 +672,37 @@
             lucide.createIcons();
         }
 
-        // --- NEW TUTORIAL LOGIC ---
         function openTutorial() {
             const list = document.getElementById('tutorial-list');
-            list.innerHTML = TUTORIALS.map(t => `
-                <div class="p-4 bg-slate-50 rounded-2xl mb-4">
-                    <h4 class="font-black text-indigo-600 text-sm mb-2 uppercase tracking-tight">${t.title}</h4>
-                    <p class="text-xs text-slate-600 leading-relaxed">${t.content}</p>
-                </div>
-            `).join('');
+            list.innerHTML = TUTORIALS.map(t => `<div class="p-4 bg-slate-50 rounded-2xl mb-4"><h4 class="font-black text-indigo-600 text-sm mb-2 uppercase tracking-tight">${t.title}</h4><p class="text-xs text-slate-600 leading-relaxed">${t.content}</p></div>`).join('');
             document.getElementById('tutorial-modal').style.display = 'flex';
         }
+        function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
 
-        function closeTutorial() {
-            document.getElementById('tutorial-modal').style.display = 'none';
+        // --- TRAINING LOGIC UPDATES ---
+        function toggleSpecificMuscleGrid() {
+            const focus = document.getElementById('workout-focus').value;
+            const container = document.getElementById('muscle-selection-container');
+            container.classList.toggle('hidden', focus !== 'Specific Muscle');
         }
 
-        // --- DASHBOARD LOGIC ---
-        function renderDashboard() {
-            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            const cals = today.reduce((a, b) => a + Number(b.calories), 0);
-            const prot = today.reduce((a, b) => a + Number(b.protein), 0);
-            const carbs = cals * 0.4 / 4; 
-            const fats = cals * 0.3 / 9; 
-
-            document.getElementById('dash-calories').innerText = Math.round(cals);
-            document.getElementById('dash-protein').innerText = Math.round(prot) + 'g';
-            document.getElementById('dash-carbs').innerText = Math.round(carbs) + 'g';
-            document.getElementById('dash-fat').innerText = Math.round(fats) + 'g';
-
-            const progress = Math.min((cals / state.goals.calories) * 534, 534);
-            document.getElementById('calorie-progress').style.strokeDashoffset = 534 - progress;
-
-            const water = state.waterLogs[state.viewDate] || 0;
-            document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)}L`;
-            
-            const statsContainer = document.getElementById('muscle-volume-stats');
-            const workoutsThisWeek = state.workoutHistory.length;
-            if(workoutsThisWeek === 0) {
-                statsContainer.innerHTML = '<p class="col-span-2 text-center text-slate-500 text-[10px]">No workouts logged this week.</p>';
-            } else {
-                 statsContainer.innerHTML = `
-                    <div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">SESSIONS</div><div class="font-bold text-xl">${workoutsThisWeek}</div></div>
-                    <div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">STREAK</div><div class="font-bold text-xl">1</div></div>
-                 `;
-            }
-        }
-
-        function updateWater(ml) { 
-            state.waterLogs[state.viewDate] = Math.max(0, (state.waterLogs[state.viewDate] || 0) + ml); 
-            saveState(); renderDashboard(); 
-        }
-
-        // --- NUTRITION LOGIC ---
-        function setPortionMode(mode) {
-            portionSelection.mode = mode;
-            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('qty-label').innerText = mode === 'packet' ? 'Packets / Units' : 'Total Grams (g)';
-        }
-
-        function adjustPortionQty(val) {
-            const input = document.getElementById('portion-qty-input');
-            let current = parseFloat(input.value);
-            let step = portionSelection.mode === 'custom' ? 10 : 0.5;
-            input.value = Math.max(0.1, (current + (val * step)).toFixed(1));
-        }
-
-        function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
-        function renderNutrition() {
-            document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
-            document.getElementById('nut-view-db').classList.toggle('hidden', state.nutritionTab !== 'database');
-            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-        }
-
-        function handleFoodSearch(val) {
-            const results = document.getElementById('food-results');
-            if (!val) { results.classList.add('hidden'); return; }
-            const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
-            results.innerHTML = filtered.map(item => `
-                <div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})">
-                    <b class="text-sm">${item.name}</b><br>
-                    <small class="text-slate-400">${item.calories} Kcal / ${item.protein}g P</small>
-                </div>
-            `).join('');
-            results.classList.remove('hidden');
-        }
-
-        function initiateFoodLog(name, cals, prot) {
-            portionSelection = { item: { name, calories: cals, protein: prot }, mode: 'packet' };
-            document.getElementById('portion-item-name').innerText = name;
-            document.getElementById('portion-qty-input').value = 1;
-            setPortionMode('packet');
-            document.getElementById('portion-modal').classList.remove('hidden');
-            document.getElementById('portion-modal').style.display = 'flex';
-        }
-
-        function confirmLogPortion() {
-            const qty = parseFloat(document.getElementById('portion-qty-input').value);
-            let finalCals, finalProt;
-
-            if (portionSelection.mode === 'packet') {
-                finalCals = portionSelection.item.calories * qty;
-                finalProt = portionSelection.item.protein * qty;
-            } else {
-                finalCals = (portionSelection.item.calories / 100) * qty;
-                finalProt = (portionSelection.item.protein / 100) * qty;
-            }
-
-            state.dailyMeals.unshift({
-                id: Date.now(),
-                date: state.viewDate,
-                name: portionSelection.item.name + (portionSelection.mode === 'packet' ? ` (${qty}x)` : ` (${qty}g)`),
-                calories: Math.round(finalCals),
-                protein: Math.round(finalProt)
-            });
-            saveState(); closePortionModal(); renderDailyLog(); renderDashboard();
-            document.getElementById('food-search').value = '';
-            document.getElementById('food-results').classList.add('hidden');
-        }
-
-        function closePortionModal() { document.getElementById('portion-modal').style.display = 'none'; }
-
-        function archiveDailyNutrition() {
-            const todayMeals = state.dailyMeals.filter(m => m.date === state.viewDate);
-            if(todayMeals.length === 0) return alert("No meals to save today!");
-            saveState();
-            alert(`Daily log for ${state.viewDate} has been saved to your history.`);
-        }
-
-        function saveToDatabase() {
-            const name = document.getElementById('form-name').value;
-            const cals = document.getElementById('form-cals').value;
-            const prot = document.getElementById('form-prot').value;
-            if(!name || !cals) return;
-            state.customFoodDb.unshift({ id: Date.now(), name, calories: Number(cals), protein: Number(prot) || 0 });
-            saveState(); renderCustomDb();
-            document.getElementById('form-name').value = ''; document.getElementById('form-cals').value = ''; document.getElementById('form-prot').value = '';
-            alert("Added to Inventory!");
-        }
-
-        function renderCustomDb() {
-            const list = document.getElementById('custom-db-list');
-            if(state.customFoodDb.length === 0) {
-                list.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Inventory empty. Add items above!</div>';
-                return;
-            }
-            list.innerHTML = state.customFoodDb.map(item => `
-                <div class="p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors">
-                    <div><b>${item.name}</b><br><small class="text-slate-400">${item.calories} Kcal</small></div>
-                    <button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold hover:bg-indigo-100">+</button>
+        function renderMuscleSelection() {
+            const container = document.getElementById('muscle-selection-grid');
+            container.innerHTML = MUSCLE_LIST.map(m => `
+                <div onclick="toggleMuscleFocus('${m}')" id="muscle-chip-${m}" class="muscle-chip p-2 rounded-xl text-[8px] font-black uppercase text-center ${state.selectedMuscles.includes(m) ? 'selected' : 'bg-white text-slate-400'}">
+                    ${m}
                 </div>
             `).join('');
         }
 
-        function renderDailyLog() {
-            const container = document.getElementById('daily-log-list');
-            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            container.innerHTML = today.length ? today.map(meal => `
-                <div class="glass-card p-4 rounded-2xl flex justify-between items-center">
-                    <div><b>${meal.name}</b><br><small class="text-slate-400">${meal.calories} Kcal • ${meal.protein}g P</small></div>
-                    <div class="flex gap-2">
-                        <button onclick="openEditMeal(${meal.id})" class="text-slate-300 hover:text-indigo-500 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        <button onclick="deleteMeal(${meal.id})" class="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-            `).join('') : '<p class="text-center py-6 text-slate-400 text-xs">No food logged today.</p>';
-            lucide.createIcons();
+        function toggleMuscleFocus(muscle) {
+            if (state.selectedMuscles.includes(muscle)) state.selectedMuscles = state.selectedMuscles.filter(m => m !== muscle);
+            else state.selectedMuscles.push(muscle);
+            renderMuscleSelection();
         }
 
-        function deleteMeal(id) { 
-            if(!confirm("Delete this entry?")) return;
-            state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); 
-            saveState(); renderDailyLog(); renderDashboard(); 
-        }
-
-        function openEditMeal(id) {
-            const meal = state.dailyMeals.find(m => m.id === id);
-            if(!meal) return;
-            const fields = document.getElementById('edit-modal-fields');
-            fields.innerHTML = `
-                <input id="edit-meal-name" value="${meal.name}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-                <input id="edit-meal-cals" type="number" value="${meal.calories}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-                <input id="edit-meal-prot" type="number" value="${meal.protein}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-            `;
-            document.getElementById('edit-modal-title').innerText = "Edit Meal Entry";
-            document.getElementById('edit-modal-save').onclick = () => {
-                meal.name = document.getElementById('edit-meal-name').value;
-                meal.calories = Number(document.getElementById('edit-meal-cals').value);
-                meal.protein = Number(document.getElementById('edit-meal-prot').value);
-                saveState(); renderDailyLog(); renderDashboard(); closeEditModal();
-            };
-            document.getElementById('edit-modal').style.display = 'flex';
-        }
-
-        // --- BARCODE SCANNER LOGIC ---
-        function startScanner() {
-            document.getElementById('scanner-container').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("scanner-mount");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText, decodedResult) => {
-                    stopScanner();
-                    fetchOpenFoodFacts(decodedText);
-                },
-                (errorMessage) => { }
-            ).catch(err => {
-                alert("Error starting camera: " + err);
-            });
-        }
-
-        function stopScanner() {
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scanner-container').classList.add('hidden');
-                    html5QrCode.clear();
-                }).catch(err => { console.error(err); });
-            } else {
-                document.getElementById('scanner-container').classList.add('hidden');
-            }
-        }
-
-        async function fetchOpenFoodFacts(code) {
-            try {
-                alert(`Scanning Product: ${code}...`);
-                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-                const data = await res.json();
-                
-                if(data.status === 1) {
-                    const product = data.product;
-                    const name = product.product_name || "Unknown Product";
-                    let cals = product.nutriments['energy-kcal_serving'] || product.nutriments['energy-kcal_100g'];
-                    let prot = product.nutriments.proteins_serving || product.nutriments.proteins_100g;
-                    
-                    document.getElementById('form-name').value = name;
-                    document.getElementById('form-cals').value = Math.round(cals || 0);
-                    document.getElementById('form-prot').value = Math.round(prot || 0);
-                    
-                    alert(`Found: ${name}. Values auto-filled.`);
-                } else {
-                    alert("Product not found in database.");
-                }
-            } catch(e) {
-                alert("Connection error.");
-            }
-        }
-
-        // --- TRAINING LOGIC ---
-        function setWorkoutEnv(env) { 
-            state.workoutEnv = env; 
-            document.getElementById('current-env-label').innerText = env;
-            document.getElementById('env-tab-gym').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'gym' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('env-tab-home').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+        function toggleCardioOptions() {
+            document.getElementById('cardio-options').classList.toggle('hidden', !document.getElementById('add-cardio-check').checked);
         }
 
         function startManualWorkout() {
@@ -1002,37 +710,99 @@
             document.getElementById('workout-active').classList.remove('hidden');
             document.getElementById('active-workout-title').innerText = document.getElementById('workout-focus').value;
             document.getElementById('exercise-list').innerHTML = ''; 
+            document.getElementById('extra-active-section').innerHTML = '';
             activeWorkoutStart = Date.now();
             timerInterval = setInterval(updateTimer, 1000);
+            
+            // Add Extras if checked
+            if (document.getElementById('add-cardio-check').checked) addCardioSection();
+            if (document.getElementById('add-core-check').checked) initCoreSection();
+        }
+
+        function addCardioSection() {
+            const type = document.getElementById('cardio-type').value;
+            const exercise = document.getElementById('cardio-exercise').value;
+            const cont = document.getElementById('extra-active-section');
+            const div = document.createElement('div');
+            div.className = "glass-card p-6 rounded-[2rem] border-2 border-indigo-100";
+            div.innerHTML = `
+                <h4 class="text-sm font-black uppercase text-indigo-600 mb-3">Cardio: ${exercise}</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" placeholder="Time (min)" class="p-3 bg-slate-50 rounded-xl font-bold text-center">
+                    <input type="number" placeholder="Distance" class="p-3 bg-slate-50 rounded-xl font-bold text-center">
+                </div>
+                <p class="text-[9px] font-bold text-slate-400 mt-2 uppercase">Training: ${type}</p>
+            `;
+            cont.appendChild(div);
+        }
+
+        function initCoreSection() {
+            const cont = document.getElementById('extra-active-section');
+            const div = document.createElement('div');
+            div.className = "glass-card p-6 rounded-[2rem] border-2 border-emerald-100";
+            div.id = "core-finisher-container";
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-sm font-black uppercase text-emerald-600">Core Finisher</h4>
+                    <button onclick="addNewCoreExerciseRow()" class="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-lg border border-emerald-100">+ Add Core Exercise</button>
+                </div>
+                <div id="core-rows-list" class="space-y-4"></div>
+            `;
+            cont.appendChild(div);
+            addNewCoreExerciseRow(); // Start with one
+        }
+
+        function addNewCoreExerciseRow() {
+            const list = document.getElementById('core-rows-list');
+            const rowId = 'core-' + Math.random().toString(36).substr(2, 9);
+            const div = document.createElement('div');
+            div.className = "flex flex-col gap-2 bg-slate-50 p-3 rounded-xl shadow-sm border border-slate-100";
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <select class="text-xs font-bold bg-transparent outline-none w-3/4">
+                        ${CORE_EXERCISES.map(ex => `<option value="${ex}">${ex}</option>`).join('')}
+                    </select>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-300 hover:text-red-400">×</button>
+                </div>
+                <div class="core-input-grid">
+                    <input type="number" placeholder="kg" class="col-span-1 p-2 bg-white rounded text-center text-xs font-bold border border-slate-100" title="Core Weight">
+                    <input type="number" placeholder="val" class="col-span-1 p-2 bg-white rounded text-center text-xs font-bold border border-slate-100">
+                    <div class="col-span-4 grid grid-cols-2 gap-2 mt-1 border-t border-slate-200 pt-2">
+                        <select class="text-[7px] font-black uppercase p-2 rounded bg-white border border-slate-100 outline-none">
+                            <option>Reps</option>
+                            <option>Time (s)</option>
+                        </select>
+                        <label class="text-[7px] flex items-center justify-center gap-1 font-black uppercase text-slate-400">
+                            <input type="checkbox" class="accent-emerald-500 scale-75"> BW
+                        </label>
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
         }
 
         function addExerciseField(prefillName = null, sets = 3) {
             const list = document.getElementById('exercise-list');
             const focus = document.getElementById('workout-focus').value;
-            const env = state.workoutEnv;
-            const availableEquip = state.equipment[env];
+            const availableEquip = state.equipment[state.workoutEnv];
             
             const validExercises = EXERCISE_DB.filter(ex => {
-                const matchesFocus = (focus === "Full Body" || ex.focus === focus);
-                const equipType = ex.equipment;
-                const hasEquipment = (equipType && (availableEquip[equipType] || equipType === 'bodyweight'));
-                return matchesFocus && hasEquipment;
+                if (focus === "Specific Muscle" && state.selectedMuscles.length > 0) {
+                    return ex.muscles.some(m => state.selectedMuscles.includes(m));
+                }
+                if (focus !== "Full Body" && !ex.focus.includes(focus)) return false;
+                return availableEquip[ex.equipment] || ex.equipment === 'bodyweight';
             });
 
             const sortedExercises = [...validExercises].sort((a,b) => a.name.localeCompare(b.name));
             const options = sortedExercises.map(e => `<option value="${e.name}" ${e.name === prefillName ? 'selected' : ''}>${e.name}</option>`).join('');
-
-            if (sortedExercises.length === 0 && !prefillName) {
-                alert("No exercises found for this setup.");
-                return;
-            }
-
-            const div = document.createElement('div');
+            
             const exId = Date.now() + Math.random().toString(16).slice(2);
+            const div = document.createElement('div');
             div.className = "glass-card p-4 rounded-2xl mb-4";
             div.innerHTML = `
                 <div class="flex justify-between items-center mb-3">
-                    <select class="bg-transparent font-bold outline-none text-slate-800 w-full text-sm">${options}</select>
+                    <select class="bg-transparent font-bold outline-none text-slate-800 w-full text-sm">${options || '<option>Manual Exercise</option>'}</select>
                     <button class="text-red-400 font-bold ml-2" onclick="this.parentElement.parentElement.remove()">×</button>
                 </div>
                 <div id="sets-${exId}" class="space-y-2 mb-3"></div>
@@ -1061,19 +831,64 @@
         }
 
         function generateAIWorkout() {
-            const focus = document.getElementById('workout-focus').value;
-            const env = state.workoutEnv;
-            const availableEquip = state.equipment[env];
-            const validExercises = EXERCISE_DB.filter(ex => {
-                if(focus !== "Full Body" && ex.focus !== focus) return false;
-                const equipType = ex.equipment;
-                if(equipType && !availableEquip[equipType] && equipType !== 'bodyweight') return false; 
-                return true;
-            });
-            if(validExercises.length === 0) return alert("No exercises found.");
-            const selected = validExercises.sort(() => 0.5 - Math.random()).slice(0, 5);
             startManualWorkout();
-            selected.forEach(ex => addExerciseField(ex.name, 3));
+            const focus = document.getElementById('workout-focus').value;
+            const availableEquip = state.equipment[state.workoutEnv];
+            const pool = EXERCISE_DB.filter(ex => {
+                if (focus === "Specific Muscle") return ex.muscles.some(m => state.selectedMuscles.includes(m));
+                return (focus === "Full Body" || ex.focus.includes(focus)) && (availableEquip[ex.equipment] || ex.equipment === 'bodyweight');
+            });
+            pool.sort(() => 0.5 - Math.random()).slice(0, 5).forEach(ex => addExerciseField(ex.name, 3));
+        }
+
+        function saveWorkout() {
+            clearInterval(timerInterval);
+            const exercisesLogged = [];
+            document.querySelectorAll('#exercise-list > div').forEach(card => {
+                const selectElement = card.querySelector('select');
+                if (!selectElement) return;
+                const name = selectElement.value;
+                const sets = [];
+                card.querySelectorAll('.set-row').forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    sets.push({ kg: inputs[0].value, reps: inputs[1].value });
+                });
+                exercisesLogged.push({ name, sets });
+            });
+            
+            // Log Core if present
+            const coreList = document.getElementById('core-rows-list');
+            if (coreList && coreList.children.length > 0) {
+                coreList.querySelectorAll('div.flex-col').forEach(row => {
+                    const name = row.querySelector('select').value;
+                    const inputs = row.querySelectorAll('input');
+                    const units = row.querySelectorAll('select')[1].value;
+                    exercisesLogged.push({ 
+                        name: `Core: ${name}`, 
+                        sets: [{ kg: inputs[0].value, val: inputs[1].value, unit: units, bw: inputs[2].checked }] 
+                    });
+                });
+            }
+
+            state.workoutHistory.unshift({
+                id: Date.now(),
+                date: state.viewDate,
+                focus: document.getElementById('active-workout-title').innerText,
+                duration: document.getElementById('workout-timer').innerText,
+                exercises: exercisesLogged
+            });
+            saveState();
+            document.getElementById('workout-setup').classList.remove('hidden'); 
+            document.getElementById('workout-active').classList.add('hidden');
+            switchTab('history');
+        }
+
+        function cancelWorkout() {
+            if(confirm("Exit workout? Data will be lost.")) {
+                clearInterval(timerInterval);
+                document.getElementById('workout-setup').classList.remove('hidden'); 
+                document.getElementById('workout-active').classList.add('hidden');
+            }
         }
 
         function updateTimer() {
@@ -1084,296 +899,167 @@
             document.getElementById('workout-timer').innerText = `${h}:${m}:${s}`;
         }
 
-        function cancelWorkout() {
-            if(confirm("Exit this workout? Data will be lost.")) {
-                clearInterval(timerInterval);
-                document.getElementById('workout-setup').classList.remove('hidden'); 
-                document.getElementById('workout-active').classList.add('hidden');
-                document.getElementById('exercise-list').innerHTML = '';
-            }
+        function setWorkoutEnv(env) { 
+            state.workoutEnv = env; 
+            document.getElementById('current-env-label').innerText = env;
+            document.getElementById('env-tab-gym').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'gym' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('env-tab-home').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
         }
 
-        function saveWorkout() {
-            clearInterval(timerInterval);
-            const duration = document.getElementById('workout-timer').innerText;
-            const exercisesLogged = [];
-            document.querySelectorAll('#exercise-list > div').forEach(card => {
-                const selectEl = card.querySelector('select');
-                if (!selectEl) return;
-                const name = selectEl.value;
-                const sets = [];
-                card.querySelectorAll('.set-row').forEach(row => {
-                    const inputs = row.querySelectorAll('input');
-                    sets.push({ kg: inputs[0].value, reps: inputs[1].value });
-                });
-                exercisesLogged.push({ name, sets });
-            });
-
-            state.workoutHistory.unshift({
-                id: Date.now(),
-                date: state.viewDate,
-                focus: document.getElementById('active-workout-title').innerText,
-                duration: duration,
-                exercises: exercisesLogged
-            });
-            saveState();
-            document.getElementById('workout-setup').classList.remove('hidden'); 
-            document.getElementById('workout-active').classList.add('hidden');
-            switchTab('history');
+        // --- DASHBOARD & NUTRITION LOGIC ---
+        function renderDashboard() {
+            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
+            const cals = today.reduce((a, b) => a + Number(b.calories), 0);
+            const prot = today.reduce((a, b) => a + Number(b.protein), 0);
+            document.getElementById('dash-calories').innerText = Math.round(cals);
+            document.getElementById('dash-protein').innerText = Math.round(prot) + 'g';
+            document.getElementById('dash-carbs').innerText = Math.round(cals * 0.4 / 4) + 'g';
+            document.getElementById('dash-fat').innerText = Math.round(cals * 0.3 / 9) + 'g';
+            const progress = Math.min((cals / state.goals.calories) * 534, 534);
+            const circle = document.getElementById('calorie-progress');
+            if (circle) circle.style.strokeDashoffset = 534 - progress;
+            const water = state.waterLogs[state.viewDate] || 0;
+            document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)}L`;
+            document.getElementById('muscle-volume-stats').innerHTML = `<div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">SESSIONS</div><div class="font-bold text-xl">${state.workoutHistory.length}</div></div><div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">STREAK</div><div class="font-bold text-xl">1</div></div>`;
         }
 
-        // --- METRICS & PHOTO LOGIC ---
-        function setMetricsTab(t) {
-            state.metricsTab = t;
-            document.getElementById('metrics-view-checkin').classList.toggle('hidden', t !== 'checkin');
-            document.getElementById('metrics-view-logs').classList.toggle('hidden', t !== 'logs');
-            document.getElementById('metrics-tab-checkin').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'checkin' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('metrics-tab-logs').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'logs' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            if(t === 'logs') {
-                updateProgressBars(); 
-                renderMetricsLogs();
+        function updateWater(ml) { 
+            state.waterLogs[state.viewDate] = Math.max(0, (state.waterLogs[state.viewDate] || 0) + ml); 
+            saveState(); renderDashboard(); 
+        }
+
+        function handleFoodSearch(val) {
+            const results = document.getElementById('food-results');
+            if (!val) { results.classList.add('hidden'); return; }
+            const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
+            results.innerHTML = filtered.map(item => `<div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})"><b class="text-sm">${item.name}</b><br><small class="text-slate-400">${item.calories} Kcal / ${item.protein}g P</small></div>`).join('');
+            results.classList.remove('hidden');
+        }
+
+        function initiateFoodLog(name, cals, prot) {
+            portionSelection = { item: { name, calories: cals, protein: prot }, mode: 'packet' };
+            document.getElementById('portion-item-name').innerText = name;
+            document.getElementById('portion-qty-input').value = 1;
+            document.getElementById('portion-modal').style.display = 'flex';
+        }
+
+        function confirmLogPortion() {
+            const qty = parseFloat(document.getElementById('portion-qty-input').value);
+            const finalCals = portionSelection.mode === 'packet' ? portionSelection.item.calories * qty : (portionSelection.item.calories / 100) * qty;
+            const finalProt = portionSelection.mode === 'packet' ? portionSelection.item.protein * qty : (portionSelection.item.protein / 100) * qty;
+            state.dailyMeals.unshift({ id: Date.now(), date: state.viewDate, name: portionSelection.item.name, calories: Math.round(finalCals), protein: Math.round(finalProt) });
+            saveState(); closePortionModal(); renderDailyLog(); renderDashboard();
+        }
+
+        function closePortionModal() { document.getElementById('portion-modal').style.display = 'none'; }
+        function setPortionMode(mode) { 
+            portionSelection.mode = mode; 
+            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+        }
+        function adjustPortionQty(v) { document.getElementById('portion-qty-input').value = Math.max(0.1, parseFloat(document.getElementById('portion-qty-input').value) + (v * 0.5)); }
+
+        function saveToDatabase() {
+            const name = document.getElementById('form-name').value;
+            const cals = document.getElementById('form-cals').value;
+            const prot = document.getElementById('form-prot').value;
+            if(!name || !cals) return;
+            state.customFoodDb.unshift({ id: Date.now(), name, calories: Number(cals), protein: Number(prot) || 0 });
+            saveState(); renderCustomDb();
+            document.getElementById('form-name').value = ''; document.getElementById('form-cals').value = ''; document.getElementById('form-prot').value = '';
+        }
+
+        function renderCustomDb() {
+            const list = document.getElementById('custom-db-list');
+            list.innerHTML = state.customFoodDb.map(item => `<div class="p-4 flex justify-between items-center"><div><b>${item.name}</b><br><small>${item.calories} Kcal</small></div><button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl">+</button></div>`).join('');
+        }
+
+        function renderDailyLog() {
+            const container = document.getElementById('daily-log-list');
+            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
+            container.innerHTML = today.map(meal => `<div class="glass-card p-4 rounded-2xl flex justify-between"><div><b>${meal.name}</b><br><small>${meal.calories} Kcal</small></div><button onclick="deleteMeal(${meal.id})">×</button></div>`).join('');
+        }
+
+        function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
+
+        function archiveDailyNutrition() { alert("Daily Log Saved to Local Archive!"); }
+
+        function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
+        function renderNutrition() {
+            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
+            document.getElementById('nut-view-db').classList.toggle('hidden', state.nutritionTab !== 'database');
+        }
+
+        // --- SCANNER & METRICS ---
+        function startScanner() { 
+            document.getElementById('scanner-container').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("scanner-mount");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => { stopScanner(); fetchOpenFoodFacts(text); });
+        }
+        function stopScanner() { if(html5QrCode) html5QrCode.stop(); document.getElementById('scanner-container').classList.add('hidden'); }
+        async function fetchOpenFoodFacts(code) {
+            const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+            const data = await res.json();
+            if(data.status === 1) {
+                document.getElementById('form-name').value = data.product.product_name || "Unknown Item";
+                document.getElementById('form-cals').value = Math.round(data.product.nutriments?.['energy-kcal_100g'] || 0);
+                document.getElementById('form-prot').value = Math.round(data.product.nutriments?.['proteins_100g'] || 0);
             }
         }
 
         function triggerPhoto(type) { currentPhotoType = type; document.getElementById('photo-input').click(); }
-
         function handlePhotoUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
             const reader = new FileReader();
-            reader.onload = (event) => {
-                state.currentPhotos[currentPhotoType] = event.target.result;
-                renderMetrics();
-                saveState();
-            };
-            reader.readAsDataURL(file);
+            reader.onload = (event) => { state.currentPhotos[currentPhotoType] = event.target.result; renderMetrics(); saveState(); };
+            reader.readAsDataURL(e.target.files[0]);
         }
 
-        function updateProgressBars() {
-            const card = document.getElementById('progress-card-container');
-            if(state.metricsHistory.length < 2) {
-                card.classList.add('hidden');
-                return;
-            }
-            card.classList.remove('hidden');
-            
-            const current = state.metricsHistory[0];
-            const start = state.metricsHistory[state.metricsHistory.length - 1]; 
-
-            const updateMetric = (idPrefix, currVal, startVal, isGrowth) => {
-                const labelEl = document.getElementById(`start-${idPrefix}-label`);
-                const barEl = document.getElementById(`prog-${idPrefix}-bar`);
-                const diffEl = document.getElementById(`diff-${idPrefix}`);
-                if(!currVal || !startVal) return;
-                const diffNum = parseFloat((currVal - startVal).toFixed(1));
-                labelEl.innerText = `Start: ${startVal}${idPrefix === 'weight' ? 'kg' : 'cm'}`;
-                
-                if (diffNum === 0) {
-                    diffEl.innerText = "NO CHANGE";
-                    diffEl.className = "diff-indicator bg-slate-100 text-slate-500";
-                } else if ((isGrowth && diffNum > 0) || (!isGrowth && diffNum < 0)) {
-                    diffEl.innerText = `${diffNum > 0 ? '+' : ''}${diffNum}${idPrefix === 'weight' ? 'kg' : 'cm'}`;
-                    diffEl.className = "diff-indicator diff-neg";
-                } else {
-                    diffEl.innerText = `${diffNum > 0 ? '+' : ''}${diffNum}${idPrefix === 'weight' ? 'kg' : 'cm'}`;
-                    diffEl.className = "diff-indicator diff-pos";
-                }
-                const deviation = Math.abs(diffNum);
-                const barWidth = Math.min(100, (deviation / (startVal * 0.2)) * 100);
-                barEl.style.width = Math.max(10, barWidth) + '%';
-            };
-            updateMetric('weight', current.weight, start.weight, false);
-            updateMetric('waist', current.measurements.waist, start.measurements.waist, false);
-            updateMetric('arms', current.measurements.arms, start.measurements.arms, true);
-        }
-
-        function renderMetrics() {
-            if(state.metricsHistory.length > 0) {
-                const last = state.metricsHistory[0];
-                document.getElementById('body-weight').value = last.weight || '';
-                document.getElementById('m-waist').value = last.measurements.waist || '';
-                document.getElementById('m-chest').value = last.measurements.chest || '';
-                document.getElementById('m-arms').value = last.measurements.arms || '';
-                document.getElementById('m-thighs').value = last.measurements.thighs || '';
-            }
-            ['front', 'side', 'back'].forEach(type => {
-                const img = document.getElementById(`img-${type}`);
-                if(state.currentPhotos[type]) {
-                    img.src = state.currentPhotos[type];
-                    img.classList.remove('hidden');
-                } else {
-                    img.classList.add('hidden');
-                }
-            });
-            lucide.createIcons();
+        function setMetricsTab(t) { 
+            state.metricsTab = t; 
+            document.getElementById('metrics-tab-checkin').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'checkin' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('metrics-tab-logs').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'logs' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('metrics-view-checkin').classList.toggle('hidden', t !== 'checkin');
+            document.getElementById('metrics-view-logs').classList.toggle('hidden', t !== 'logs');
         }
 
         function saveMetrics() {
-            const weight = document.getElementById('body-weight').value;
-            if (!weight) return alert("Please enter weight");
-            
-            state.metricsHistory.unshift({
-                id: Date.now(),
-                date: state.viewDate,
-                weight: weight,
-                measurements: {
-                    waist: document.getElementById('m-waist').value,
-                    chest: document.getElementById('m-chest').value,
-                    arms: document.getElementById('m-arms').value,
-                    thighs: document.getElementById('m-thighs').value
-                },
-                photos: { ...state.currentPhotos } 
+            state.metricsHistory.unshift({ id: Date.now(), date: state.viewDate, weight: document.getElementById('body-weight').value, measurements: { waist: document.getElementById('m-waist').value }, photos: { ...state.currentPhotos } });
+            saveState(); alert("Log Saved!");
+        }
+
+        function renderMetrics() {
+            ['front', 'side', 'back'].forEach(t => {
+                const img = document.getElementById(`img-${t}`);
+                if(state.currentPhotos[t]) { img.src = state.currentPhotos[t]; img.classList.remove('hidden'); }
             });
-            
-            saveState();
-            alert("Check-in Logged!");
-            renderMetrics();
         }
-
-        function renderMetricsLogs() {
-            const container = document.getElementById('metrics-history-list');
-            if(state.metricsHistory.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-400 py-10">No check-in history found.</p>`;
-                return;
-            }
-            
-            container.innerHTML = state.metricsHistory.map((m) => {
-                const photoHtml = ['front', 'side', 'back'].map(p => {
-                    if(!m.photos || !m.photos[p]) return '';
-                    return `<div class="aspect-[3/4] bg-slate-100 rounded-lg overflow-hidden relative border border-slate-200">
-                        <img src="${m.photos[p]}" class="w-full h-full object-cover">
-                        <span class="absolute bottom-1 left-1 bg-black/50 text-[6px] text-white px-1.5 rounded-full font-black uppercase">${p}</span>
-                    </div>`;
-                }).join('');
-
-                return `
-                <div class="glass-card p-6 rounded-[2rem] space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
-                        <div>
-                            <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">${m.date}</span>
-                            <h4 class="text-2xl font-black text-slate-900">${m.weight} kg</h4>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="openEditMetric(${m.id})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteMetric(${m.id})" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-4 gap-2 text-center text-[9px] font-bold uppercase text-slate-500">
-                        <div class="bg-slate-50 p-2 rounded-xl">Waist<br><span class="text-slate-900 font-black">${m.measurements.waist || '--'}</span></div>
-                        <div class="bg-slate-50 p-2 rounded-xl">Chest<br><span class="text-slate-900 font-black">${m.measurements.chest || '--'}</span></div>
-                        <div class="bg-slate-50 p-2 rounded-xl">Arms<br><span class="text-slate-900 font-black">${m.measurements.arms || '--'}</span></div>
-                        <div class="bg-slate-50 p-2 rounded-xl">Thighs<br><span class="text-slate-900 font-black">${m.measurements.thighs || '--'}</span></div>
-                    </div>
-
-                    ${photoHtml ? `<div class="grid grid-cols-3 gap-2 pt-2">${photoHtml}</div>` : ''}
-                </div>
-            `;}).join('');
-            lucide.createIcons();
-        }
-
-        function deleteMetric(id) {
-            if(!confirm("Permanently delete this check-in?")) return;
-            state.metricsHistory = state.metricsHistory.filter(m => m.id !== id);
-            saveState(); renderMetricsLogs(); renderMetrics(); updateProgressBars();
-        }
-
-        function openEditMetric(id) {
-            const entry = state.metricsHistory.find(m => m.id === id);
-            if(!entry) return;
-            const fields = document.getElementById('edit-modal-fields');
-            fields.innerHTML = `
-                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Body Weight (kg)</label>
-                <input id="edit-m-weight" type="number" step="0.1" value="${entry.weight}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Waist (cm)</label>
-                         <input id="edit-m-waist" value="${entry.measurements.waist}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none">
-                    </div>
-                    <div>
-                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Arms (cm)</label>
-                         <input id="edit-m-arms" value="${entry.measurements.arms}" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none">
-                    </div>
-                </div>
-            `;
-            document.getElementById('edit-modal-title').innerText = "Edit Log Entry";
-            document.getElementById('edit-modal-save').onclick = () => {
-                entry.weight = document.getElementById('edit-m-weight').value;
-                entry.measurements.waist = document.getElementById('edit-m-waist').value;
-                entry.measurements.arms = document.getElementById('edit-m-arms').value;
-                saveState(); renderMetricsLogs(); renderMetrics(); updateProgressBars(); closeEditModal();
-            };
-            document.getElementById('edit-modal').style.display = 'flex';
-        }
-
-        // --- GENERAL HELPERS ---
-        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
 
         function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
         function renderHistory() {
             const list = document.getElementById('history-list');
             document.getElementById('hist-tab-train').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'training' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-
+            
             if(state.historyTab === 'training') {
-                list.innerHTML = state.workoutHistory.length ? state.workoutHistory.map(w => `
-                    <div class="glass-card p-4 rounded-2xl mb-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-slate-800">${w.focus}</h4>
-                                <p class="text-[10px] text-slate-400 uppercase mt-1">${w.date}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-indigo-500 font-mono">${w.duration}</span>
-                                <button onclick="deleteWorkout(${w.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('') : '<p class="text-center text-slate-400 text-xs py-8">No workouts yet.</p>';
+                list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${w.focus}</b><br><small>${w.date} • ${w.duration}</small></div>`).join('');
             } else {
-                const dates = [...new Set(state.dailyMeals.map(m => m.date))];
-                list.innerHTML = dates.length ? dates.map(d => {
-                    const meals = state.dailyMeals.filter(m => m.date === d);
-                    return `
-                    <div class="glass-card p-4 rounded-2xl mb-2">
-                        <div class="flex justify-between mb-2 border-b pb-2 border-slate-50">
-                            <span class="font-black text-xs text-slate-400 uppercase">${d}</span>
-                            <span class="font-bold text-xs text-indigo-600">${meals.reduce((a,b)=>a+b.calories,0)} Kcal</span>
-                        </div>
-                        ${meals.map(m => `<div class="flex justify-between text-xs text-slate-600 truncate mb-1"><span>• ${m.name}</span><button onclick="deleteMeal(${m.id})" class="text-slate-300 hover:text-red-500 ml-2">×</button></div>`).join('')}
-                    </div>`;
-                }).join('') : '<p class="text-center text-slate-400 text-xs py-8">No history.</p>';
+                list.innerHTML = state.dailyMeals.map(m => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${m.name}</b><br><small>${m.date} • ${m.calories} Kcal</small></div>`).join('');
             }
-            lucide.createIcons();
-        }
-
-        function deleteWorkout(id) {
-            if(!confirm("Delete this workout from history?")) return;
-            state.workoutHistory = state.workoutHistory.filter(w => w.id !== id);
-            saveState(); renderHistory();
         }
 
         function initEquipmentSettings() {
             const gymCont = document.getElementById('gym-equip-list');
+            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `<button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.gym[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
             const homeCont = document.getElementById('home-equip-list');
-            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `
-                <button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.gym[key] ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400'}">${key}</button>
-            `).join('');
-            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `
-                <button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase transition-all ${state.equipment.home[key] ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400'}">${key}</button>
-            `).join('');
+            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `<button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.home[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
         }
 
-        function toggleEquip(env, key) {
-            state.equipment[env][key] = !state.equipment[env][key];
-            saveState(); initEquipmentSettings();
-        }
+        function toggleEquip(env, key) { state.equipment[env][key] = !state.equipment[env][key]; saveState(); initEquipmentSettings(); }
 
-        function resetData() {
-            if(confirm("Permanently delete all data?")) {
-                localStorage.clear(); location.reload();
-            }
-        }
+        function resetData() { if(confirm("Permanently clear all data? This cannot be undone.")) { localStorage.clear(); location.reload(); } }
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
