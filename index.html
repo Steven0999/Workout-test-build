@@ -137,6 +137,14 @@
             color: white;
             border-color: #4f46e5;
         }
+
+        /* Updated Core Grid: Narrowed input columns */
+        .core-input-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.35rem;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="pb-28">
@@ -281,7 +289,7 @@
                         </div>
                         <div class="flex items-center justify-between pt-2">
                             <span class="text-[10px] font-black uppercase text-slate-500">Add Core</span>
-                            <input type="checkbox" id="add-core-check" class="w-2 h-5 accent-indigo-600">
+                            <input type="checkbox" id="add-core-check" class="w-5 h-5 accent-indigo-600">
                         </div>
                     </div>
                     
@@ -608,7 +616,7 @@
 
         const TUTORIALS = [
             { title: "Training Setup", content: "Select your environment (Gym/Home). Choose a focus. If you select 'Specific Muscle', you can pick multiple target areas. Check 'Cardio' or 'Core' to add those finishers to the end of your session." },
-            { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. For core exercises, you can toggle between Reps/Time and Bodyweight modes." }
+            { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. For core exercises, you can toggle between Reps/Time and bodyweight modes. We've added a weight input to core so you can track weighted planks or crunches!" }
         ];
 
         let timerInterval;
@@ -748,7 +756,7 @@
             const list = document.getElementById('core-rows-list');
             const rowId = 'core-' + Math.random().toString(36).substr(2, 9);
             const div = document.createElement('div');
-            div.className = "flex flex-col gap-2 bg-slate-50 p-3 rounded-xl";
+            div.className = "flex flex-col gap-2 bg-slate-50 p-3 rounded-xl shadow-sm border border-slate-100";
             div.innerHTML = `
                 <div class="flex items-center justify-between">
                     <select class="text-xs font-bold bg-transparent outline-none w-3/4">
@@ -756,15 +764,18 @@
                     </select>
                     <button onclick="this.parentElement.parentElement.remove()" class="text-slate-300 hover:text-red-400">×</button>
                 </div>
-                <div class="flex gap-2 items-center">
-                    <input type="number" placeholder="val" class="flex-1 p-2 bg-white rounded text-center text-xs font-bold border border-slate-100 width-30%">
-                    <select class="text-[8px] font-black uppercase p-2 rounded bg-white border border-slate-100 outline-none">
-                        <option>Reps</option>
-                        <option>Time (s)</option>
-                    </select>
-                    <label class="text-[8px] flex items-center gap-1 font-black uppercase text-slate-400">
-                        <input type="checkbox" class="accent-emerald-500"> BW
-                    </label>
+                <div class="core-input-grid">
+                    <input type="number" placeholder="kg" class="col-span-1 p-2 bg-white rounded text-center text-[10px] font-bold border border-slate-100" title="Core Weight">
+                    <input type="number" placeholder="val" class="col-span-1 p-2 bg-white rounded text-center text-[10px] font-bold border border-slate-100">
+                    <div class="col-span-5 grid grid-cols-2 gap-2 border-l border-slate-200 pl-2">
+                        <select class="text-[7px] font-black uppercase p-2 rounded bg-white border border-slate-100 outline-none">
+                            <option>Reps</option>
+                            <option>Time (s)</option>
+                        </select>
+                        <label class="text-[7px] flex items-center justify-center gap-1 font-black uppercase text-slate-400">
+                            <input type="checkbox" class="accent-emerald-500 scale-75"> BW
+                        </label>
+                    </div>
                 </div>
             `;
             list.appendChild(div);
@@ -834,7 +845,9 @@
             clearInterval(timerInterval);
             const exercisesLogged = [];
             document.querySelectorAll('#exercise-list > div').forEach(card => {
-                const name = card.querySelector('select').value;
+                const selectElement = card.querySelector('select');
+                if (!selectElement) return;
+                const name = selectElement.value;
                 const sets = [];
                 card.querySelectorAll('.set-row').forEach(row => {
                     const inputs = row.querySelectorAll('input');
@@ -842,6 +855,21 @@
                 });
                 exercisesLogged.push({ name, sets });
             });
+            
+            // Log Core if present
+            const coreList = document.getElementById('core-rows-list');
+            if (coreList && coreList.children.length > 0) {
+                coreList.querySelectorAll('div.flex-col').forEach(row => {
+                    const name = row.querySelector('select').value;
+                    const inputs = row.querySelectorAll('input');
+                    const units = row.querySelectorAll('select')[1].value;
+                    exercisesLogged.push({ 
+                        name: `Core: ${name}`, 
+                        sets: [{ kg: inputs[0].value, val: inputs[1].value, unit: units, bw: inputs[2].checked }] 
+                    });
+                });
+            }
+
             state.workoutHistory.unshift({
                 id: Date.now(),
                 date: state.viewDate,
@@ -888,7 +916,8 @@
             document.getElementById('dash-carbs').innerText = Math.round(cals * 0.4 / 4) + 'g';
             document.getElementById('dash-fat').innerText = Math.round(cals * 0.3 / 9) + 'g';
             const progress = Math.min((cals / state.goals.calories) * 534, 534);
-            document.getElementById('calorie-progress').style.strokeDashoffset = 534 - progress;
+            const circle = document.getElementById('calorie-progress');
+            if (circle) circle.style.strokeDashoffset = 534 - progress;
             const water = state.waterLogs[state.viewDate] || 0;
             document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)}L`;
             document.getElementById('muscle-volume-stats').innerHTML = `<div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">SESSIONS</div><div class="font-bold text-xl">${state.workoutHistory.length}</div></div><div class="bg-white/10 p-3 rounded-xl"><div class="text-[10px] opacity-70">STREAK</div><div class="font-bold text-xl">1</div></div>`;
@@ -923,7 +952,11 @@
         }
 
         function closePortionModal() { document.getElementById('portion-modal').style.display = 'none'; }
-        function setPortionMode(mode) { portionSelection.mode = mode; }
+        function setPortionMode(mode) { 
+            portionSelection.mode = mode; 
+            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+        }
         function adjustPortionQty(v) { document.getElementById('portion-qty-input').value = Math.max(0.1, parseFloat(document.getElementById('portion-qty-input').value) + (v * 0.5)); }
 
         function saveToDatabase() {
@@ -949,10 +982,12 @@
 
         function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
 
-        function archiveDailyNutrition() { alert("Saved!"); }
+        function archiveDailyNutrition() { alert("Daily Log Saved to Local Archive!"); }
 
         function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
         function renderNutrition() {
+            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${state.nutritionTab === 'database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
             document.getElementById('nut-view-db').classList.toggle('hidden', state.nutritionTab !== 'database');
         }
@@ -968,8 +1003,9 @@
             const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
             const data = await res.json();
             if(data.status === 1) {
-                document.getElementById('form-name').value = data.product.product_name;
-                document.getElementById('form-cals').value = Math.round(data.product.nutriments['energy-kcal_100g'] || 0);
+                document.getElementById('form-name').value = data.product.product_name || "Unknown Item";
+                document.getElementById('form-cals').value = Math.round(data.product.nutriments?.['energy-kcal_100g'] || 0);
+                document.getElementById('form-prot').value = Math.round(data.product.nutriments?.['proteins_100g'] || 0);
             }
         }
 
@@ -982,13 +1018,15 @@
 
         function setMetricsTab(t) { 
             state.metricsTab = t; 
+            document.getElementById('metrics-tab-checkin').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'checkin' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('metrics-tab-logs').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'logs' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('metrics-view-checkin').classList.toggle('hidden', t !== 'checkin');
             document.getElementById('metrics-view-logs').classList.toggle('hidden', t !== 'logs');
         }
 
         function saveMetrics() {
             state.metricsHistory.unshift({ id: Date.now(), date: state.viewDate, weight: document.getElementById('body-weight').value, measurements: { waist: document.getElementById('m-waist').value }, photos: { ...state.currentPhotos } });
-            saveState(); alert("Logged!");
+            saveState(); alert("Log Saved!");
         }
 
         function renderMetrics() {
@@ -1001,23 +1039,27 @@
         function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
         function renderHistory() {
             const list = document.getElementById('history-list');
+            document.getElementById('hist-tab-train').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'training' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            
             if(state.historyTab === 'training') {
-                list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${w.focus}</b><br><small>${w.date}</small></div>`).join('');
+                list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${w.focus}</b><br><small>${w.date} • ${w.duration}</small></div>`).join('');
             } else {
-                list.innerHTML = state.dailyMeals.map(m => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${m.name}</b><br><small>${m.calories} Kcal</small></div>`).join('');
+                list.innerHTML = state.dailyMeals.map(m => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${m.name}</b><br><small>${m.date} • ${m.calories} Kcal</small></div>`).join('');
             }
         }
 
         function initEquipmentSettings() {
             const gymCont = document.getElementById('gym-equip-list');
             gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `<button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.gym[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
+            const homeCont = document.getElementById('home-equip-list');
+            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `<button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.home[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
         }
 
         function toggleEquip(env, key) { state.equipment[env][key] = !state.equipment[env][key]; saveState(); initEquipmentSettings(); }
 
-        function resetData() { if(confirm("Clear all?")) { localStorage.clear(); location.reload(); } }
+        function resetData() { if(confirm("Permanently clear all data? This cannot be undone.")) { localStorage.clear(); location.reload(); } }
         function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
-
