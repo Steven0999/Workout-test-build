@@ -119,6 +119,13 @@
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
             z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
         }
+
+        /* Tutorial Custom Scroll */
+        .tutorial-content {
+            max-height: 70vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
     </style>
 </head>
 <body class="pb-28">
@@ -137,6 +144,10 @@
         <div class="flex items-center gap-2">
             <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl hover:bg-indigo-100 transition-colors">
                 <i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i>
+            </button>
+            <!-- NEW TUTORIAL BUTTON -->
+            <button onclick="openTutorial()" class="px-4 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-100 transition-colors font-bold text-xs uppercase tracking-wider">
+                Tutorial
             </button>
             <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                 <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
@@ -280,6 +291,11 @@
                     </div>
                 </div>
                 <div id="daily-log-list" class="space-y-3"></div>
+                
+                <!-- NEW SAVE LOG BUTTON -->
+                <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                    <i data-lucide="save"></i> Save Daily Log
+                </button>
             </div>
 
             <!-- Inventory / Scanner View -->
@@ -298,7 +314,7 @@
                 <!-- Add Product / Scan Buttons -->
                 <div class="glass-card p-6 rounded-[2.5rem]">
                     <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">New Product</h4>
+                        <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">Product Catalog</h4>
                         <div class="flex gap-2">
                             <button onclick="startScanner()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
                         </div>
@@ -537,6 +553,19 @@
         </button>
     </nav>
 
+    <!-- TUTORIAL MODAL -->
+    <div id="tutorial-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h3 class="text-xl font-black text-slate-900">App Guide</h3>
+                <button onclick="closeTutorial()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">×</button>
+            </div>
+            <div id="tutorial-list" class="space-y-2 tutorial-content pr-2">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Generic Edit Modal -->
     <div id="edit-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6">
@@ -625,6 +654,30 @@
             { name: "Mountain Climbers", focus: "Cardio / Core", equipment: "bodyweight" }
         ];
 
+        // TUTORIAL DATA
+        const TUTORIALS = [
+            {
+                title: "Getting Started with VaughanFitness",
+                content: "Welcome to VaughanFitness Pro V8! This app is designed to be your all-in-one companion for strength, nutrition, and physique transformation. To begin, navigate to the Settings tab to set your daily calorie and hydration goals. You should also toggle which equipment you have available in both your Gym and Home environments; this allows the AI suggest feature to pick exercises you can actually perform. On the Dashboard, you'll see a real-time summary of your day including calories, macros, and hydration. The app is built on 'Daily Views', meaning everything you log is pinned to a specific date. You can change the date in the Training tab to log for yesterday or plan for tomorrow. Remember, consistency is the ultimate variable in fitness, so make logging a daily habit before you even enter the gym."
+            },
+            {
+                title: "Logging and Managing Your Training",
+                content: "The Training tab offers two main modes: Gym and Home. Select your environment first, then choose a workout focus like 'Upper Body (Push)' or 'Full Body'. You can manually add exercises or use the 'AI Suggest' button to let the app build a balanced session for you based on your available equipment. Once a workout is active, you can track sets, weight (kg), and repetitions. Use the checkmark icon to mark a set as complete. If you forget to add a specific exercise, just tap '+ Add Exercise'. When finished, tap 'Finish & Log Session' to move the data into your permanent history. In the History tab, you can review past sessions and see your progression over weeks and months, ensuring you are applying progressive overload."
+            },
+            {
+                title: "Nutrition Diary & Inventory System",
+                content: "VaughanFitness uses a two-part nutrition system: the Diary and the Inventory. The Inventory is your personal food database. You can add items manually or use the built-in Barcode Scanner. The Barcode Scanner connects to the OpenFoodFacts database to automatically fetch nutrition data for thousands of products. Once an item is in your Inventory, you can find it using the search bar in the Diary tab. When logging food, you can choose 'Packet/Unit' mode for simple items or 'Grams' mode for precise measurement. A critical new feature is the 'Save Daily Log' button. Once you've logged your meals for the day, hitting save archives the entire day's data into your Food History, allowing you to track your calorie trends over time."
+            },
+            {
+                title: "Physique Metrics & Progress Tracking",
+                content: "The Metrics tab is where you track your physical transformation beyond just the scale. We recommend a full 'Check-in' once a week. Enter your weight and measurements for your waist, chest, arms, and thighs. You can also upload Front, Side, and Back photos directly from your camera. These photos are stored within the specific log entry for visual comparison. In the 'Logs' sub-tab, the app generates a 'Personal Progress' card. This compares your current weight and measurements against your very first log (the 'Start' metrics). This visualizes your total journey, showing you exactly how many centimeters you've lost on your waist or gained on your arms since you began your journey."
+            },
+            {
+                title: "Advanced Settings & Customization",
+                content: "Your fitness journey is personal, which is why the Settings tab is so powerful. Here, you can adjust your Daily Calorie Goal as your needs change (e.g., moving from a bulk to a cut). The equipment toggles are dynamic; if you buy a new set of dumbbells for home, just toggle it on, and the AI will immediately start including dumbbell exercises in your home workout suggestions. If you ever want to start fresh, the 'Purge All Data' button will wipe the local storage clean. Note: This app uses high-performance local browser storage to keep your data private and fast without needing an internet connection. Always ensure you are using the same device/browser to keep your history intact."
+            }
+        ];
+
         const apiKey = ""; 
         let timerInterval;
         let activeWorkoutStart = null;
@@ -686,6 +739,22 @@
             if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
             if (tabId === 'metrics') renderMetrics();
             lucide.createIcons();
+        }
+
+        // --- NEW TUTORIAL LOGIC ---
+        function openTutorial() {
+            const list = document.getElementById('tutorial-list');
+            list.innerHTML = TUTORIALS.map(t => `
+                <div class="p-4 bg-slate-50 rounded-2xl mb-4">
+                    <h4 class="font-black text-indigo-600 text-sm mb-2 uppercase tracking-tight">${t.title}</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">${t.content}</p>
+                </div>
+            `).join('');
+            document.getElementById('tutorial-modal').style.display = 'flex';
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorial-modal').style.display = 'none';
         }
 
         // --- DASHBOARD LOGIC ---
@@ -794,6 +863,13 @@
         }
 
         function closePortionModal() { document.getElementById('portion-modal').style.display = 'none'; }
+
+        function archiveDailyNutrition() {
+            const todayMeals = state.dailyMeals.filter(m => m.date === state.viewDate);
+            if(todayMeals.length === 0) return alert("No meals to save today!");
+            saveState();
+            alert(`Daily log for ${state.viewDate} has been saved to your history.`);
+        }
 
         function saveToDatabase() {
             const name = document.getElementById('form-name').value;
