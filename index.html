@@ -31,15 +31,15 @@
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
         }
 
-        /* Scanner Styles 
-        #scanner-mount, #ai-video {
+        /* Scanner Styles */
+        #scanner-mount {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 1.5rem;
             background: #000;
             overflow: hidden;
-        }*/
+        }
 
         .scanner-laser {
             position: absolute;
@@ -295,38 +295,12 @@
                     <button onclick="stopScanner()" class="w-full bg-slate-100 text-slate-600 p-4 rounded-2xl font-bold">Stop Scanner</button>
                 </div>
 
-                <!-- AI Scanner Container 
-                <div id="ai-scan-container" class="hidden space-y-4">
-                    <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl">
-                        <video id="ai-video" autoplay playsinline muted></video>
-                        <div class="scanner-laser"></div>
-                        <div id="ai-scanner-overlay" class="absolute inset-0 bg-black/80 backdrop-blur-md z-[60] flex flex-col items-center justify-center text-white p-6 text-center hidden">
-                            <div class="loading-spinner mb-4 border-indigo-500 border-t-white"></div>
-                            <p id="ai-status-text" class="font-bold text-sm mb-2">Analyzing Food...</p>
-                            <div id="ai-results-preview" class="bg-white/10 p-4 rounded-2xl w-full max-w-[240px] hidden">
-                                <h5 id="ai-prev-name" class="font-black text-indigo-400 text-sm uppercase">Meal Found</h5>
-                                <div class="flex justify-between mt-2 text-xs">
-                                    <span>Calories:</span>
-                                    <span id="ai-prev-cals" class="font-bold">--</span>
-                                </div>
-                                <div class="flex justify-between text-xs">
-                                    <span>Protein:</span>
-                                    <span id="ai-prev-prot" class="font-bold">--</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button id="ai-capture-btn" onclick="captureAndAnalyzeMeal()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-indigo-200">Snap & Analyze</button>
-                    <button onclick="closeScanner()" class="w-full bg-slate-100 text-slate-600 p-3 rounded-2xl font-bold">Cancel</button>
-                </div> -->
-
                 <!-- Add Product / Scan Buttons -->
                 <div class="glass-card p-6 rounded-[2.5rem]">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">New Product</h4>
                         <div class="flex gap-2">
                             <button onclick="startScanner()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
-                            <button onclick="startAIScanner()" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="camera" class="w-3 h-3"></i> AI</button>
                         </div>
                     </div>
                     <div class="space-y-3">
@@ -656,7 +630,6 @@
         let activeWorkoutStart = null;
         let currentPhotoType = null;
         let html5QrCode;
-        let aiStream = null;
         
         let state = {
             activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log', metricsTab: 'checkin',
@@ -752,6 +725,20 @@
         }
 
         // --- NUTRITION LOGIC ---
+        function setPortionMode(mode) {
+            portionSelection.mode = mode;
+            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('qty-label').innerText = mode === 'packet' ? 'Packets / Units' : 'Total Grams (g)';
+        }
+
+        function adjustPortionQty(val) {
+            const input = document.getElementById('portion-qty-input');
+            let current = parseFloat(input.value);
+            let step = portionSelection.mode === 'custom' ? 10 : 0.5;
+            input.value = Math.max(0.1, (current + (val * step)).toFixed(1));
+        }
+
         function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
         function renderNutrition() {
             document.getElementById('nut-view-log').classList.toggle('hidden', state.nutritionTab !== 'log');
@@ -780,20 +767,6 @@
             setPortionMode('packet');
             document.getElementById('portion-modal').classList.remove('hidden');
             document.getElementById('portion-modal').style.display = 'flex';
-        }
-
-        function setPortionMode(mode) {
-            portionSelection.mode = mode;
-            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${mode === 'custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('qty-label').innerText = mode === 'packet' ? 'Packets / Units' : 'Total Grams (g)';
-        }
-
-        function adjustPortionQty(val) {
-            const input = document.getElementById('portion-qty-input');
-            let current = parseFloat(input.value);
-            let step = portionSelection.mode === 'custom' ? 10 : 0.5;
-            input.value = Math.max(0.1, (current + (val * step)).toFixed(1));
         }
 
         function confirmLogPortion() {
@@ -938,74 +911,6 @@
             } catch(e) {
                 alert("Connection error.");
             }
-        }
-
-        // --- AI CAMERA ---
-        function startAIScanner() {
-            document.getElementById('ai-scan-container').classList.remove('hidden');
-            const constraints = { video: { facingMode: "environment" } };
-            
-            navigator.mediaDevices.getUserMedia(constraints)
-            .then((stream) => {
-                aiStream = stream;
-                const video = document.getElementById('ai-video');
-                video.srcObject = stream;
-            })
-            .catch((err) => {
-                alert("Camera Access Denied: " + err);
-                closeScanner();
-            });
-        }
-
-        function closeScanner() {
-            document.getElementById('ai-scan-container').classList.add('hidden');
-            document.getElementById('ai-scanner-overlay').classList.add('hidden');
-            document.getElementById('ai-results-preview').classList.add('hidden');
-            document.getElementById('ai-capture-btn').classList.remove('hidden');
-            if(aiStream) {
-                aiStream.getTracks().forEach(track => track.stop());
-                aiStream = null;
-            }
-        }
-
-        function captureAndAnalyzeMeal() {
-            const overlay = document.getElementById('ai-scanner-overlay');
-            const results = document.getElementById('ai-results-preview');
-            const status = document.getElementById('ai-status-text');
-            const captureBtn = document.getElementById('ai-capture-btn');
-
-            overlay.classList.remove('hidden');
-            captureBtn.classList.add('hidden');
-            status.innerText = "Scanning Food Objects...";
-            
-            const foodLibrary = [
-                { name: "Grilled Salmon", cals: 360, prot: 32 },
-                { name: "Egg & Spinach Omelette", cals: 280, prot: 18 },
-                { name: "Greek Yogurt Bowl", cals: 190, prot: 15 },
-                { name: "Whey Protein Shake", cals: 140, prot: 25 },
-                { name: "Chicken Breast & Broccoli", cals: 410, prot: 44 },
-                { name: "Sirloin Steak (200g)", cals: 480, prot: 52 },
-                { name: "Peanut Butter Sandwich", cals: 340, prot: 11 },
-                { name: "Tuna Salad", cals: 260, prot: 38 }
-            ];
-            
-            const result = foodLibrary[Math.floor(Math.random() * foodLibrary.length)];
-
-            setTimeout(() => {
-                status.innerText = "Analyzing Macronutrients...";
-                setTimeout(() => {
-                    status.innerText = "Detection Success!";
-                    document.getElementById('ai-prev-name').innerText = result.name;
-                    document.getElementById('ai-prev-cals').innerText = result.cals + " kcal";
-                    document.getElementById('ai-prev-prot').innerText = result.prot + "g";
-                    results.classList.remove('hidden');
-                    
-                    setTimeout(() => {
-                        closeScanner();
-                        initiateFoodLog(result.name, result.cals, result.prot);
-                    }, 2200);
-                }, 1000);
-            }, 1200);
         }
 
         // --- TRAINING LOGIC ---
@@ -1231,7 +1136,6 @@
             const weight = document.getElementById('body-weight').value;
             if (!weight) return alert("Please enter weight");
             
-            // Capture all data including current photo state
             state.metricsHistory.unshift({
                 id: Date.now(),
                 date: state.viewDate,
@@ -1247,10 +1151,6 @@
             
             saveState();
             alert("Check-in Logged!");
-            
-            // Optional: Reset photo stage for next checkin
-            // state.currentPhotos = { front: null, side: null, back: null };
-            
             renderMetrics();
         }
 
@@ -1401,6 +1301,4 @@
     </script>
 </body>
 </html>
-
-
 
