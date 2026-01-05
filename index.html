@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,6 +146,12 @@
             grid-template-columns: repeat(7, 1fr);
             gap: 0.35rem;
             align-items: center;
+        }
+
+        /* Food Search Dropdown Fix */
+        .search-results-container {
+            position: relative;
+            z-index: 60;
         }
     </style>
 </head>
@@ -327,6 +335,11 @@
             </div>
 
             <div id="nut-view-log" class="space-y-6">
+                <!-- Make a Meal Button -->
+                <button onclick="openMealModal()" class="w-full bg-white border-2 border-dashed border-indigo-200 p-4 rounded-2xl flex items-center justify-center gap-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:bg-indigo-50 transition-colors">
+                    <i data-lucide="utensils" class="w-4 h-4"></i> Make a Meal
+                </button>
+
                 <div class="flex items-center gap-3">
                     <div class="relative flex-1">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
@@ -335,6 +348,17 @@
                     </div>
                 </div>
                 <div id="daily-log-list" class="space-y-3"></div>
+                
+                <div id="daily-totals-card" class="glass-card p-6 rounded-[2rem] bg-indigo-50/30 border-indigo-100 hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-[10px] font-black uppercase text-indigo-600">Daily Totals</h4>
+                    </div>
+                    <div class="flex gap-4 text-sm font-bold">
+                        <div id="total-day-cals">0 Kcal</div>
+                        <div id="total-day-prot" class="text-slate-400">0g Protein</div>
+                    </div>
+                </div>
+
                 <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2">
                     <i data-lucide="save"></i> Save Daily Log
                 </button>
@@ -355,7 +379,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">Product Catalog</h4>
                         <div class="flex gap-2">
-                            <button onclick="startScanner()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
+                            <button onclick="startScanner('db')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
                         </div>
                     </div>
                     <div class="space-y-3">
@@ -375,7 +399,45 @@
             </div>
         </section>
 
-        <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 transition-opacity">
+        <!-- Meal Builder Modal -->
+        <div id="meal-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-[2.5rem] flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">Make a Meal</h3>
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Combine Ingredients</p>
+                    </div>
+                    <button onclick="closeMealModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">×</button>
+                </div>
+                
+                <div class="p-6 flex-1 overflow-y-auto space-y-6">
+                    <div class="space-y-4">
+                        <input id="meal-builder-name" placeholder="Meal Name (e.g., High Protein Lunch)" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none focus:ring-2 ring-indigo-100">
+                        
+                        <div class="relative search-results-container">
+                            <i data-lucide="plus-circle" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input id="meal-item-search" placeholder="Search ingredients..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-200 font-bold outline-none" oninput="handleMealSearch(this.value)">
+                            <button onclick="startScanner('meal')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"><i data-lucide="scan-barcode" class="w-5 h-5"></i></button>
+                            <div id="meal-search-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-[70] shadow-2xl max-h-48 overflow-y-auto"></div>
+                        </div>
+
+                        <div id="meal-builder-list" class="space-y-2">
+                            <!-- Items go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-slate-50 border-t border-slate-100">
+                    <div id="meal-totals" class="flex justify-between items-center text-[10px] font-black uppercase text-indigo-700 mb-4 hidden">
+                        <span>Total Macros:</span>
+                        <span id="meal-builder-stats">0 Kcal • 0g Protein</span>
+                    </div>
+                    <button onclick="saveMealToInventory()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-100">Save Meal to Inventory</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[250] hidden items-center justify-center p-6 transition-opacity">
             <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <div class="text-center">
                     <h3 id="portion-item-name" class="text-xl font-black text-slate-900 mb-1">Food Item</h3>
@@ -616,13 +678,15 @@
 
         const TUTORIALS = [
             { title: "Training Setup", content: "Select your environment (Gym/Home). Choose a focus. If you select 'Specific Muscle', you can pick multiple target areas. Check 'Cardio' or 'Core' to add those finishers to the end of your session." },
-            { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. For core exercises, you can toggle between Reps/Time and bodyweight modes. We've added a weight input to core so you can track weighted planks or crunches!" }
+            { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. For core exercises, you can toggle between Reps/Time and bodyweight modes. We've added a weight input to core so you can track weighted planks or crunches!" },
+            { title: "Meal Builder", content: "In the Nutrition tab, use the 'Make a Meal' button to combine multiple items. Adjust portions (packet/grams), name your creation, and save it to your inventory for one-tap logging." }
         ];
 
         let timerInterval;
         let activeWorkoutStart = null;
         let currentPhotoType = null;
         let html5QrCode;
+        let scannerMode = 'db'; // 'db' or 'meal'
         
         let state = {
             activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log', metricsTab: 'checkin',
@@ -634,10 +698,12 @@
             },
             dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [],
             currentPhotos: { front: null, side: null, back: null },
-            selectedMuscles: []
+            selectedMuscles: [],
+            nutritionalArchive: []
         };
 
         let portionSelection = { item: null, mode: 'packet' };
+        let mealBuilderItems = [];
 
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_combined_v8');
@@ -679,7 +745,154 @@
         }
         function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
 
-        // --- TRAINING LOGIC UPDATES ---
+        // --- MEAL BUILDER LOGIC ---
+        function openMealModal() {
+            document.getElementById('meal-modal').style.display = 'flex';
+            mealBuilderItems = [];
+            renderMealBuilder();
+            lucide.createIcons();
+        }
+
+        function closeMealModal() {
+            document.getElementById('meal-modal').style.display = 'none';
+        }
+
+        function handleMealSearch(val) {
+            const results = document.getElementById('meal-search-results');
+            if (!val) { results.classList.add('hidden'); return; }
+            const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
+            results.innerHTML = filtered.map(item => `
+                <div class="p-4 border-b hover:bg-slate-50 cursor-pointer flex justify-between items-center" onclick="addIngredientToMeal('${item.name}', ${item.calories}, ${item.protein})">
+                    <div><b class="text-[11px] font-bold">${item.name}</b><br><small class="text-slate-400 text-[9px]">${item.calories} Kcal / ${item.protein}g P</small></div>
+                    <i data-lucide="plus" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+            `).join('');
+            results.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function addIngredientToMeal(name, cals, prot) {
+            const item = { id: Date.now() + Math.random(), name, baseCals: cals, baseProt: prot, qty: 1, mode: 'packet' };
+            mealBuilderItems.push(item);
+            document.getElementById('meal-item-search').value = '';
+            document.getElementById('meal-search-results').classList.add('hidden');
+            renderMealBuilder();
+        }
+
+        function renderMealBuilder() {
+            const list = document.getElementById('meal-builder-list');
+            const totalsDiv = document.getElementById('meal-totals');
+            if (mealBuilderItems.length === 0) {
+                list.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-8 italic">Search and add items to create a meal</p>`;
+                totalsDiv.classList.add('hidden');
+                return;
+            }
+            totalsDiv.classList.remove('hidden');
+            
+            list.innerHTML = mealBuilderItems.map(item => `
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between gap-2">
+                    <div class="flex-1">
+                        <div class="text-[11px] font-bold text-slate-800">${item.name}</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="number" value="${item.qty}" step="0.1" onchange="updateIngredientQty(${item.id}, this.value)" class="w-12 bg-white border border-slate-200 rounded text-[10px] font-bold text-center p-1">
+                            <select onchange="updateIngredientMode(${item.id}, this.value)" class="bg-transparent text-[9px] font-black uppercase text-indigo-500 outline-none">
+                                <option value="packet" ${item.mode === 'packet' ? 'selected' : ''}>Unit</option>
+                                <option value="grams" ${item.mode === 'grams' ? 'selected' : ''}>Grams</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="removeIngredient(${item.id})" class="text-slate-300 hover:text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            `).join('');
+            
+            let totalCals = 0;
+            let totalProt = 0;
+            mealBuilderItems.forEach(i => {
+                const multiplier = i.mode === 'packet' ? i.qty : (i.qty / 100);
+                totalCals += i.baseCals * multiplier;
+                totalProt += i.baseProt * multiplier;
+            });
+            
+            document.getElementById('meal-builder-stats').innerText = `${Math.round(totalCals)} Kcal • ${Math.round(totalProt)}g Protein`;
+            lucide.createIcons();
+        }
+
+        function updateIngredientQty(id, val) {
+            const item = mealBuilderItems.find(i => i.id === id);
+            if (item) item.qty = parseFloat(val) || 0;
+            renderMealBuilder();
+        }
+
+        function updateIngredientMode(id, val) {
+            const item = mealBuilderItems.find(i => i.id === id);
+            if (item) item.mode = val;
+            renderMealBuilder();
+        }
+
+        function removeIngredient(id) {
+            mealBuilderItems = mealBuilderItems.filter(i => i.id !== id);
+            renderMealBuilder();
+        }
+
+        function saveMealToInventory() {
+            const name = document.getElementById('meal-builder-name').value;
+            if (!name || mealBuilderItems.length === 0) {
+                alert("Please name the meal and add items first.");
+                return;
+            }
+            
+            let totalCals = 0;
+            let totalProt = 0;
+            mealBuilderItems.forEach(i => {
+                const multiplier = i.mode === 'packet' ? i.qty : (i.qty / 100);
+                totalCals += i.baseCals * multiplier;
+                totalProt += i.baseProt * multiplier;
+            });
+
+            state.customFoodDb.unshift({ 
+                id: Date.now(), 
+                name: `Meal: ${name}`, 
+                calories: Math.round(totalCals), 
+                protein: Math.round(totalProt) 
+            });
+            
+            saveState();
+            renderCustomDb();
+            closeMealModal();
+            document.getElementById('meal-builder-name').value = '';
+            alert("Meal added to Inventory!");
+        }
+
+        // --- NUTRITION LOGS ENHANCEMENT ---
+        function archiveDailyNutrition() {
+            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
+            if (today.length === 0) {
+                alert("No food logged for today yet.");
+                return;
+            }
+
+            const totalCals = today.reduce((a, b) => a + Number(b.calories), 0);
+            const totalProt = today.reduce((a, b) => a + Number(b.protein), 0);
+
+            // Storing the full day intake summary
+            const archiveEntry = {
+                id: Date.now(),
+                date: state.viewDate,
+                totalCalories: Math.round(totalCals),
+                totalProtein: Math.round(totalProt),
+                itemCount: today.length
+            };
+
+            // Remove existing entry for the same date to avoid duplicates
+            state.nutritionalArchive = state.nutritionalArchive.filter(entry => entry.date !== state.viewDate);
+            state.nutritionalArchive.unshift(archiveEntry);
+            
+            saveState();
+            alert(`Daily log archived: ${archiveEntry.totalCalories} Kcal, ${archiveEntry.totalProtein}g Protein.`);
+            if (state.historyTab === 'nutrition') renderHistory();
+        }
+
+        // --- EXISTING LOGIC ---
         function toggleSpecificMuscleGrid() {
             const focus = document.getElementById('workout-focus').value;
             const container = document.getElementById('muscle-selection-container');
@@ -714,7 +927,6 @@
             activeWorkoutStart = Date.now();
             timerInterval = setInterval(updateTimer, 1000);
             
-            // Add Extras if checked
             if (document.getElementById('add-cardio-check').checked) addCardioSection();
             if (document.getElementById('add-core-check').checked) initCoreSection();
         }
@@ -749,7 +961,7 @@
                 <div id="core-rows-list" class="space-y-4"></div>
             `;
             cont.appendChild(div);
-            addNewCoreExerciseRow(); // Start with one
+            addNewCoreExerciseRow();
         }
 
         function addNewCoreExerciseRow() {
@@ -856,7 +1068,6 @@
                 exercisesLogged.push({ name, sets });
             });
             
-            // Log Core if present
             const coreList = document.getElementById('core-rows-list');
             if (coreList && coreList.children.length > 0) {
                 coreList.querySelectorAll('div.flex-col').forEach(row => {
@@ -906,7 +1117,6 @@
             document.getElementById('env-tab-home').className = `px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
         }
 
-        // --- DASHBOARD & NUTRITION LOGIC ---
         function renderDashboard() {
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
             const cals = today.reduce((a, b) => a + Number(b.calories), 0);
@@ -977,12 +1187,22 @@
         function renderDailyLog() {
             const container = document.getElementById('daily-log-list');
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            container.innerHTML = today.map(meal => `<div class="glass-card p-4 rounded-2xl flex justify-between"><div><b>${meal.name}</b><br><small>${meal.calories} Kcal</small></div><button onclick="deleteMeal(${meal.id})">×</button></div>`).join('');
+            container.innerHTML = today.map(meal => `<div class="glass-card p-4 rounded-2xl flex justify-between"><div><b>${meal.name}</b><br><small>${meal.calories} Kcal / ${meal.protein}g Protein</small></div><button onclick="deleteMeal(${meal.id})">×</button></div>`).join('');
+            
+            const totalCals = today.reduce((a, b) => a + Number(b.calories), 0);
+            const totalProt = today.reduce((a, b) => a + Number(b.protein), 0);
+            
+            const totalsCard = document.getElementById('daily-totals-card');
+            if (today.length > 0) {
+                totalsCard.classList.remove('hidden');
+                document.getElementById('total-day-cals').innerText = `${Math.round(totalCals)} Kcal`;
+                document.getElementById('total-day-prot').innerText = `${Math.round(totalProt)}g Protein`;
+            } else {
+                totalsCard.classList.add('hidden');
+            }
         }
 
         function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
-
-        function archiveDailyNutrition() { alert("Daily Log Saved to Local Archive!"); }
 
         function setNutritionTab(t) { state.nutritionTab = t; renderNutrition(); }
         function renderNutrition() {
@@ -992,8 +1212,8 @@
             document.getElementById('nut-view-db').classList.toggle('hidden', state.nutritionTab !== 'database');
         }
 
-        // --- SCANNER & METRICS ---
-        function startScanner() { 
+        function startScanner(target) { 
+            scannerMode = target;
             document.getElementById('scanner-container').classList.remove('hidden');
             html5QrCode = new Html5Qrcode("scanner-mount");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => { stopScanner(); fetchOpenFoodFacts(text); });
@@ -1003,9 +1223,17 @@
             const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
             const data = await res.json();
             if(data.status === 1) {
-                document.getElementById('form-name').value = data.product.product_name || "Unknown Item";
-                document.getElementById('form-cals').value = Math.round(data.product.nutriments?.['energy-kcal_100g'] || 0);
-                document.getElementById('form-prot').value = Math.round(data.product.nutriments?.['proteins_100g'] || 0);
+                const name = data.product.product_name || "Unknown Item";
+                const cals = Math.round(data.product.nutriments?.['energy-kcal_100g'] || 0);
+                const prot = Math.round(data.product.nutriments?.['proteins_100g'] || 0);
+                
+                if (scannerMode === 'meal') {
+                    addIngredientToMeal(name, cals, prot);
+                } else {
+                    document.getElementById('form-name').value = name;
+                    document.getElementById('form-cals').value = cals;
+                    document.getElementById('form-prot').value = prot;
+                }
             }
         }
 
@@ -1045,7 +1273,18 @@
             if(state.historyTab === 'training') {
                 list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${w.focus}</b><br><small>${w.date} • ${w.duration}</small></div>`).join('');
             } else {
-                list.innerHTML = state.dailyMeals.map(m => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${m.name}</b><br><small>${m.date} • ${m.calories} Kcal</small></div>`).join('');
+                list.innerHTML = (state.nutritionalArchive || []).map(entry => `
+                    <div class="glass-card p-4 rounded-2xl mb-2 flex justify-between items-center">
+                        <div>
+                            <b class="text-sm">Daily Summary: ${entry.date}</b><br>
+                            <small class="text-slate-500">${entry.itemCount} items logged</small>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-indigo-600 font-black text-xs">${entry.totalCalories} Kcal</div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase">${entry.totalProtein}g Protein</div>
+                        </div>
+                    </div>
+                `).join('') || `<p class="text-center text-[10px] text-slate-400 italic py-8">Save your daily food logs to see summaries here</p>`;
             }
         }
 
@@ -1063,3 +1302,4 @@
     </script>
 </body>
 </html>
+
