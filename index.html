@@ -138,12 +138,21 @@
             border-color: #4f46e5;
         }
 
-        /* Updated Core Grid */
+        /* Fixed Core Grid for Mobile - Prevents cut-off */
         .core-input-grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.35rem;
             align-items: center;
+        }
+        
+        @media (max-width: 380px) {
+            .core-input-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .core-input-grid > *:nth-child(n+3) {
+                margin-top: 4px;
+            }
         }
     </style>
 </head>
@@ -765,17 +774,15 @@
                     <button onclick="this.parentElement.parentElement.remove()" class="text-slate-300 hover:text-red-400">×</button>
                 </div>
                 <div class="core-input-grid">
-                    <input type="number" placeholder="kg" class="col-span-1 p-2 bg-white rounded text-center text-xs font-bold border border-slate-100" title="Core Weight">
-                    <input type="number" placeholder="val" class="col-span-1 p-2 bg-white rounded text-center text-xs font-bold border border-slate-100">
-                    <div class="col-span-4 grid grid-cols-2 gap-2 mt-1 border-t border-slate-200 pt-2">
-                        <select class="text-[7px] font-black uppercase p-2 rounded bg-white border border-slate-100 outline-none">
-                            <option>Reps</option>
-                            <option>Time (s)</option>
-                        </select>
-                        <label class="text-[7px] flex items-center justify-center gap-1 font-black uppercase text-slate-400">
-                            <input type="checkbox" class="accent-emerald-500 scale-75"> BW
-                        </label>
-                    </div>
+                    <input type="number" placeholder="kg" class="p-2 bg-white rounded text-center text-xs font-bold border border-slate-100" title="Core Weight">
+                    <input type="number" placeholder="val" class="p-2 bg-white rounded text-center text-xs font-bold border border-slate-100">
+                    <select class="text-[7px] font-black uppercase p-2 rounded bg-white border border-slate-100 outline-none">
+                        <option>Reps</option>
+                        <option>Time (s)</option>
+                    </select>
+                    <label class="text-[7px] flex items-center justify-center gap-1 font-black uppercase text-slate-400">
+                        <input type="checkbox" class="accent-emerald-500 scale-75"> BW
+                    </label>
                 </div>
             `;
             list.appendChild(div);
