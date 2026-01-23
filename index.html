@@ -143,7 +143,14 @@
                     <h3 class="text-xl font-bold mb-2">Plan Session</h3>
                     <input type="date" id="workout-date-input" class="w-full p-4 bg-slate-50 rounded-2xl mb-4 text-center font-bold">
                     <select id="workout-focus" onchange="toggleSpecificMuscleGrid()" class="w-full p-4 bg-slate-50 rounded-2xl mb-4 text-center font-bold outline-none">
-                        <option>Full Body</option><option>Upper Body</option><option>Lower Body/Legs</option><option>Push</option><option>Pull</option><option>Squat</option><option>Hinge</option><option>Specific Muscle</option>
+                        <option>Full Body</option>
+                        <option>Upper Body</option>
+                        <option>Lower Body/Legs</option>
+                        <option>Push</option>
+                        <option>Pull</option>
+                        <option>Squat</option>
+                        <option>Hinge</option>
+                        <option>Specific Muscle</option>
                     </select>
                     <div id="muscle-selection-container" class="mb-4 hidden text-left">
                         <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Select Muscles</label>
@@ -386,7 +393,7 @@
             { name: "Pull Ups", focus: ["Full Body", "Upper Body", "Pull"], equipment: "bodyweight", muscles: ["Back", "Biceps"] },
 
             //Resistance Band
-           { name: "Band Rows", focus: ["Full Body", "Upper Body", "Pull"], equipment: "resistanceband", muscles: ["Back", "Biceps"] }
+            { name: "Band Rows", focus: ["Full Body", "Upper Body", "Pull"], equipment: "resistanceband", muscles: ["Back", "Biceps"] }
 
 
             //Weight Machine
