@@ -92,7 +92,7 @@
     </header>
 
     <main class="max-w-xl mx-auto p-4 space-y-6">
-        //Dashboard
+       <!--  Dashboard  -->
         <section id="dashboard" class="tab-content active space-y-6">
             <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
                 <div class="relative w-48 h-48 flex items-center justify-center">
@@ -131,7 +131,7 @@
             </div>
         </section>
         
-//Training
+<!--Training-->
         <section id="training" class="tab-content space-y-6">
             <div id="workout-setup" class="space-y-4">
                 <div class="glass-card p-6 rounded-[2.5rem] text-center">
@@ -188,7 +188,7 @@
             </div>
         </section>
         
-//Nutrition
+<!--Nutrition-->
         <section id="nutrition" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
@@ -230,7 +230,7 @@
             </div>
         </section>
         
-//Body Metrics
+<!--Body Metrics-->
         <section id="metrics" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setMetricsTab('checkin')" id="metrics-tab-checkin" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Check-in</button>
@@ -290,7 +290,7 @@
             </div>
         </section>
         
-//History Log
+<!--History Log-->
         <section id="history" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Training</button>
@@ -306,7 +306,7 @@
             </div>
         </section>
         
-//Setting & Equipment
+<!--Setting & Equipment-->
         <section id="settings" class="tab-content space-y-6">
             <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
                 <div><label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Daily Calorie Goal</label><input id="set-cal-goal" type="number" class="w-full bg-slate-50 p-4 rounded-2xl font-bold" onchange="state.goals.calories = this.value; saveState();"></div>
@@ -368,7 +368,7 @@
     <script>
         // --- DATA & STATE ---
         const EXERCISE_DB = [
-    //Barbell
+  //Barbell
             { name: "Barbell Bench Press", focus: ["Full Body", "Upper Body", "Push"], equipment: "barbell", muscles: ["Chest", "Triceps", "Shoulders"] },
             { name: "Incline Barbell Press", focus: ["Upper Body", "Push"], equipment: "barbell", muscles: ["Chest", "Shoulders"] },
             { name: "Barbell Rows", focus: ["Full Body", "Upper Body", "Pull"], equipment: "barbell", muscles: ["Back", "Biceps"] },
@@ -377,26 +377,26 @@
             { name: "Romanian Deadlifts", focus: ["Lower Body/Legs", "Hinge"], equipment: "barbell", muscles: ["Hamstrings", "Glutes"] },
             { name: "Overhead Press", focus: ["Upper Body", "Push"], equipment: "barbell", muscles: ["Shoulders"] },
 
-            // Dumbbell
+   // Dumbbell
             { name: "Dumbbell Press", focus: ["Full Body", "Upper Body", "Push"], equipment: "dumbbell", muscles: ["Chest", "Triceps"] },
             { name: "Lunges", focus: ["Lower Body/Legs", "Squat"], equipment: "dumbbell", muscles: ["Quads", "Glutes"] },
 
-            // Machine
+    // Machine
             { name: "Leg Press", focus: ["Lower Body/Legs", "Squat"], equipment: "machine", muscles: ["Quads", "Glutes"] },
  
 
-            //Cable 
+   //Cable 
             { name: "Lat Pulldowns", focus: ["Upper Body", "Pull"], equipment: "cable", muscles: ["Back", "Biceps"] },
  
 
-            //Bodyweight
+    //Bodyweight
             { name: "Pull Ups", focus: ["Full Body", "Upper Body", "Pull"], equipment: "bodyweight", muscles: ["Back", "Biceps"] },
 
-            //Resistance Band
+   //Resistance Band
             { name: "Band Rows", focus: ["Full Body", "Upper Body", "Pull"], equipment: "bands", muscles: ["Back", "Biceps"] }
 
 
-            //Weight Machine
+   //Weight Machine
         ];
 
         const CORE_EXERCISES = ["Plank", "Crunches", "Leg Raises", "Russian Twists", "Deadbugs", "Bicycle Crunches", "Hollow Hold", "Bird Dog"];
