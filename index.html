@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -656,6 +654,16 @@
         </div>
     </div>
 
+    <div id="view-metric-modal" class="modal-overlay" style="display: none;">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-black">Metric Details</h3>
+                <button onclick="closeViewMetricModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">×</button>
+            </div>
+            <div id="view-metric-content" class="space-y-2"></div>
+        </div>
+    </div>
+
     <script>
         // --- DATA & STATE ---
         const EXERCISE_DB = [
@@ -740,7 +748,7 @@
 
         function openTutorial() {
             const list = document.getElementById('tutorial-list');
-            list.innerHTML = TUTORIALS.map(t => `<div class="p-4 bg-slate-50 rounded-2xl mb-4"><h4 class="font-black text-indigo-600 text-sm mb-2 uppercase tracking-tight">${t.title}</h4><p class="text-xs text-slate-600 leading-relaxed">${t.content}</p></div>`).join('');
+            list.innerHTML = TUTORIALS.map(t => `<div class="p-4 bg-slate-50 rounded-2xl mb-4"><h4 class="font-black text-indigo-600 text-sm mb-2 uppercase tracking-tight">\( {t.title}</h4><p class="text-xs text-slate-600 leading-relaxed"> \){t.content}</p></div>`).join('');
             document.getElementById('tutorial-modal').style.display = 'flex';
         }
         function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
@@ -763,7 +771,7 @@
             const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
             results.innerHTML = filtered.map(item => `
                 <div class="p-4 border-b hover:bg-slate-50 cursor-pointer flex justify-between items-center" onclick="addIngredientToMeal('${item.name}', ${item.calories}, ${item.protein})">
-                    <div><b class="text-[11px] font-bold">${item.name}</b><br><small class="text-slate-400 text-[9px]">${item.calories} Kcal / ${item.protein}g P</small></div>
+                    <div><b class="text-[11px] font-bold">\( {item.name}</b><br><small class="text-slate-400 text-[9px]"> \){item.calories} Kcal / ${item.protein}g P</small></div>
                     <i data-lucide="plus" class="w-4 h-4 text-indigo-500"></i>
                 </div>
             `).join('');
@@ -794,7 +802,7 @@
                     <div class="flex-1">
                         <div class="text-[11px] font-bold text-slate-800">${item.name}</div>
                         <div class="flex items-center gap-2 mt-1">
-                            <input type="number" value="${item.qty}" step="0.1" onchange="updateIngredientQty(${item.id}, this.value)" class="w-12 bg-white border border-slate-200 rounded text-[10px] font-bold text-center p-1">
+                            <input type="number" value="\( {item.qty}" step="0.1" onchange="updateIngredientQty( \){item.id}, this.value)" class="w-12 bg-white border border-slate-200 rounded text-[10px] font-bold text-center p-1">
                             <select onchange="updateIngredientMode(${item.id}, this.value)" class="bg-transparent text-[9px] font-black uppercase text-indigo-500 outline-none">
                                 <option value="packet" ${item.mode === 'packet' ? 'selected' : ''}>Unit</option>
                                 <option value="grams" ${item.mode === 'grams' ? 'selected' : ''}>Grams</option>
@@ -902,7 +910,7 @@
         function renderMuscleSelection() {
             const container = document.getElementById('muscle-selection-grid');
             container.innerHTML = MUSCLE_LIST.map(m => `
-                <div onclick="toggleMuscleFocus('${m}')" id="muscle-chip-${m}" class="muscle-chip p-2 rounded-xl text-[8px] font-black uppercase text-center ${state.selectedMuscles.includes(m) ? 'selected' : 'bg-white text-slate-400'}">
+                <div onclick="toggleMuscleFocus('\( {m}')" id="muscle-chip- \){m}" class="muscle-chip p-2 rounded-xl text-[8px] font-black uppercase text-center ${state.selectedMuscles.includes(m) ? 'selected' : 'bg-white text-slate-400'}">
                     ${m}
                 </div>
             `).join('');
@@ -972,7 +980,7 @@
             div.innerHTML = `
                 <div class="flex items-center justify-between">
                     <select class="text-xs font-bold bg-transparent outline-none w-3/4">
-                        ${CORE_EXERCISES.map(ex => `<option value="${ex}">${ex}</option>`).join('')}
+                        \( {CORE_EXERCISES.map(ex => `<option value=" \){ex}">${ex}</option>`).join('')}
                     </select>
                     <button onclick="this.parentElement.parentElement.remove()" class="text-slate-300 hover:text-red-400">×</button>
                 </div>
@@ -1007,7 +1015,7 @@
             });
 
             const sortedExercises = [...validExercises].sort((a,b) => a.name.localeCompare(b.name));
-            const options = sortedExercises.map(e => `<option value="${e.name}" ${e.name === prefillName ? 'selected' : ''}>${e.name}</option>`).join('');
+            const options = sortedExercises.map(e => `<option value="${e.name}" \( {e.name === prefillName ? 'selected' : ''}> \){e.name}</option>`).join('');
             
             const exId = Date.now() + Math.random().toString(16).slice(2);
             const div = document.createElement('div');
@@ -1107,7 +1115,7 @@
             const h = Math.floor(diff / 3600).toString().padStart(2, '0');
             const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
             const s = (diff % 60).toString().padStart(2, '0');
-            document.getElementById('workout-timer').innerText = `${h}:${m}:${s}`;
+            document.getElementById('workout-timer').innerText = `\( {h}: \){m}:${s}`;
         }
 
         function setWorkoutEnv(env) { 
@@ -1142,7 +1150,7 @@
             const results = document.getElementById('food-results');
             if (!val) { results.classList.add('hidden'); return; }
             const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
-            results.innerHTML = filtered.map(item => `<div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})"><b class="text-sm">${item.name}</b><br><small class="text-slate-400">${item.calories} Kcal / ${item.protein}g P</small></div>`).join('');
+            results.innerHTML = filtered.map(item => `<div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${item.name}', ${item.calories}, \( {item.protein})"><b class="text-sm"> \){item.name}</b><br><small class="text-slate-400">${item.calories} Kcal / ${item.protein}g P</small></div>`).join('');
             results.classList.remove('hidden');
         }
 
@@ -1181,13 +1189,13 @@
 
         function renderCustomDb() {
             const list = document.getElementById('custom-db-list');
-            list.innerHTML = state.customFoodDb.map(item => `<div class="p-4 flex justify-between items-center"><div><b>${item.name}</b><br><small>${item.calories} Kcal</small></div><button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl">+</button></div>`).join('');
+            list.innerHTML = state.customFoodDb.map(item => `<div class="p-4 flex justify-between items-center"><div><b>\( {item.name}</b><br><small> \){item.calories} Kcal</small></div><button onclick="initiateFoodLog('${item.name}', ${item.calories}, ${item.protein})" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl">+</button></div>`).join('');
         }
 
         function renderDailyLog() {
             const container = document.getElementById('daily-log-list');
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            container.innerHTML = today.map(meal => `<div class="glass-card p-4 rounded-2xl flex justify-between"><div><b>${meal.name}</b><br><small>${meal.calories} Kcal / ${meal.protein}g Protein</small></div><button onclick="deleteMeal(${meal.id})">×</button></div>`).join('');
+            container.innerHTML = today.map(meal => `<div class="glass-card p-4 rounded-2xl flex justify-between"><div><b>\( {meal.name}</b><br><small> \){meal.calories} Kcal / \( {meal.protein}g Protein</small></div><button onclick="deleteMeal( \){meal.id})">×</button></div>`).join('');
             
             const totalCals = today.reduce((a, b) => a + Number(b.calories), 0);
             const totalProt = today.reduce((a, b) => a + Number(b.protein), 0);
@@ -1250,11 +1258,31 @@
             document.getElementById('metrics-tab-logs').className = `flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${t === 'logs' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('metrics-view-checkin').classList.toggle('hidden', t !== 'checkin');
             document.getElementById('metrics-view-logs').classList.toggle('hidden', t !== 'logs');
+            renderMetrics();
         }
 
         function saveMetrics() {
-            state.metricsHistory.unshift({ id: Date.now(), date: state.viewDate, weight: document.getElementById('body-weight').value, measurements: { waist: document.getElementById('m-waist').value }, photos: { ...state.currentPhotos } });
-            saveState(); alert("Log Saved!");
+            let measurements = {
+                waist: document.getElementById('m-waist').value,
+                chest: document.getElementById('m-chest').value,
+                arms: document.getElementById('m-arms').value,
+                thighs: document.getElementById('m-thighs').value
+            };
+            state.metricsHistory.unshift({ id: Date.now(), date: state.viewDate, weight: document.getElementById('body-weight').value, measurements, photos: { ...state.currentPhotos } });
+            document.getElementById('body-weight').value = '';
+            document.getElementById('m-waist').value = '';
+            document.getElementById('m-chest').value = '';
+            document.getElementById('m-arms').value = '';
+            document.getElementById('m-thighs').value = '';
+            state.currentPhotos = { front: null, side: null, back: null };
+            ['front', 'side', 'back'].forEach(t => {
+                const img = document.getElementById(`img-${t}`);
+                img.src = '';
+                img.classList.add('hidden');
+            });
+            saveState(); 
+            alert("Log Saved!");
+            setMetricsTab('logs');
         }
 
         function renderMetrics() {
@@ -1262,7 +1290,89 @@
                 const img = document.getElementById(`img-${t}`);
                 if(state.currentPhotos[t]) { img.src = state.currentPhotos[t]; img.classList.remove('hidden'); }
             });
+            if (state.metricsTab === 'logs') renderMetricsLogs();
         }
+
+        function renderMetricsLogs() {
+            const list = document.getElementById('metrics-history-list');
+            list.innerHTML = state.metricsHistory.map(entry => `
+                <div class="glass-card p-4 rounded-2xl cursor-pointer" onclick="viewMetricEntry(${entry.id})">
+                    <b>${entry.date}</b><br>
+                    <small>Weight: ${entry.weight}kg</small>
+                </div>
+            `).join('');
+            if (state.metricsHistory.length > 1) {
+                document.getElementById('progress-card-container').classList.remove('hidden');
+                const start = state.metricsHistory[state.metricsHistory.length - 1];
+                const latest = state.metricsHistory[0];
+                const diffWeight = latest.weight - start.weight;
+                document.getElementById('diff-weight').innerText = (diffWeight > 0 ? '+' : '') + diffWeight + 'kg';
+                document.getElementById('diff-weight').className = `diff-indicator ${diffWeight > 0 ? 'diff-pos' : 'diff-neg'}`;
+                const diffWaist = latest.measurements.waist - start.measurements.waist;
+                document.getElementById('diff-waist').innerText = (diffWaist > 0 ? '+' : '') + diffWaist + 'cm';
+                document.getElementById('diff-waist').className = `diff-indicator ${diffWaist > 0 ? 'diff-pos' : 'diff-neg'}`;
+                const diffArms = latest.measurements.arms - start.measurements.arms;
+                document.getElementById('diff-arms').innerText = (diffArms > 0 ? '+' : '') + diffArms + 'cm';
+                document.getElementById('diff-arms').className = `diff-indicator ${diffArms > 0 ? 'diff-neg' : 'diff-pos'}`;
+                const maxWeightChange = 10;
+                const maxWaistChange = 10;
+                const maxArmsGrowth = 5;
+                document.getElementById('prog-weight-bar').style.width = `${diffWeight < 0 ? Math.min(Math.abs(diffWeight) / maxWeightChange * 100, 100) : 0}%`;
+                document.getElementById('prog-waist-bar').style.width = `${diffWaist < 0 ? Math.min(Math.abs(diffWaist) / maxWaistChange * 100, 100) : 0}%`;
+                document.getElementById('prog-arms-bar').style.width = `${diffArms > 0 ? Math.min(Math.abs(diffArms) / maxArmsGrowth * 100, 100) : 0}%`;
+                document.getElementById('start-weight-label').innerText = `Start: ${start.weight}kg`;
+                document.getElementById('start-waist-label').innerText = `Start: ${start.measurements.waist}cm`;
+                document.getElementById('start-arms-label').innerText = `Start: ${start.measurements.arms}cm`;
+            } else {
+                document.getElementById('progress-card-container').classList.add('hidden');
+            }
+        }
+
+        function viewMetricEntry(id) {
+            const entry = state.metricsHistory.find(e => e.id === id);
+            if (!entry) return;
+            const content = document.getElementById('view-metric-content');
+            content.innerHTML = `
+                <p class="text-sm font-bold">Date: ${entry.date}</p>
+                <p class="text-sm">Weight: ${entry.weight}kg</p>
+                <p class="text-sm">Waist: ${entry.measurements.waist}cm</p>
+                <p class="text-sm">Chest: ${entry.measurements.chest}cm</p>
+                <p class="text-sm">Arms: ${entry.measurements.arms}cm</p>
+                <p class="text-sm">Thighs: ${entry.measurements.thighs}cm</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <img src="${entry.photos.front || ''}" alt="Front" class="rounded-lg ${entry.photos.front ? '' : 'hidden'}">
+                    <img src="${entry.photos.side || ''}" alt="Side" class="rounded-lg ${entry.photos.side ? '' : 'hidden'}">
+                    <img src="${entry.photos.back || ''}" alt="Back" class="rounded-lg ${entry.photos.back ? '' : 'hidden'}">
+                </div>
+                <select id="compare-with" onchange="updateCompare(${entry.id})" class="w-full p-2 bg-slate-50 rounded-xl mt-4">
+                    <option value="">Compare with...</option>
+                    \( {state.metricsHistory.filter(e => e.id !== entry.id).map(e => `<option value=" \){e.id}">${e.date}</option>`).join('')}
+                </select>
+                <div id="compare-diff" class="space-y-2 mt-2"></div>
+            `;
+            document.getElementById('view-metric-modal').style.display = 'flex';
+        }
+
+        function updateCompare(currentId) {
+            const compareId = document.getElementById('compare-with').value;
+            if (!compareId) {
+                document.getElementById('compare-diff').innerHTML = '';
+                return;
+            }
+            const current = state.metricsHistory.find(e => e.id == currentId);
+            const compare = state.metricsHistory.find(e => e.id == compareId);
+            const diffHtml = `
+                <h4 class="text-sm font-bold">Compared to ${compare.date}</h4>
+                <p class="text-xs">Weight Diff: ${(current.weight - compare.weight).toFixed(1)}kg</p>
+                <p class="text-xs">Waist Diff: ${(current.measurements.waist - compare.measurements.waist).toFixed(1)}cm</p>
+                <p class="text-xs">Chest Diff: ${(current.measurements.chest - compare.measurements.chest).toFixed(1)}cm</p>
+                <p class="text-xs">Arms Diff: ${(current.measurements.arms - compare.measurements.arms).toFixed(1)}cm</p>
+                <p class="text-xs">Thighs Diff: ${(current.measurements.thighs - compare.measurements.thighs).toFixed(1)}cm</p>
+            `;
+            document.getElementById('compare-diff').innerHTML = diffHtml;
+        }
+
+        function closeViewMetricModal() { document.getElementById('view-metric-modal').style.display = 'none'; }
 
         function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
         function renderHistory() {
@@ -1271,7 +1381,7 @@
             document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all ${state.historyTab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             
             if(state.historyTab === 'training') {
-                list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>${w.focus}</b><br><small>${w.date} • ${w.duration}</small></div>`).join('');
+                list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl mb-2"><b>\( {w.focus}</b><br><small> \){w.date} • ${w.duration}</small></div>`).join('');
             } else {
                 list.innerHTML = (state.nutritionalArchive || []).map(entry => `
                     <div class="glass-card p-4 rounded-2xl mb-2 flex justify-between items-center">
@@ -1290,9 +1400,9 @@
 
         function initEquipmentSettings() {
             const gymCont = document.getElementById('gym-equip-list');
-            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `<button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.gym[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
+            gymCont.innerHTML = Object.keys(state.equipment.gym).map(key => `<button onclick="toggleEquip('gym', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase \( {state.equipment.gym[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}"> \){key}</button>`).join('');
             const homeCont = document.getElementById('home-equip-list');
-            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `<button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment.home[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${key}</button>`).join('');
+            homeCont.innerHTML = Object.keys(state.equipment.home).map(key => `<button onclick="toggleEquip('home', '${key}')" class="p-3 rounded-xl text-[10px] font-bold uppercase \( {state.equipment.home[key] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}"> \){key}</button>`).join('');
         }
 
         function toggleEquip(env, key) { state.equipment[env][key] = !state.equipment[env][key]; saveState(); initEquipmentSettings(); }
@@ -1301,5 +1411,4 @@
         function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
     </script>
 </body>
-</html>
-
+    </html>
