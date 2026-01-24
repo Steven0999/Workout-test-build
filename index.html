@@ -59,8 +59,8 @@
         .metric-bar-bg { background: #e2e8f0; border-radius: 999px; height: 12px; position: relative; overflow: hidden;}
         .metric-bar-fill { background: var(--brand-primary); height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .diff-indicator { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
-        .diff-pos { background: #fef2f2; color: #ef4444; } 
-        .diff-neg { background: #ecfdf5; color: #10b981; }
+        .diff-pos { background: #fef2f2; color: #ef4444; } /* Negative for weight gain (usually) */
+        .diff-neg { background: #ecfdf5; color: #10b981; } /* Positive for weight loss (usually) */
 
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
@@ -395,12 +395,7 @@
 
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_combined_v8');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                state = { ...state, ...parsed };
-                // Ensure array-based metrics persist correctly
-                if (parsed.metricsHistory) state.metricsHistory = parsed.metricsHistory;
-            }
+            if (saved) state = { ...state, ...JSON.parse(saved) };
             document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             document.getElementById('set-cal-goal').value = state.goals.calories;
             document.getElementById('workout-date-input').value = state.viewDate;
@@ -410,7 +405,11 @@
         };
 
         function saveState() { 
-            localStorage.setItem('fittrack_combined_v8', JSON.stringify(state)); 
+            try {
+                localStorage.setItem('fittrack_combined_v8', JSON.stringify(state)); 
+            } catch (e) {
+                alert("Storage full! Try deleting some old metrics or photos.");
+            }
         }
 
         function switchTab(tabId) {
@@ -541,7 +540,7 @@
         }
         function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
 
-        // --- BODY METRICS (LOCAL PERSISTENCE) ---
+        // --- METRICS & COMPRESSED PHOTOS ---
         function setMetricsTab(t) { 
             state.metricsTab = t; 
             document.getElementById('metrics-tab-checkin').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='checkin' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
@@ -554,12 +553,38 @@
         function triggerPhoto(type) { currentPhotoType = type; document.getElementById('photo-input').click(); }
         
         function handlePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
-            reader.onload = (event) => { 
-                state.currentPhotos[currentPhotoType] = event.target.result; 
-                renderCheckinPhotos(); 
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // COMPRESSION LOGIC: Resize image to max 400px width/height and 0.6 quality
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max_size = 400;
+
+                    if (width > height) {
+                        if (width > max_size) { height *= max_size / width; width = max_size; }
+                    } else {
+                        if (height > max_size) { width *= max_size / height; height = max_size; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Small base64 string
+                    const compressedData = canvas.toDataURL('image/jpeg', 0.6); 
+                    state.currentPhotos[currentPhotoType] = compressedData;
+                    renderCheckinPhotos();
+                };
+                img.src = event.target.result;
             };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
         }
 
         function renderCheckinPhotos() {
@@ -572,44 +597,31 @@
         function saveMetrics() {
             const weight = document.getElementById('body-weight').value;
             if(!weight) { alert("Please enter weight."); return; }
-            
             const log = {
-                id: Date.now(), 
-                date: state.viewDate, 
-                weight: parseFloat(weight),
+                id: Date.now(), date: state.viewDate, weight: parseFloat(weight),
                 measurements: {
                     waist: parseFloat(document.getElementById('m-waist').value) || 0,
                     chest: parseFloat(document.getElementById('m-chest').value) || 0,
                     arms: parseFloat(document.getElementById('m-arms').value) || 0,
                     thighs: parseFloat(document.getElementById('m-thighs').value) || 0
                 },
-                photos: { ...state.currentPhotos } // Photos are saved as DataURLs in the object
+                photos: { ...state.currentPhotos }
             };
-
-            // Remove existing entry for the same day to prevent duplicates
             state.metricsHistory = state.metricsHistory.filter(m => m.date !== state.viewDate);
             state.metricsHistory.unshift(log);
+            saveState(); 
             
-            saveState(); // Commit entire state to LocalStorage
-            alert("Check-in Saved to Device!");
-            
-            // Reset fields for next entry
+            // Clean up
             document.getElementById('body-weight').value = '';
             state.currentPhotos = { front: null, side: null, back: null };
             ['front', 'side', 'back'].forEach(t => document.getElementById(`img-${t}`).classList.add('hidden'));
-            
             setMetricsTab('logs');
         }
 
         function renderMetricsHistory() {
             const list = document.getElementById('metrics-history-list');
             const prog = document.getElementById('progress-card-container');
-            
-            if(!state.metricsHistory || state.metricsHistory.length === 0) { 
-                list.innerHTML = `<p class="text-center text-slate-400 py-10">No logs found on this device.</p>`; 
-                prog.classList.add('hidden'); 
-                return; 
-            }
+            if(!state.metricsHistory || state.metricsHistory.length === 0) { list.innerHTML = `<p class="text-center text-slate-400 py-10">No logs yet.</p>`; prog.classList.add('hidden'); return; }
             
             prog.classList.remove('hidden');
             const cur = state.metricsHistory[0], first = state.metricsHistory[state.metricsHistory.length-1];
@@ -637,20 +649,14 @@
                         <div class="grid grid-cols-3 gap-2">
                             ${['front', 'side', 'back'].map(p => log.photos[p] ? `<img src="${log.photos[p]}" class="rounded-lg aspect-[3/4] object-cover">` : `<div class="bg-slate-200 rounded-lg aspect-[3/4]"></div>`).join('')}
                         </div>
-                        <button onclick="deleteMetric(${log.id})" class="text-red-400 text-[10px] font-black uppercase">Delete Log</button>
+                        <button onclick="deleteMetric(${log.id})" class="text-red-400 text-[10px] font-black uppercase">Delete</button>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        function deleteMetric(id) { 
-            if(confirm("Delete this log?")) {
-                state.metricsHistory = state.metricsHistory.filter(m => m.id !== id); 
-                saveState(); 
-                renderMetricsHistory(); 
-            }
-        }
+        function deleteMetric(id) { state.metricsHistory = state.metricsHistory.filter(m => m.id !== id); saveState(); renderMetricsHistory(); }
 
         // --- HISTORY & SETTINGS ---
         function renderHistory() {
