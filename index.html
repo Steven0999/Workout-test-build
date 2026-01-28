@@ -90,7 +90,6 @@
 
     <main class="max-w-xl mx-auto p-4 space-y-6">
         
-        <!-- DASHBOARD SECTION -->
         <section id="dashboard" class="tab-content active space-y-6">
             <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
                 <div class="relative w-48 h-48 flex items-center justify-center">
@@ -129,7 +128,6 @@
             </div>
         </section>
 
-        <!-- TRAINING SECTION -->
         <section id="training" class="tab-content space-y-6">
             <div id="workout-setup" class="space-y-4">
                 <div class="glass-card p-6 rounded-[2.5rem] text-center">
@@ -178,7 +176,6 @@
             </div>
         </section>
 
-        <!-- NUTRITION SECTION -->
         <section id="nutrition" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
@@ -220,7 +217,6 @@
             </div>
         </section>
 
-        <!-- HISTORY SECTION -->
         <section id="history" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Training</button>
@@ -229,7 +225,6 @@
             <div id="history-list" class="space-y-4"></div>
         </section>
 
-        <!-- METRICS SECTION -->
         <section id="metrics" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
                 <button onclick="setMetricsTab('checkin')" id="metrics-tab-checkin" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Check-in</button>
@@ -289,7 +284,6 @@
             </div>
         </section>
 
-        <!-- SETTINGS SECTION -->
         <section id="settings" class="tab-content space-y-6">
             <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
                 <div><label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Daily Calorie Goal</label><input id="set-cal-goal" type="number" class="w-full bg-slate-50 p-4 rounded-2xl font-bold" onchange="state.goals.calories = Number(this.value); saveState(); renderDashboard();"></div>
@@ -299,7 +293,6 @@
             </div>
         </section>
 
-        <!-- EDUCATION SECTION -->
         <section id="education" class="tab-content space-y-6">
             <div class="glass-card rounded-[2.5rem] p-6">
                 <h3 class="text-xl font-bold mb-2">Training Science</h3>
@@ -308,7 +301,6 @@
         </section>
     </main>
 
-    <!-- FOOTER NAV -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-6 py-4 flex justify-between items-center z-50">
         <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex flex-col items-center gap-1.5 text-indigo-600"><div class="w-12 h-8 rounded-full flex items-center justify-center bg-indigo-50"><i data-lucide="layout-grid"></i></div></button>
         <button onclick="switchTab('training')" data-tab="training" class="nav-item flex flex-col items-center gap-1.5 text-slate-300"><div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="dumbbell"></i></div></button>
@@ -317,7 +309,6 @@
         <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item flex flex-col items-center gap-1.5 text-slate-300"><div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="scale"></i></div></button>
     </nav>
 
-    <!-- MODALS -->
     <div id="meal-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-md rounded-[2.5rem] flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-6 border-b flex justify-between items-center"><div><h3 class="text-xl font-black">Make a Meal</h3><p class="text-[10px] uppercase text-slate-400">Combine Ingredients</p></div><button onclick="closeMealModal()" class="w-10 h-10 rounded-full bg-slate-100">×</button></div>
@@ -359,6 +350,25 @@
     </div>
 
     <script>
+        // --- NEW: BACKEND CONFIGURATION ---
+        // Change this to your Render URL after you deploy
+        const BACKEND_URL = "http://localhost:3000"; 
+
+        // Helper function to send data to your server
+        async function sendDataToBackend(endpoint, data) {
+            try {
+                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                console.log("Server response:", result);
+            } catch (error) {
+                console.error("Backend Error:", error);
+            }
+        }
+
         // --- DATA & STATE ---
         const EXERCISE_DB = [
             { name: "Barbell Bench Press", focus: ["Full Body", "Upper Body", "Push"], equipment: "barbell", muscles: ["Chest", "Triceps", "Shoulders"] },
@@ -415,9 +425,12 @@
             lucide.createIcons();
         };
 
+        // --- UPDATED: SAVE STATE ---
         function saveState() { 
             try {
                 localStorage.setItem('fittrack_combined_v8', JSON.stringify(state)); 
+                // We send the entire state to the server as a backup
+                sendDataToBackend('/api/sync', state);
             } catch (e) {
                 console.error("Storage Error", e);
             }
@@ -572,13 +585,18 @@
                 logs.push({ name, sets });
             });
             
-            state.workoutHistory.unshift({ 
+            const newWorkout = { 
                 id: Date.now(), 
                 date: state.viewDate, 
                 focus: document.getElementById('active-workout-title').innerText, 
                 duration: document.getElementById('workout-timer').innerText, 
                 exercises: logs 
-            });
+            };
+
+            state.workoutHistory.unshift(newWorkout);
+            
+            // Send specifically the workout to the backend
+            sendDataToBackend('/api/workouts', newWorkout);
             
             saveState(); 
             document.getElementById('workout-setup').classList.remove('hidden'); 
@@ -616,13 +634,19 @@
         function confirmLogPortion() {
             const qty = parseFloat(document.getElementById('portion-qty-input').value);
             const factor = portionSelection.mode === 'packet' ? qty : qty/100;
-            state.dailyMeals.unshift({ 
+            const newMeal = { 
                 id: Date.now(), 
                 date: state.viewDate, 
                 name: portionSelection.item.name, 
                 calories: Math.round(portionSelection.item.calories * factor), 
                 protein: Math.round(portionSelection.item.protein * factor) 
-            });
+            };
+
+            state.dailyMeals.unshift(newMeal);
+
+            // Send to backend
+            sendDataToBackend('/api/nutrition', newMeal);
+
             saveState(); 
             closePortionModal(); 
             renderDailyLog(); 
@@ -791,6 +815,10 @@
                 photos: { ...state.currentPhotos }
             };
             state.metricsHistory.unshift(log);
+            
+            // Send metrics to backend
+            sendDataToBackend('/api/metrics', log);
+
             saveState(); 
             state.currentPhotos = { front: null, side: null, back: null };
             ['front', 'side', 'back'].forEach(t => document.getElementById(`img-${t}`).classList.add('hidden'));
@@ -879,7 +907,12 @@
         function archiveDailyNutrition() {
             const today = state.dailyMeals.filter(m => m.date === state.viewDate);
             if(today.length === 0) return;
-            state.nutritionalArchive.unshift({ date: state.viewDate, totalCalories: today.reduce((a,b) => a+b.calories, 0) });
+            const archiveEntry = { date: state.viewDate, totalCalories: today.reduce((a,b) => a+b.calories, 0) };
+            state.nutritionalArchive.unshift(archiveEntry);
+            
+            // Sync to backend
+            sendDataToBackend('/api/archive', archiveEntry);
+
             saveState(); 
             alert("Daily log saved to history.");
             switchTab('history');
@@ -887,4 +920,3 @@
     </script>
 </body>
 </html>
-
