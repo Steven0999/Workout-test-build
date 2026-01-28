@@ -1,0 +1,36 @@
+const express = require('express');
+const fs = require('fs');
+const cors = require('cors');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// --- INITIAL CHECK ---
+// Creates data.json with our empty structure if it doesn't exist
+if (!fs.existsSync('data.json')) {
+    const initialData = { workouts: [], nutrition: [], metrics: [], archive: [] };
+    fs.writeFileSync('data.json', JSON.stringify(initialData, null, 2));
+}
+
+// --- HELPER FUNCTION ---
+function saveEntry(category, newEntry) {
+    const rawData = fs.readFileSync('data.json');
+    const database = JSON.parse(rawData);
+    
+    database[category].push(newEntry); // The line we just talked about!
+    
+    fs.writeFileSync('data.json', JSON.stringify(database, null, 2));
+}
+
+// --- WORKOUT ROUTE ---
+app.post('/api/workouts', (req, res) => {
+    const workout = req.body;
+    saveEntry('workouts', workout);
+    res.status(200).json({ message: "Workout saved! 💪" });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
