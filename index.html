@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         
         :root {
             --brand-primary: #4f46e5;
@@ -69,6 +70,13 @@
         }
 
         .muscle-chip.selected { background-color: #4f46e5; color: white; border-color: #4f46e5; }
+
+        /* NutriSnap Styles */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="pb-28">
@@ -85,6 +93,16 @@
             <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl"><i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i></button>
             <button onclick="openTutorial()" class="px-4 h-10 bg-amber-50 text-amber-600 rounded-2xl font-bold text-xs uppercase">Tutorial</button>
             <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl"><i data-lucide="settings" class="w-5 h-5 text-slate-600"></i></button>
+        </div>
+        <div id="search-header-ui" class="hidden space-y-4 w-full mt-4">
+            <div class="relative group">
+                <input id="food-search-input" type="text" placeholder="Search food or brand..." 
+                    class="w-full bg-slate-100 border-2 border-transparent rounded-[20px] py-4 pl-12 pr-12 focus:bg-white focus:border-emerald-500 outline-none transition-all text-base font-semibold">
+                <i data-lucide="search" class="absolute left-4 top-4.5 text-slate-400 w-5 h-5" style="top: 1.1rem;"></i>
+            </div>
+            <div id="store-tags" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-5 px-5">
+                <!-- Store tags injected here -->
+            </div>
         </div>
     </header>
 
@@ -178,42 +196,49 @@
 
         <section id="nutrition" class="tab-content space-y-6">
             <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
-                <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">Inventory</button>
+                <button onclick="setNutritionTab('diary')" id="nut-tab-diary" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
+                <button onclick="setNutritionTab('scan')" id="nut-tab-scan" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">Scan</button>
+                <button onclick="setNutritionTab('search')" id="nut-tab-search" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">Search</button>
             </div>
-            <div id="nut-view-log" class="space-y-6">
-                <button onclick="openMealModal()" class="w-full bg-white border-2 border-dashed border-indigo-200 p-4 rounded-2xl flex items-center justify-center gap-2 text-indigo-600 font-black text-[10px] uppercase">
-                    <i data-lucide="utensils" class="w-4 h-4"></i> Make a Meal
-                </button>
-                <div class="relative">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                    <input id="food-search" placeholder="Search inventory..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 outline-none" oninput="handleFoodSearch(this.value)">
-                    <div id="food-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border rounded-2xl z-50 shadow-2xl max-h-64 overflow-y-auto"></div>
+            <div id="nut-view-diary" class="py-6 space-y-6">
+                <div class="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div id="total-kcal" class="text-5xl font-black text-slate-900 mb-1">0</div>
+                            <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Calories Today</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-black text-blue-600 flex items-center gap-1 justify-end">
+                                <i data-lucide="zap" class="w-5 h-5 fill-current"></i> <span id="total-protein">0.0</span>g
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Total Protein</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="daily-log-list" class="space-y-3"></div>
-                <div id="daily-totals-card" class="glass-card p-6 rounded-[2rem] bg-indigo-50/30 border-indigo-100 hidden">
-                    <div class="flex justify-between items-center"><h4 class="text-[10px] font-black uppercase text-indigo-600">Daily Totals</h4></div>
-                    <div class="flex gap-4 text-sm font-bold"><div id="total-day-cals">0 Kcal</div><div id="total-day-prot" class="text-slate-400">0g Protein</div></div>
+
+                <div id="meal-sections">
+                    <!-- Meals injected here -->
                 </div>
                 <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold">Save Daily Log</button>
             </div>
-            <div id="nut-view-db" class="hidden space-y-6">
-                <div id="scanner-container" class="hidden space-y-4">
-                    <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl"><div id="scanner-mount"></div></div>
-                    <button onclick="stopScanner()" class="w-full bg-slate-100 p-4 rounded-2xl font-bold">Stop Scanner</button>
+            <div id="nut-view-scan" class="hidden py-6 flex flex-col items-center">
+                <div class="w-full bg-white rounded-[32px] p-4 border-4 border-emerald-500/20 overflow-hidden relative shadow-xl mb-6">
+                    <div id="reader" class="w-full min-h-[300px]"></div>
                 </div>
-                <div class="glass-card p-6 rounded-[2.5rem]">
-                    <div class="flex justify-between items-center mb-4"><h4 class="font-black text-[10px] uppercase text-slate-400">Product Catalog</h4><button onclick="startScanner('db')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button></div>
-                    <div class="space-y-3">
-                        <input id="form-name" placeholder="Item Name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-                        <div class="grid grid-cols-2 gap-3">
-                            <input id="form-cals" type="number" placeholder="Kcal" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-                            <input id="form-prot" type="number" placeholder="Protein (g)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
-                        </div>
-                        <button onclick="saveToDatabase()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs mt-2">Add to Inventory</button>
+                <div class="w-full bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Manual Entry</p>
+                    <div class="flex gap-2">
+                        <input id="manual-barcode" type="text" placeholder="Enter barcode..." class="flex-1 bg-slate-100 rounded-xl px-4 py-3 outline-none font-mono">
+                        <button id="btn-barcode-lookup" class="bg-slate-900 text-white p-3 rounded-xl active:scale-95"><i data-lucide="chevron-right"></i></button>
                     </div>
                 </div>
-                <div id="custom-db-list" class="bg-white rounded-[2.5rem] divide-y divide-slate-50 shadow-sm overflow-hidden"></div>
+            </div>
+            <div id="nut-view-search" class="hidden py-6 space-y-3">
+                <div id="search-loading" class="hidden py-20 text-center flex flex-col items-center gap-3">
+                    <i data-lucide="loader-2" class="animate-spin text-emerald-500"></i>
+                    <span class="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Processing Macros...</span>
+                </div>
+                <div id="search-results-list" class="space-y-3"></div>
             </div>
         </section>
 
@@ -309,43 +334,63 @@
         <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item flex flex-col items-center gap-1.5 text-slate-300"><div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="scale"></i></div></button>
     </nav>
 
-    <div id="meal-modal" class="modal-overlay">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="p-6 border-b flex justify-between items-center"><div><h3 class="text-xl font-black">Make a Meal</h3><p class="text-[10px] uppercase text-slate-400">Combine Ingredients</p></div><button onclick="closeMealModal()" class="w-10 h-10 rounded-full bg-slate-100">×</button></div>
-            <div class="p-6 flex-1 overflow-y-auto space-y-4">
-                <input id="meal-builder-name" placeholder="Meal Name" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
-                <div class="relative"><input id="meal-item-search" placeholder="Search ingredients..." class="w-full p-4 bg-white border rounded-2xl font-bold outline-none" oninput="handleMealSearch(this.value)"><div id="meal-search-results" class="hidden absolute top-full left-0 right-0 bg-white border z-[70] rounded-2xl shadow-xl max-h-48 overflow-y-auto"></div></div>
-                <div id="meal-builder-list" class="space-y-2"></div>
-            </div>
-            <div class="p-6 bg-slate-50 border-t">
-                <div id="meal-totals" class="flex justify-between text-[10px] font-black uppercase text-indigo-700 mb-4"><span>Total:</span><span id="meal-builder-stats">0 Kcal • 0g P</span></div>
-                <button onclick="saveMealToInventory()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs">Save to Inventory</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="portion-modal" class="modal-overlay">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6">
-            <div class="text-center"><h3 id="portion-item-name" class="text-xl font-black">Food Item</h3><p class="text-[10px] uppercase text-slate-400">Adjust Quantity</p></div>
-            <div class="flex bg-slate-100 p-1 rounded-2xl">
-                <button onclick="setPortionMode('packet')" id="p-mode-packet" class="flex-1 py-3 text-[10px] uppercase rounded-xl bg-white text-indigo-600">Unit</button>
-                <button onclick="setPortionMode('custom')" id="p-mode-custom" class="flex-1 py-3 text-[10px] uppercase rounded-xl text-slate-400">Grams (g)</button>
-            </div>
-            <div class="bg-slate-50 p-6 rounded-3xl text-center">
-                <div class="flex items-center justify-center gap-6">
-                    <button onclick="adjustPortionQty(-1)" class="w-12 h-12 bg-white rounded-2xl font-bold text-xl shadow-sm">-</button>
-                    <input id="portion-qty-input" type="number" value="1" step="0.1" class="w-24 bg-transparent text-center text-3xl font-black text-indigo-600 outline-none">
-                    <button onclick="adjustPortionQty(1)" class="w-12 h-12 bg-white rounded-2xl font-bold text-xl shadow-sm">+</button>
-                </div>
-            </div>
-            <div class="flex gap-3"><button onclick="closePortionModal()" class="flex-1 p-4 bg-slate-100 rounded-2xl font-bold">Cancel</button><button onclick="confirmLogPortion()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold">Log It</button></div>
-        </div>
-    </div>
-
     <div id="tutorial-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-4"><h3 class="text-xl font-black">App Guide</h3><button onclick="closeTutorial()" class="w-8 h-8 bg-slate-100 rounded-full">×</button></div>
             <div id="tutorial-list" class="space-y-2 overflow-y-auto max-h-[60vh]"></div>
+        </div>
+    </div>
+
+    <!-- Item Popup Modal from NutriSnap -->
+    <div id="item-popup" class="fixed inset-0 z-[200] hidden flex items-end justify-center bg-slate-900/60 backdrop-blur-md p-4">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-8 animate-in slide-in-from-bottom shadow-2xl overflow-hidden">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-24 h-24 bg-slate-50 rounded-2xl overflow-hidden mb-4 p-2">
+                    <img id="popup-image" src="" class="w-full h-full object-contain" alt="">
+                </div>
+                <h2 id="popup-name" class="text-xl font-black text-center leading-tight mb-1">Product Name</h2>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1">
+                        <i data-lucide="map-pin" class="w-3 h-3 text-emerald-500"></i>
+                        <p id="popup-store" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Store</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <i data-lucide="zap" class="w-3 h-3 text-blue-500"></i>
+                        <p id="popup-protein-ref" class="text-[10px] font-black text-blue-500 uppercase tracking-widest">0g Protein</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mb-6" id="popup-meal-selector">
+                <!-- Meal buttons injected here -->
+            </div>
+
+            <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
+                <button onclick="setAmountType('qty')" id="btn-type-qty" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all bg-white shadow text-emerald-600">Quantity</button>
+                <button onclick="setAmountType('grams')" id="btn-type-grams" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all text-slate-400">Grams</button>
+            </div>
+
+            <div class="relative mb-6">
+                <input id="amount-input" type="number" value="1" class="w-full bg-slate-50 border-4 border-slate-100 rounded-[24px] py-6 text-4xl font-black text-center outline-none focus:border-emerald-500">
+                <div id="amount-unit-label" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black uppercase text-xs">qty</div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-around">
+                <div class="text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Total Kcal</p>
+                    <p id="preview-kcal" class="font-black text-lg">0</p>
+                </div>
+                <div class="w-px h-8 bg-slate-200 mt-2"></div>
+                <div class="text-center">
+                    <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Total Protein</p>
+                    <p id="preview-protein" class="font-black text-lg text-blue-600">0.0g</p>
+                </div>
+            </div>
+
+            <button id="btn-save-item" class="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                Log Item <i data-lucide="chevron-right"></i>
+            </button>
+            <button onclick="closePopup()" class="w-full py-4 text-xs font-black text-slate-300 uppercase tracking-widest">Close</button>
         </div>
     </div>
 
@@ -395,7 +440,7 @@
         ];
 
         let state = {
-            activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'log', metricsTab: 'checkin',
+            activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'diary', metricsTab: 'checkin',
             workoutEnv: 'gym', viewDate: new Date().toISOString().split('T')[0],
             goals: { calories: 2500, water: 2500 },
             equipment: { 
@@ -419,10 +464,13 @@
             
             initEquipmentSettings(); 
             renderDashboard(); 
-            renderCustomDb(); 
             renderMuscleSelection();
             document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
             lucide.createIcons();
+
+            initStoreTags();
+            initMealSelector();
+            setupEventListeners();
         };
 
         // --- UPDATED: SAVE STATE ---
@@ -449,8 +497,9 @@
 
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
-            if (tabId === 'nutrition') { renderDailyLog(); renderCustomDb(); }
+            if (tabId === 'nutrition') { setNutritionTab(state.nutritionTab); syncDiary(); }
             if (tabId === 'metrics') renderMetricsHistory();
+            if (tabId !== 'nutrition') document.getElementById('search-header-ui').classList.add('hidden');
             lucide.createIcons();
         }
 
@@ -606,157 +655,36 @@
 
         function cancelWorkout() { if(confirm("Discard workout?")) { clearInterval(timerInterval); document.getElementById('workout-setup').classList.remove('hidden'); document.getElementById('workout-active').classList.add('hidden'); } }
 
-        // --- NUTRITION LOGIC ---
+        // --- NUTRITION LOGIC (NutriSnap Integrated) ---
         function setNutritionTab(t) { 
             state.nutritionTab = t; 
-            document.getElementById('nut-tab-log').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='log' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
-            document.getElementById('nut-tab-db').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='database' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
-            document.getElementById('nut-view-log').classList.toggle('hidden', t!=='log'); 
-            document.getElementById('nut-view-db').classList.toggle('hidden', t!=='database'); 
+            document.getElementById('nut-tab-diary').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='diary' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
+            document.getElementById('nut-tab-scan').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='scan' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
+            document.getElementById('nut-tab-search').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='search' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
+            document.getElementById('nut-view-diary').classList.toggle('hidden', t!=='diary'); 
+            document.getElementById('nut-view-scan').classList.toggle('hidden', t!=='scan'); 
+            document.getElementById('nut-view-search').classList.toggle('hidden', t!=='search'); 
+
+            document.getElementById('search-header-ui').classList.toggle('hidden', t !== 'search');
+
+            if (t === 'scan') initScanner();
+            else stopScanner();
+
+            if (t === 'diary') syncDiary();
         }
 
-        function handleFoodSearch(val) {
-            const res = document.getElementById('food-results');
-            if(!val) { res.classList.add('hidden'); return; }
-            const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
-            res.innerHTML = filtered.map(i => `<div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="initiateFoodLog('${i.name}', ${i.calories}, ${i.protein})"><b>${i.name}</b><br><small>${i.calories} Kcal • ${i.protein}g Protein</small></div>`).join('');
-            res.classList.remove('hidden');
-        }
-
-        function initiateFoodLog(name, cals, prot) { 
-            portionSelection = { item: { name, calories: cals, protein: prot }, mode: 'packet' }; 
-            document.getElementById('portion-item-name').innerText = name; 
-            document.getElementById('portion-qty-input').value = 1; 
-            document.getElementById('portion-modal').style.display = 'flex'; 
-            document.getElementById('food-results').classList.add('hidden');
-        }
-
-        function confirmLogPortion() {
-            const qty = parseFloat(document.getElementById('portion-qty-input').value);
-            const factor = portionSelection.mode === 'packet' ? qty : qty/100;
-            const newMeal = { 
-                id: Date.now(), 
-                date: state.viewDate, 
-                name: portionSelection.item.name, 
-                calories: Math.round(portionSelection.item.calories * factor), 
-                protein: Math.round(portionSelection.item.protein * factor) 
-            };
-
-            state.dailyMeals.unshift(newMeal);
-
-            // Send to backend
-            sendDataToBackend('/api/nutrition', newMeal);
+        function archiveDailyNutrition() {
+            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
+            if(today.length === 0) return;
+            const archiveEntry = { date: state.viewDate, totalCalories: today.reduce((a,b) => a+b.calories, 0) };
+            state.nutritionalArchive.unshift(archiveEntry);
+            
+            // Sync to backend
+            sendDataToBackend('/api/archive', archiveEntry);
 
             saveState(); 
-            closePortionModal(); 
-            renderDailyLog(); 
-            renderDashboard();
-        }
-
-        function closePortionModal() { document.getElementById('portion-modal').style.display = 'none'; }
-        function adjustPortionQty(v) { document.getElementById('portion-qty-input').value = Math.max(0.1, parseFloat(document.getElementById('portion-qty-input').value) + v); }
-
-        function saveToDatabase() {
-            const n = document.getElementById('form-name').value, c = document.getElementById('form-cals').value, p = document.getElementById('form-prot').value;
-            if(!n || !c) return;
-            state.customFoodDb.unshift({ id: Date.now(), name: n, calories: Number(c), protein: Number(p) || 0 });
-            saveState(); renderCustomDb(); 
-            document.getElementById('form-name').value = ''; 
-            document.getElementById('form-cals').value = ''; 
-            document.getElementById('form-prot').value = '';
-        }
-
-        function renderCustomDb() { 
-            document.getElementById('custom-db-list').innerHTML = state.customFoodDb.map(i => `
-                <div class="p-4 flex justify-between items-center">
-                    <div><b>${i.name}</b><br><small>${i.calories} Kcal</small></div>
-                    <div class="flex gap-2">
-                        <button onclick="deleteFromDb(${i.id})" class="w-10 h-10 bg-red-50 text-red-400 rounded-xl">×</button>
-                        <button onclick="initiateFoodLog('${i.name}', ${i.calories}, ${i.protein})" class="w-10 h-10 bg-indigo-50 rounded-xl">+</button>
-                    </div>
-                </div>`).join(''); 
-        }
-        
-        function deleteFromDb(id) { state.customFoodDb = state.customFoodDb.filter(f => f.id !== id); saveState(); renderCustomDb(); }
-
-        function renderDailyLog() {
-            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            document.getElementById('daily-log-list').innerHTML = today.map(m => `
-                <div class="glass-card p-4 rounded-2xl flex justify-between">
-                    <div><b>${m.name}</b><br><small>${m.calories} Kcal • ${m.protein}g P</small></div>
-                    <button onclick="deleteMeal(${m.id})" class="text-slate-300">×</button>
-                </div>`).join('');
-            document.getElementById('daily-totals-card').classList.toggle('hidden', today.length === 0);
-            const totalCals = today.reduce((a,b) => a+b.calories, 0);
-            const totalProt = today.reduce((a,b) => a+b.protein, 0);
-            document.getElementById('total-day-cals').innerText = totalCals + ' Kcal';
-            document.getElementById('total-day-prot').innerText = totalProt + 'g Protein';
-        }
-
-        function deleteMeal(id) { state.dailyMeals = state.dailyMeals.filter(m => m.id !== id); saveState(); renderDailyLog(); renderDashboard(); }
-
-        // --- MEAL BUILDER ---
-        function handleMealSearch(val) {
-            const res = document.getElementById('meal-search-results');
-            if(!val) { res.classList.add('hidden'); return; }
-            const filtered = state.customFoodDb.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
-            res.innerHTML = filtered.map(i => `<div class="p-4 border-b hover:bg-slate-50 cursor-pointer" onclick="addIngredientToMeal('${i.name}', ${i.calories}, ${i.protein})"><b>${i.name}</b></div>`).join('');
-            res.classList.remove('hidden');
-        }
-
-        function addIngredientToMeal(name, cals, prot) {
-            mealBuilderItems.push({ name, calories: cals, protein: prot });
-            document.getElementById('meal-search-results').classList.add('hidden');
-            document.getElementById('meal-item-search').value = '';
-            renderMealBuilder();
-        }
-
-        function renderMealBuilder() {
-            const list = document.getElementById('meal-builder-list');
-            list.innerHTML = mealBuilderItems.map((item, idx) => `
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
-                    <span class="text-xs font-bold">${item.name}</span>
-                    <button onclick="mealBuilderItems.splice(${idx}, 1); renderMealBuilder();" class="text-red-400">×</button>
-                </div>`).join('');
-            
-            const totalCals = mealBuilderItems.reduce((a,b) => a+b.calories, 0);
-            const totalProt = mealBuilderItems.reduce((a,b) => a+b.protein, 0);
-            document.getElementById('meal-builder-stats').innerText = `${totalCals} Kcal • ${totalProt}g P`;
-        }
-
-        function saveMealToInventory() {
-            const name = document.getElementById('meal-builder-name').value;
-            if(!name || mealBuilderItems.length === 0) return;
-            const cals = mealBuilderItems.reduce((a,b) => a+b.calories, 0);
-            const prot = mealBuilderItems.reduce((a,b) => a+b.protein, 0);
-            state.customFoodDb.unshift({ id: Date.now(), name: name, calories: cals, protein: prot });
-            saveState();
-            mealBuilderItems = [];
-            document.getElementById('meal-builder-name').value = '';
-            closeMealModal();
-            renderCustomDb();
-        }
-
-        // --- SCANNER ---
-        function startScanner(mode) {
-            scannerMode = mode;
-            document.getElementById('scanner-container').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("scanner-mount");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                stopScanner();
-                // Simple Mock: in a real app, you'd fetch an API here
-                document.getElementById('form-name').value = "Scanned Item " + text.slice(-4);
-                document.getElementById('form-cals').value = 150;
-                document.getElementById('form-prot').value = 10;
-            });
-        }
-
-        function stopScanner() { 
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('scanner-container').classList.add('hidden');
-                });
-            }
+            alert("Daily log saved to history.");
+            switchTab('history');
         }
 
         // --- METRICS ---
@@ -896,27 +824,323 @@
             document.getElementById('tutorial-modal').style.display = 'flex';
         }
         function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
-        function openMealModal() { document.getElementById('meal-modal').style.display = 'flex'; }
-        function closeMealModal() { document.getElementById('meal-modal').style.display = 'none'; }
-        function setPortionMode(m) { 
-            portionSelection.mode = m; 
-            document.getElementById('p-mode-packet').className = `flex-1 py-3 text-[10px] uppercase rounded-xl ${m==='packet' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
-            document.getElementById('p-mode-custom').className = `flex-1 py-3 text-[10px] uppercase rounded-xl ${m==='custom' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
-        }
-        
-        function archiveDailyNutrition() {
-            const today = state.dailyMeals.filter(m => m.date === state.viewDate);
-            if(today.length === 0) return;
-            const archiveEntry = { date: state.viewDate, totalCalories: today.reduce((a,b) => a+b.calories, 0) };
-            state.nutritionalArchive.unshift(archiveEntry);
-            
-            // Sync to backend
-            sendDataToBackend('/api/archive', archiveEntry);
 
-            saveState(); 
-            alert("Daily log saved to history.");
-            switchTab('history');
+        // --- NutriSnap Integrated Script ---
+        // --- Config ---
+        const apiKey = ""; 
+
+        // --- State ---
+        let diaryItems = [];
+        let searchResults = [];
+        let currentPopupItem = null;
+        let selectedMeal = 'breakfast';
+        let amountType = 'qty'; // 'qty' or 'grams'
+        let debounceTimer = null;
+        let currentStore = 'All Stores';
+
+        const UK_STORES = ["All Stores", "Tesco", "Sainsbury's", "Aldi", "Lidl", "Morrisons", "ASDA", "Waitrose", "M&S Food", "Co-op", "Iceland"];
+        const MEAL_TYPES = [
+            { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
+            { id: 'lunch', label: 'Lunch', icon: 'utensils' },
+            { id: 'dinner', label: 'Dinner', icon: 'moon' },
+            { id: 'snack', label: 'Snack', icon: 'cookie' }
+        ];
+
+        function setupEventListeners() {
+            document.getElementById('food-search-input').addEventListener('input', (e) => {
+                const query = e.target.value;
+                if (debounceTimer) clearTimeout(debounceTimer);
+                if (query.length > 2) {
+                    debounceTimer = setTimeout(() => performSearch(query), 800);
+                } else {
+                    renderSearchResults([]);
+                }
+            });
+
+            document.getElementById('amount-input').addEventListener('input', updatePopupCalculations);
+            document.getElementById('btn-save-item').addEventListener('click', saveItemToDiary);
+            document.getElementById('btn-barcode-lookup').addEventListener('click', () => {
+                const code = document.getElementById('manual-barcode').value;
+                if (code) lookupBarcode(code);
+            });
         }
+
+        // --- UI Logic ---
+        function initStoreTags() {
+            const container = document.getElementById('store-tags');
+            container.innerHTML = UK_STORES.map(store => `
+                <button onclick="setStore('${store}')" id="tag-${store.replace(/'/g, '')}" 
+                    class="store-tag px-4 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap border-2 transition-all 
+                    ${currentStore === store ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-white border-slate-100 text-slate-400'}">
+                    ${store}
+                </button>
+            `).join('');
+        }
+
+        window.setStore = (store) => {
+            currentStore = store;
+            initStoreTags();
+            const query = document.getElementById('food-search-input').value;
+            if (query.length > 2) performSearch(query);
+        };
+
+        function initMealSelector() {
+            const container = document.getElementById('popup-meal-selector');
+            container.innerHTML = MEAL_TYPES.map(meal => `
+                <button onclick="selectMeal('${meal.id}')" id="meal-btn-${meal.id}" 
+                    class="meal-opt py-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all 
+                    ${selectedMeal === meal.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-400'}">
+                    <i data-lucide="${meal.icon}" class="w-4 h-4"></i>
+                    <span class="text-[8px] font-black uppercase">${meal.label}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.selectMeal = (id) => {
+            selectedMeal = id;
+            initMealSelector();
+        };
+
+        window.setAmountType = (type) => {
+            amountType = type;
+            document.getElementById('btn-type-qty').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'qty' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
+            document.getElementById('btn-type-grams').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'grams' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
+            
+            const label = document.getElementById('amount-unit-label');
+            if (type === 'grams') {
+                label.innerText = 'g';
+            } else {
+                label.innerText = currentPopupItem?.isPerItem ? 'qty' : 'x100g';
+            }
+            updatePopupCalculations();
+        };
+
+        // --- Data Fetching ---
+        async function performSearch(query) {
+            if (!query) return;
+            document.getElementById('search-loading').classList.remove('hidden');
+            document.getElementById('search-results-list').innerHTML = '';
+
+            try {
+                const storeFilter = currentStore !== "All Stores" ? `&brands=${encodeURIComponent(currentStore)}` : "";
+                const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom${storeFilter}`;
+                
+                const offResponse = await fetch(offUrl);
+                const offData = await offResponse.json();
+                const offItems = (offData.products || []).map(p => processProductData(p));
+
+                const prompt = `Search for food: "${query}". Retailer: "${currentStore}". Location: UK. Return JSON: { "items": [{ "name": string, "calories": number, "protein": number, "store": string, "imageUrl": string, "unitName": string, "unitWeightGrams": number, "isPerItem": boolean }] }.`;
+                
+                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                const aiData = await aiResponse.json();
+                const rawText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
+                const aiItems = JSON.parse(rawText).items || [];
+
+                renderSearchResults([...offItems, ...aiItems]);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                document.getElementById('search-loading').classList.add('hidden');
+            }
+        }
+
+        function processProductData(p) {
+            const hasServingData = p.nutriments?.['energy-kcal_serving'] !== undefined;
+            return {
+                name: p.product_name || p.generic_name || "Unknown Product",
+                calories: hasServingData ? Math.round(p.nutriments['energy-kcal_serving']) : Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
+                protein: parseFloat(hasServingData ? (p.nutriments?.proteins_serving || 0) : (p.nutriments?.proteins_100g || 0)).toFixed(1),
+                store: p.brands || "General",
+                imageUrl: p.image_front_small_url || p.image_url || "https://placehold.co/100x100?text=Food",
+                unitName: hasServingData ? (p.serving_size || "serving") : "100g",
+                isPerItem: hasServingData
+            };
+        }
+
+        function renderSearchResults(items) {
+            searchResults = items;
+            const list = document.getElementById('search-results-list');
+            list.innerHTML = items.map((item, idx) => `
+                <button onclick="openPopup(${idx})" class="w-full bg-white p-4 rounded-[28px] border border-slate-100 flex items-center gap-4 text-left shadow-sm active:scale-95 transition-all">
+                    <div class="w-14 h-14 bg-slate-50 rounded-xl overflow-hidden p-1 flex-shrink-0">
+                        <img src="${item.imageUrl}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/100x100?text=Food'">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter bg-slate-100 text-slate-500">${item.store}</span>
+                            <span class="bg-blue-50 text-blue-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">${item.protein}g Protein</span>
+                        </div>
+                        <p class="font-bold text-sm truncate text-slate-800">${item.name}</p>
+                        <div class="flex items-center gap-1.5">
+                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-tight">${item.calories} kcal / ${item.unitName}</p>
+                            <div class="${item.isPerItem ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'} text-[7px] font-black px-1 rounded uppercase">
+                                ${item.isPerItem ? 'Per Item' : 'Per 100g'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- Diary Sync ---
+        function syncDiary() {
+            diaryItems = state.dailyMeals.filter(m => m.date === state.viewDate) || [];
+            renderDiary();
+        }
+
+        function renderDiary() {
+            const container = document.getElementById('meal-sections');
+            let totalK = 0;
+            let totalP = 0;
+
+            container.innerHTML = MEAL_TYPES.map(meal => {
+                const items = diaryItems.filter(i => i.meal === meal.id);
+                const itemsHtml = items.map(item => {
+                    totalK += item.calories;
+                    totalP += Number(item.protein);
+                    return `
+                        <div class="bg-white p-4 rounded-[24px] mb-2 border border-slate-100 flex items-center gap-4">
+                            <img src="${item.imageUrl}" class="w-12 h-12 object-contain bg-slate-50 rounded-lg p-1" onerror="this.src='https://placehold.co/100x100?text=Food'">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-sm truncate">${item.name}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${item.displayAmount} • ${item.calories}kcal • ${item.protein}g P</p>
+                            </div>
+                            <button onclick="removeItem(${item.id})" class="text-slate-200 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="${meal.icon}" class="w-4 h-4 text-slate-400"></i>
+                            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${meal.label}</h3>
+                        </div>
+                        ${itemsHtml || '<p class="text-[10px] text-slate-300 italic px-4">Nothing logged yet</p>'}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('total-kcal').innerText = totalK;
+            document.getElementById('total-protein').innerText = totalP.toFixed(1);
+            lucide.createIcons();
+        }
+
+        window.removeItem = (id) => {
+            state.dailyMeals = state.dailyMeals.filter(i => i.id !== id);
+            saveState();
+            renderDiary();
+            renderDashboard();
+        };
+
+        // --- Popup Logic ---
+        window.openPopup = (idx) => {
+            currentPopupItem = searchResults[idx];
+            document.getElementById('popup-image').src = currentPopupItem.imageUrl;
+            document.getElementById('popup-name').innerText = currentPopupItem.name;
+            document.getElementById('popup-store').innerText = currentPopupItem.store;
+            document.getElementById('popup-protein-ref').innerText = `${currentPopupItem.protein}g Protein (${currentPopupItem.unitName})`;
+            
+            document.getElementById('amount-input').value = 1;
+            setAmountType('qty');
+            
+            document.getElementById('item-popup').classList.remove('hidden');
+            updatePopupCalculations();
+            lucide.createIcons();
+        };
+
+        window.closePopup = () => {
+            document.getElementById('item-popup').classList.add('hidden');
+        };
+
+        function updatePopupCalculations() {
+            if (!currentPopupItem) return;
+            const val = parseFloat(document.getElementById('amount-input').value) || 0;
+            const multiplier = amountType === 'grams' ? val / 100 : val;
+
+            const kcal = Math.round(currentPopupItem.calories * multiplier);
+            const prot = (currentPopupItem.protein * multiplier).toFixed(1);
+
+            document.getElementById('preview-kcal').innerText = kcal;
+            document.getElementById('preview-protein').innerText = `${prot}g`;
+        }
+
+        async function saveItemToDiary() {
+            if (!currentPopupItem) return;
+
+            const val = parseFloat(document.getElementById('amount-input').value) || 0;
+            const multiplier = amountType === 'grams' ? val / 100 : val;
+
+            const newItem = {
+                ...currentPopupItem,
+                id: Date.now(),
+                meal: selectedMeal,
+                displayAmount: amountType === 'qty' ? `${val} x ${currentPopupItem.unitName}` : `${val}g`,
+                calories: Math.round(currentPopupItem.calories * multiplier),
+                protein: (currentPopupItem.protein * multiplier).toFixed(1),
+                date: state.viewDate
+            };
+
+            state.dailyMeals.unshift(newItem);
+            saveState();
+
+            closePopup();
+            setNutritionTab('diary');
+            renderDashboard();
+        }
+
+        // --- Scanner Logic ---
+        let html5QrCode = null;
+        function initScanner() {
+            if (html5QrCode) return;
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    lookupBarcode(decodedText);
+                    html5QrCode.stop();
+                }
+            ).catch(err => console.error(err));
+        }
+
+        function stopScanner() { 
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => html5QrCode = null).catch(() => html5QrCode = null);
+            }
+        }
+
+        async function lookupBarcode(code) {
+            setNutritionTab('search');
+            document.getElementById('search-loading').classList.remove('hidden');
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                const data = await res.json();
+                if (data.status === 1) {
+                    const item = processProductData(data.product);
+                    searchResults = [item];
+                    openPopup(0);
+                } else {
+                    alert("Product not found");
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                document.getElementById('search-loading').classList.add('hidden');
+            }
+        }
+
     </script>
 </body>
 </html>
+
