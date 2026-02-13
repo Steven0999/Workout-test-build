@@ -136,25 +136,29 @@
                 </div>
             </div>
 
-            <!-- LIVE WALKING STEP TRACKER -->
             <div class="glass-card rounded-[2.5rem] p-6">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center"><i data-lucide="footprints" class="text-amber-500"></i></div>
+                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="footprints" class="text-amber-500"></i>
+                        </div>
                         <div>
                             <h4 class="font-bold">Steps</h4>
                             <p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p>
                         </div>
                     </div>
-                    <button onclick="toggleLiveStepTracking()" id="live-step-btn"
-                        class="px-5 py-2 bg-emerald-500 text-white rounded-2xl font-bold text-sm flex items-center gap-2">
-                        <span id="live-status">Start Live Tracking</span>
-                        <span class="text-lg">📱</span>
-                    </button>
+                    <div id="live-step-status" class="text-xs font-medium px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                        Counting…
+                    </div>
                 </div>
+                
+                <div class="text-center text-[13px] text-slate-500 mt-1 mb-3">
+                    Steps counted while this screen is open and visible
+                </div>
+
                 <div class="flex gap-2">
-                    <button onclick="updateSteps(-500)" class="flex-1 h-10 rounded-xl bg-slate-50 text-slate-500">-</button>
-                    <button onclick="updateSteps(500)" class="flex-1 h-10 rounded-xl bg-amber-500 text-white">+</button>
+                    <button onclick="updateSteps(-500)" class="flex-1 h-10 rounded-xl bg-slate-50 text-slate-600 font-medium">-</button>
+                    <button onclick="updateSteps(500)" class="flex-1 h-10 rounded-xl bg-amber-500 text-white font-medium">+</button>
                 </div>
             </div>
 
@@ -236,8 +240,23 @@
                     </div>
                 </div>
 
+                <div class="mb-6 flex flex-wrap gap-2">
+                    <button onclick="loadSavedMeal()" 
+                            class="px-5 py-3 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-2xl font-medium transition-colors">
+                        Add saved meal
+                    </button>
+                </div>
+
                 <div id="meal-sections"></div>
-                <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold">Save Daily Log</button>
+
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                    <button onclick="saveCurrentDayAsNamedMeal()" 
+                            class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-medium shadow-md transition-colors">
+                        Save today's foods as named meal
+                    </button>
+                </div>
+
+                <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold mt-4">Save Daily Log</button>
             </div>
             <div id="nut-view-scan" class="hidden py-6 flex flex-col items-center">
                 <div class="w-full bg-white rounded-[32px] p-4 border-4 border-emerald-500/20 overflow-hidden relative shadow-xl mb-6">
@@ -457,11 +476,11 @@
     </div>
 
     <script>
-        const BACKEND_URL = "http://localhost:3000"; 
+        const BACKEND_URL = "http://localhost:3000";
 
         async function sendDataToBackend(endpoint, data) {
             try {
-                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                const response = await fetch(`\( {BACKEND_URL} \){endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -491,6 +510,7 @@
         ];
 
         const MUSCLE_LIST = ["Chest", "Back", "Shoulders", "Quads", "Hamstrings", "Glutes", "Triceps", "Biceps", "Core"];
+
         const TUTORIALS = [
             { title: "Training Setup", content: "Select your environment (Gym/Home). Choose a focus. If you select 'Specific Muscle', you can pick multiple target areas." },
             { title: "Tracking", content: "Inside the workout, log your sets, weight, and reps. Manual entries are allowed." },
@@ -519,7 +539,7 @@
                 gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, machine: true, bodyweight: true }, 
                 home: { dumbbell: false, kettlebell: false, bodyweight: true, bands: false } 
             },
-            dailyMeals: [], waterLogs: {}, stepsLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [],
+            dailyMeals: [], waterLogs: {}, stepsLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [], customMeals: [],
             currentPhotos: { front: null, side: null, back: null },
             selectedMuscles: [], nutritionalArchive: [],
             lastStepsDate: ''
@@ -528,33 +548,420 @@
         let timerInterval, activeWorkoutStart = null, currentPhotoType = null, html5QrCode = null;
         let trendChart = null;
         let currentStore = STORE_OPTIONS[0];
-        let isLiveTracking = false;
+
+        let stepMagnitudeHistory = [];
+        const STEP_THRESHOLD = 10.8;
+        const MIN_STEP_INTERVAL_MS = 300;
+        let lastStepTime = 0;
         let lastMagnitude = 0;
+        let motionListenerActive = false;
 
-        window.onload = () => {
-            const saved = localStorage.getItem('fittrack_combined_v8');
-            if (saved) state = { ...state, ...JSON.parse(saved) };
-            
-            document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            document.getElementById('set-cal-goal').value = state.goals.calories;
-            document.getElementById('workout-date-input').value = state.viewDate;
-            
-            initEquipmentSettings(); 
-            renderDashboard(); 
-            renderMuscleSelection();
-            document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
-            lucide.createIcons();
+        function onDeviceMotion(event) {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
 
-            initStoreDropdown();
-            initMealSelector();
-            setupEventListeners();
+            const now = Date.now();
+            if (now - lastStepTime < MIN_STEP_INTERVAL_MS) return;
 
-            checkStepsDate();
-            setInterval(() => {
-                checkStepsDate();
+            const magnitudeRaw = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
+
+            stepMagnitudeHistory.push(magnitudeRaw);
+            if (stepMagnitudeHistory.length > 8) stepMagnitudeHistory.shift();
+            const avg = stepMagnitudeHistory.reduce((a,b)=>a+b,0) / stepMagnitudeHistory.length || 0;
+
+            if (avg > STEP_THRESHOLD && lastMagnitude < STEP_THRESHOLD - 1.2) {
+                const today = new Date().toISOString().split('T')[0];
+                state.stepsLogs[today] = (state.stepsLogs[today] || 0) + 1;
                 renderDashboard();
-            }, 60000);
+                lastStepTime = now;
+            }
+
+            lastMagnitude = avg;
+        }
+
+        function startContinuousMotionListening() {
+            if (motionListenerActive) return;
+
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permission => {
+                        if (permission === 'granted') {
+                            window.addEventListener('devicemotion', onDeviceMotion);
+                            motionListenerActive = true;
+                            const el = document.getElementById('live-step-status');
+                            if (el) {
+                                el.textContent = 'Counting steps…';
+                                el.className = 'text-xs font-medium px-3 py-1 rounded-full bg-emerald-100 text-emerald-700';
+                            }
+                        } else {
+                            const el = document.getElementById('live-step-status');
+                            if (el) {
+                                el.textContent = 'Motion permission denied';
+                                el.className = 'text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700';
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        const el = document.getElementById('live-step-status');
+                        if (el) el.textContent = 'Motion not available';
+                    });
+            } else {
+                window.addEventListener('devicemotion', onDeviceMotion);
+                motionListenerActive = true;
+                const el = document.getElementById('live-step-status');
+                if (el) {
+                    el.textContent = 'Counting steps…';
+                    el.className = 'text-xs font-medium px-3 py-1 rounded-full bg-emerald-100 text-emerald-700';
+                }
+            }
+        }
+
+        function stopContinuousMotionListening() {
+            if (!motionListenerActive) return;
+            window.removeEventListener('devicemotion', onDeviceMotion);
+            motionListenerActive = false;
+            const el = document.getElementById('live-step-status');
+            if (el) {
+                el.textContent = 'Paused';
+                el.className = 'text-xs font-medium px-3 py-1 rounded-full bg-slate-100 text-slate-600';
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && state.activeTab === 'dashboard') {
+                startContinuousMotionListening();
+            } else {
+                stopContinuousMotionListening();
+            }
+        });
+
+        const originalSwitchTab = switchTab;
+        switchTab = function(tabId) {
+            originalSwitchTab(tabId);
+            if (tabId === 'dashboard') {
+                startContinuousMotionListening();
+            } else {
+                stopContinuousMotionListening();
+            }
         };
+
+        function saveCurrentDayAsNamedMeal() {
+            const todayItems = state.dailyMeals.filter(m => m.date === state.viewDate);
+            if (todayItems.length === 0) {
+                alert("Nothing logged today to save as a meal.");
+                return;
+            }
+
+            const name = prompt("Name this meal (e.g. 'My usual breakfast', 'Post-gym chicken bowl'):");
+            if (!name || name.trim() === '') return;
+
+            const meal = {
+                id: Date.now(),
+                name: name.trim(),
+                type: 'custom-meal',
+                dateCreated: new Date().toISOString(),
+                items: todayItems.map(item => ({ ...item }))
+            };
+
+            if (!state.customMeals) state.customMeals = [];
+            state.customMeals.push(meal);
+            saveState();
+
+            alert(`Meal "${name}" saved! You can now add it quickly from the diary.`);
+
+            if (confirm("Clear today's logged items now?")) {
+                state.dailyMeals = state.dailyMeals.filter(m => m.date !== state.viewDate);
+                saveState();
+                syncDiary();
+                renderDashboard();
+            }
+        }
+
+        function loadSavedMeal() {
+            if (!state.customMeals || state.customMeals.length === 0) {
+                alert("You haven't saved any custom meals yet.");
+                return;
+            }
+
+            const options = state.customMeals.map(m => m.name).join('\n');
+            const choice = prompt(`Which meal do you want to add?\n\n${options}\n\nType the exact name:`);
+            if (!choice) return;
+
+            const selected = state.customMeals.find(m => m.name.toLowerCase() === choice.toLowerCase().trim());
+            if (!selected) {
+                alert("Meal not found. Check spelling.");
+                return;
+            }
+
+            const today = state.viewDate;
+            selected.items.forEach(item => {
+                state.dailyMeals.push({
+                    ...item,
+                    id: Date.now() + Math.random(),
+                    date: today
+                });
+            });
+
+            saveState();
+            syncDiary();
+            renderDashboard();
+            alert(`Added "${selected.name}" to today!`);
+        }
+
+        async function performSearch(query) {
+            if (!query || query.trim().length < 2) return;
+            document.getElementById('search-loading').classList.remove('hidden');
+            document.getElementById('search-results-list').innerHTML = '';
+
+            try {
+                const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?` +
+                    `search_terms=${encodeURIComponent(query.trim())}` +
+                    `&search_simple=0` +
+                    `&action=process&json=1&page_size=30` +
+                    `&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom` +
+                    `&sort_by=unique_scans_n`;
+
+                const offResponse = await fetch(offUrl);
+                const offData = await offResponse.json();
+                const offItems = (offData.products || []).map(p => processProductData(p));
+
+                renderSearchResults(offItems);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('search-results-list').innerHTML = 
+                    '<p class="text-center text-slate-500 py-8">Error loading results</p>';
+            } finally {
+                document.getElementById('search-loading').classList.add('hidden');
+            }
+        }
+
+        function processProductData(p) {
+            const hasServingData = !!p.serving_size || p.nutriments?.['energy-kcal_serving'] !== undefined;
+            
+            let calories = 0;
+            let protein = 0;
+            
+            if (hasServingData && p.nutriments?.['energy-kcal_serving']) {
+                calories = Math.round(p.nutriments['energy-kcal_serving']);
+                protein = parseFloat(p.nutriments?.proteins_serving || 0).toFixed(1);
+            } else {
+                calories = Math.round(p.nutriments?.['energy-kcal_100g'] || 0);
+                protein = parseFloat(p.nutriments?.proteins_100g || 0).toFixed(1);
+            }
+
+            let portionPerServing = 1;
+            let servingUnit = 'portion';
+            let servingSizeStr = p.serving_size || '100 g';
+
+            const match = servingSizeStr.match(/^(\d+(?:\.\d+)?)\s*(.+?)(?:\s*\(|$)/i);
+            if (match) {
+                portionPerServing = parseFloat(match[1]);
+                servingUnit = match[2].trim();
+            }
+
+            return {
+                name: p.product_name || p.generic_name || "Unknown Product",
+                calories: calories,
+                protein: protein,
+                store: currentStore.name,
+                imageUrl: p.image_front_small_url || p.image_url || "https://placehold.co/100x100?text=Food",
+                servingSize: servingSizeStr,
+                portionPerServing: portionPerServing,
+                servingUnit: servingUnit,
+                isServingBased: hasServingData
+            };
+        }
+
+        function renderSearchResults(items) {
+            searchResults = items;
+            const list = document.getElementById('search-results-list');
+            list.innerHTML = items.map((item, idx) => `
+                <button onclick="openPopup(${idx})" class="w-full bg-white p-4 rounded-[28px] border border-slate-100 flex items-center gap-4 text-left shadow-sm active:scale-95 transition-all">
+                    <div class="w-14 h-14 bg-slate-50 rounded-xl overflow-hidden p-1 flex-shrink-0">
+                        <img src="${item.imageUrl}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/100x100?text=Food'">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter bg-slate-100 text-slate-500">${item.store}</span>
+                            <span class="bg-blue-50 text-blue-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">${item.protein}g Protein</span>
+                        </div>
+                        <p class="font-bold text-sm truncate text-slate-800">${item.name}</p>
+                        <div class="flex items-center gap-1.5">
+                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-tight">${item.calories} kcal / ${item.servingSize}</p>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function syncDiary() {
+            diaryItems = state.dailyMeals.filter(m => m.date === state.viewDate) || [];
+            renderDiary();
+        }
+
+        function renderDiary() {
+            const container = document.getElementById('meal-sections');
+            let totalK = 0;
+            let totalP = 0;
+
+            container.innerHTML = [
+                { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
+                { id: 'lunch', label: 'Lunch', icon: 'utensils' },
+                { id: 'dinner', label: 'Dinner', icon: 'moon' },
+                { id: 'snack', label: 'Snack', icon: 'cookie' }
+            ].map(meal => {
+                const items = diaryItems.filter(i => i.meal === meal.id);
+                const itemsHtml = items.map(item => {
+                    totalK += item.calories;
+                    totalP += Number(item.protein);
+                    return `
+                        <div class="bg-white p-4 rounded-[24px] mb-2 border border-slate-100 flex items-center gap-4">
+                            <img src="${item.imageUrl}" class="w-12 h-12 object-contain bg-slate-50 rounded-lg p-1" onerror="this.src='https://placehold.co/100x100?text=Food'">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-sm truncate">${item.name}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${item.displayAmount} • ${item.calories}kcal • ${item.protein}g P</p>
+                            </div>
+                            <button onclick="removeItem(${item.id})" class="text-slate-200 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="${meal.icon}" class="w-4 h-4 text-slate-400"></i>
+                            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${meal.label}</h3>
+                        </div>
+                        ${itemsHtml || '<p class="text-[10px] text-slate-300 italic px-4">Nothing logged yet</p>'}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('total-kcal').innerText = totalK;
+            document.getElementById('total-protein').innerText = totalP.toFixed(1);
+            lucide.createIcons();
+        }
+
+        window.removeItem = (id) => {
+            state.dailyMeals = state.dailyMeals.filter(i => i.id !== id);
+            saveState();
+            renderDiary();
+            renderDashboard();
+        };
+
+        window.openPopup = (idx) => {
+            currentPopupItem = searchResults[idx];
+            document.getElementById('popup-image').src = currentPopupItem.imageUrl;
+            document.getElementById('popup-name').innerText = currentPopupItem.name;
+            document.getElementById('popup-store').innerText = currentPopupItem.store;
+            document.getElementById('popup-protein-ref').innerText = `${currentPopupItem.protein}g Protein per portion`;
+            
+            document.getElementById('amount-input').value = 1;
+            setAmountType('items');
+            
+            document.getElementById('portion-info').innerText = `1 portion = ${currentPopupItem.portionPerServing} ${currentPopupItem.servingUnit}`;
+            
+            document.getElementById('item-popup').classList.remove('hidden');
+            updatePopupCalculations();
+            lucide.createIcons();
+        };
+
+        window.closePopup = () => {
+            document.getElementById('item-popup').classList.add('hidden');
+        };
+
+        function updatePopupCalculations() {
+            if (!currentPopupItem) return;
+            const val = parseFloat(document.getElementById('amount-input').value) || 0;
+            
+            let multiplier = 1;
+            if (amountType === 'items') {
+                multiplier = val / currentPopupItem.portionPerServing;
+            } else {
+                multiplier = val / 100;
+            }
+
+            const kcal = Math.round(currentPopupItem.calories * multiplier);
+            const prot = (currentPopupItem.protein * multiplier).toFixed(1);
+
+            document.getElementById('preview-kcal').innerText = kcal;
+            document.getElementById('preview-protein').innerText = `${prot}g`;
+        }
+
+        async function saveItemToDiary() {
+            if (!currentPopupItem) return;
+
+            const val = parseFloat(document.getElementById('amount-input').value) || 0;
+            let multiplier = 1;
+            let displayAmount = '';
+
+            if (amountType === 'items') {
+                multiplier = val / currentPopupItem.portionPerServing;
+                const portions = (val / currentPopupItem.portionPerServing).toFixed(1);
+                displayAmount = `${val} \( {currentPopupItem.servingUnit} ( \){portions} portions)`;
+            } else {
+                multiplier = val / 100;
+                displayAmount = `${val}g`;
+            }
+
+            const newItem = {
+                ...currentPopupItem,
+                id: Date.now(),
+                meal: selectedMeal,
+                displayAmount: displayAmount,
+                calories: Math.round(currentPopupItem.calories * multiplier),
+                protein: (currentPopupItem.protein * multiplier).toFixed(1),
+                date: state.viewDate
+            };
+
+            state.dailyMeals.unshift(newItem);
+            saveState();
+
+            closePopup();
+            setNutritionTab('diary');
+            renderDashboard();
+        }
+
+        function initScanner() {
+            if (html5QrCode) return;
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    lookupBarcode(decodedText);
+                    html5QrCode.stop();
+                }
+            ).catch(err => console.error(err));
+        }
+
+        function stopScanner() { 
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => html5QrCode = null).catch(() => html5QrCode = null);
+            }
+        }
+
+        async function lookupBarcode(code) {
+            setNutritionTab('search');
+            document.getElementById('search-loading').classList.remove('hidden');
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+                const data = await res.json();
+                if (data.status === 1) {
+                    const item = processProductData(data.product);
+                    searchResults = [item];
+                    openPopup(0);
+                } else {
+                    alert("Product not found");
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                document.getElementById('search-loading').classList.add('hidden');
+            }
+        }
 
         function saveState() { 
             try {
@@ -572,24 +979,6 @@
                 state.lastStepsDate = today;
                 saveState();
             }
-        }
-
-        function switchTab(tabId) {
-            state.activeTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                const isMatch = btn.getAttribute('data-tab') === tabId;
-                btn.className = `nav-item flex flex-col items-center gap-1.5 ${isMatch ? 'text-indigo-600' : 'text-slate-300'}`;
-                btn.querySelector('div').className = `w-12 h-8 rounded-full flex items-center justify-center ${isMatch ? 'bg-indigo-50' : ''}`;
-            });
-
-            if (tabId === 'dashboard') renderDashboard();
-            if (tabId === 'history') renderHistory();
-            if (tabId === 'nutrition') { setNutritionTab(state.nutritionTab); syncDiary(); }
-            if (tabId === 'metrics' && state.metricsTab === 'logs') renderMetricsHistory(); 
-            lucide.createIcons();
         }
 
         function renderDashboard() {
@@ -641,53 +1030,15 @@
             renderDashboard(); 
         }
 
-        function toggleLiveStepTracking() {
-            if (isLiveTracking) stopLiveStepTracking();
-            else startLiveStepTracking();
-        }
-
-        async function startLiveStepTracking() {
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                const permission = await DeviceMotionEvent.requestPermission();
-                if (permission !== 'granted') {
-                    alert("Motion permission denied. Live step tracking unavailable.");
-                    return;
-                }
-            }
-            isLiveTracking = true;
-            document.getElementById('live-status').textContent = 'LIVE';
-            document.getElementById('live-step-btn').classList.add('bg-red-500');
-            window.addEventListener('devicemotion', handleDeviceMotion);
-        }
-
-        function stopLiveStepTracking() {
-            isLiveTracking = false;
-            document.getElementById('live-status').textContent = 'Start Live Tracking';
-            document.getElementById('live-step-btn').classList.remove('bg-red-500');
-            window.removeEventListener('devicemotion', handleDeviceMotion);
-        }
-
-        function handleDeviceMotion(event) {
-            const acc = event.accelerationIncludingGravity;
-            if (!acc) return;
-            const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
-            if (magnitude > 11.5 && lastMagnitude < 11.5) {
-                const today = new Date().toISOString().split('T')[0];
-                state.stepsLogs[today] = (state.stepsLogs[today] || 0) + 1;
-                renderDashboard();
-            }
-            lastMagnitude = magnitude;
-        }
-
         function toggleSpecificMuscleGrid() { 
             document.getElementById('muscle-selection-container').classList.toggle('hidden', document.getElementById('workout-focus').value !== 'Specific Muscle'); 
         }
         
         function renderMuscleSelection() {
             document.getElementById('muscle-selection-grid').innerHTML = MUSCLE_LIST.map(m => `
-                <div onclick="toggleMuscleFocus('${m}')" id="muscle-chip-${m}" 
+                <div onclick="toggleMuscleFocus('\( {m}')" id="muscle-chip- \){m}" 
                      class="muscle-chip p-2 rounded-xl text-[8px] font-black uppercase text-center border cursor-pointer 
-                     ${state.selectedMuscles.includes(m) ? 'selected' : 'bg-white text-slate-400'}">${m}</div>
+                     \( {state.selectedMuscles.includes(m) ? 'selected' : 'bg-white text-slate-400'}"> \){m}</div>
             `).join('');
         }
         
@@ -713,6 +1064,7 @@
                 if (focus === "Specific Muscle") return equipOk && ex.muscles.some(m => state.selectedMuscles.includes(m));
                 return equipOk && (focus === "Full Body" || ex.focus.includes(focus));
             });
+            
             const count = Math.min(pool.length, 5);
             const shuffled = [...pool].sort(() => 0.5 - Math.random());
             for(let i=0; i<count; i++) addExerciseField(shuffled[i].name);
@@ -732,7 +1084,7 @@
             const h = Math.floor(diff / 3600).toString().padStart(2, '0');
             const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
             const s = (diff % 60).toString().padStart(2, '0');
-            document.getElementById('workout-timer').innerText = `${h}:${m}:${s}`;
+            document.getElementById('workout-timer').innerText = `\( {h}: \){m}:${s}`;
         }
 
         function addExerciseField(prefillName = null) {
@@ -770,6 +1122,7 @@
                 }
                 logs.push({ name, sets });
             });
+            
             const newWorkout = { 
                 id: Date.now(), 
                 date: state.viewDate, 
@@ -777,8 +1130,10 @@
                 duration: document.getElementById('workout-timer').innerText, 
                 exercises: logs 
             };
+
             state.workoutHistory.unshift(newWorkout);
             sendDataToBackend('/api/workouts', newWorkout);
+            
             saveState(); 
             document.getElementById('workout-setup').classList.remove('hidden'); 
             document.getElementById('workout-active').classList.add('hidden'); 
@@ -795,8 +1150,10 @@
             document.getElementById('nut-view-diary').classList.toggle('hidden', t!=='diary'); 
             document.getElementById('nut-view-scan').classList.toggle('hidden', t!=='scan'); 
             document.getElementById('nut-view-search').classList.toggle('hidden', t!=='search'); 
+
             if (t === 'scan') initScanner();
             else stopScanner();
+
             if (t === 'diary') syncDiary();
         }
 
@@ -881,10 +1238,12 @@
                 prog.classList.add('hidden'); 
                 return; 
             }
+            
             prog.classList.remove('hidden');
             const cur = state.metricsHistory[0], first = state.metricsHistory[state.metricsHistory.length-1];
             const wDiff = (cur.weight - first.weight).toFixed(1);
             const waDiff = (cur.measurements.waist - first.measurements.waist).toFixed(1);
+            
             document.getElementById('diff-weight').innerText = (wDiff > 0 ? '+'+wDiff : wDiff) + 'kg';
             document.getElementById('diff-weight').className = `diff-indicator ${wDiff > 0 ? 'diff-pos' : 'diff-neg'}`;
             document.getElementById('diff-waist').innerText = (waDiff > 0 ? '+'+waDiff : waDiff) + 'cm';
@@ -895,7 +1254,7 @@
             list.innerHTML = state.metricsHistory.map(log => `
                 <div class="glass-card rounded-3xl overflow-hidden mb-4">
                     <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-5 flex justify-between items-center cursor-pointer">
-                        <div><h4 class="font-bold">${log.date}</h4><span class="text-[10px] text-slate-400 uppercase font-black">${log.weight}kg</span></div>
+                        <div><h4 class="font-bold">\( {log.date}</h4><span class="text-[10px] text-slate-400 uppercase font-black"> \){log.weight}kg</span></div>
                         <i data-lucide="chevron-down" class="w-4 h-4 text-slate-300"></i>
                     </div>
                     <div class="hidden p-5 border-t bg-slate-50/50 space-y-4">
@@ -904,13 +1263,14 @@
                             <div class="bg-white p-2 rounded">Chest: ${log.measurements.chest}cm</div>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            ${['front', 'side', 'back'].map(p => log.photos[p] ? `<img src="${log.photos[p]}" class="rounded-lg aspect-[3/4] object-cover">` : `<div class="bg-slate-200 rounded-lg aspect-[3/4]"></div>`).join('')}
+                            \( {['front', 'side', 'back'].map(p => log.photos[p] ? `<img src=" \){log.photos[p]}" class="rounded-lg aspect-[3/4] object-cover">` : `<div class="bg-slate-200 rounded-lg aspect-[3/4]"></div>`).join('')}
                         </div>
                         <button onclick="deleteMetric(${log.id})" class="text-red-400 text-[10px] font-black uppercase">Delete Entry</button>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
+
             renderTrendChart();
         }
 
@@ -923,10 +1283,19 @@
         function renderTrendChart() {
             const select = document.getElementById('trend-metric-select');
             const metric = select.value;
+            
             const history = [...state.metricsHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
             const labels = history.map(log => log.date.split('-').slice(1).join('/'));
-            let dataPoints = metric === 'weight' ? history.map(log => log.weight) : history.map(log => log.measurements[metric] || 0);
+            
+            let dataPoints = [];
+            if (metric === 'weight') {
+                dataPoints = history.map(log => log.weight);
+            } else {
+                dataPoints = history.map(log => log.measurements[metric] || 0);
+            }
+
             if (trendChart) trendChart.destroy();
+
             trendChart = new Chart(document.getElementById('trend-chart'), {
                 type: 'line',
                 data: {
@@ -953,41 +1322,92 @@
                             titleColor: '#fff',
                             bodyColor: '#a1a1aa',
                             displayColors: false,
-                            callbacks: { label: (ctx) => `${ctx.raw} ${metric === 'weight' ? 'kg' : 'cm'}` }
+                            callbacks: {
+                                label: (ctx) => `${ctx.raw} ${metric === 'weight' ? 'kg' : 'cm'}`
+                            }
                         }
                     },
                     scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
-                        x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+                        y: { 
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 11 } }
+                        },
+                        x: { 
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 10 } }
+                        }
                     }
                 }
             });
         }
 
-        function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
+        function setHistoryTab(t) { 
+            state.historyTab = t; 
+            renderHistory(); 
+        }
+
         function renderHistory() {
             const list = document.getElementById('history-list');
             const isTrain = state.historyTab === 'training';
             document.getElementById('hist-tab-train').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${isTrain ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             document.getElementById('hist-tab-nut').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${!isTrain ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            if(isTrain) list.innerHTML = state.workoutHistory.map(w => `<div class="glass-card p-4 rounded-2xl"><b>${w.focus}</b><br><small>${w.date} • ${w.duration}</small></div>`).join('');
-            else list.innerHTML = state.nutritionalArchive.map(a => `<div class="glass-card p-4 rounded-2xl"><b>${a.date}</b><br><small>${a.totalCalories} Kcal</small></div>`).join('');
+            
+            if (isTrain) {
+                list.innerHTML = state.workoutHistory.map(w => `
+                    <div class="glass-card p-4 rounded-2xl">
+                        <b>${w.focus}</b><br>
+                        <small>${w.date} • ${w.duration}</small>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = state.nutritionalArchive.map(a => `
+                    <div class="glass-card p-4 rounded-2xl">
+                        <b>${a.date}</b><br>
+                        <small>${a.totalCalories} Kcal</small>
+                    </div>
+                `).join('');
+            }
         }
 
         function initEquipmentSettings() {
-            const render = (env, el) => el.innerHTML = Object.keys(state.equipment[env]).map(k => `
-                <button onclick="toggleEquip('${env}', '${k}')" class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment[env][k] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">${k}</button>`).join('');
-            render('gym', document.getElementById('gym-equip-list')); 
+            const render = (env, el) => {
+                el.innerHTML = Object.keys(state.equipment[env]).map(k => `
+                    <button onclick="toggleEquip('\( {env}', ' \){k}')" 
+                        class="p-3 rounded-xl text-[10px] font-bold uppercase ${state.equipment[env][k] ? 'bg-indigo-600 text-white' : 'bg-slate-100'}">
+                        ${k}
+                    </button>
+                `).join('');
+            };
+            render('gym', document.getElementById('gym-equip-list'));
             render('home', document.getElementById('home-equip-list'));
         }
-        function toggleEquip(e, k) { state.equipment[e][k] = !state.equipment[e][k]; saveState(); initEquipmentSettings(); }
-        function resetData() { if(confirm("This will erase all progress. Continue?")) { localStorage.clear(); location.reload(); } }
+
+        function toggleEquip(env, key) {
+            state.equipment[env][key] = !state.equipment[env][key];
+            saveState();
+            initEquipmentSettings();
+        }
+
+        function resetData() {
+            if (confirm("This will erase ALL progress. Are you sure?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
 
         function openTutorial() {
-            document.getElementById('tutorial-list').innerHTML = TUTORIALS.map(t => `<div class="p-4 bg-slate-50 rounded-2xl mb-2"><h4 class="font-bold text-indigo-600 text-sm">${t.title}</h4><p class="text-xs text-slate-500">${t.content}</p></div>`).join('');
+            document.getElementById('tutorial-list').innerHTML = TUTORIALS.map(t => `
+                <div class="p-4 bg-slate-50 rounded-2xl mb-2">
+                    <h4 class="font-bold text-indigo-600 text-sm">${t.title}</h4>
+                    <p class="text-xs text-slate-500">${t.content}</p>
+                </div>
+            `).join('');
             document.getElementById('tutorial-modal').style.display = 'flex';
         }
-        function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
+
+        function closeTutorial() {
+            document.getElementById('tutorial-modal').style.display = 'none';
+        }
 
         function initStoreDropdown() {
             document.getElementById('selected-store-icon').innerText = currentStore.icon;
@@ -999,7 +1419,10 @@
             const chevron = document.getElementById('store-chevron');
             dropdown.classList.toggle('hidden');
             chevron.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            if (!dropdown.classList.contains('hidden')) renderStoreList();
+            
+            if (!dropdown.classList.contains('hidden')) {
+                renderStoreList();
+            }
         };
 
         function renderStoreList() {
@@ -1023,9 +1446,14 @@
             document.getElementById('selected-store-icon').innerText = currentStore.icon;
             document.getElementById('selected-store-name').innerText = currentStore.name;
             toggleStoreDropdown();
+            
             const query = document.getElementById('food-search-input').value.trim();
             if (query.length > 2) performSearch(query);
         };
+
+        // ───────────────────────────────────────────────
+        // NUTRITION – POPUP, SCANNER, BARCODE, DIARY LOGIC
+        // ───────────────────────────────────────────────
 
         let diaryItems = [];
         let searchResults = [];
@@ -1035,29 +1463,45 @@
         let debounceTimer = null;
 
         function setupEventListeners() {
-            document.getElementById('food-search-input').addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                if (debounceTimer) clearTimeout(debounceTimer);
-                if (query.length > 2) debounceTimer = setTimeout(() => performSearch(query), 800);
-                else renderSearchResults([]);
-            });
-            document.getElementById('amount-input').addEventListener('input', updatePopupCalculations);
-            document.getElementById('btn-save-item').addEventListener('click', saveItemToDiary);
-            document.getElementById('btn-barcode-lookup').addEventListener('click', () => {
-                const code = document.getElementById('manual-barcode').value;
-                if (code) lookupBarcode(code);
-            });
+            const searchInput = document.getElementById('food-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    if (query.length > 2) {
+                        debounceTimer = setTimeout(() => performSearch(query), 800);
+                    } else {
+                        renderSearchResults([]);
+                    }
+                });
+            }
+
+            const amountInput = document.getElementById('amount-input');
+            if (amountInput) amountInput.addEventListener('input', updatePopupCalculations);
+
+            const saveBtn = document.getElementById('btn-save-item');
+            if (saveBtn) saveBtn.addEventListener('click', saveItemToDiary);
+
+            const barcodeBtn = document.getElementById('btn-barcode-lookup');
+            if (barcodeBtn) {
+                barcodeBtn.addEventListener('click', () => {
+                    const code = document.getElementById('manual-barcode')?.value?.trim();
+                    if (code) lookupBarcode(code);
+                });
+            }
         }
 
         function initMealSelector() {
             const container = document.getElementById('popup-meal-selector');
+            if (!container) return;
+
             container.innerHTML = [
                 { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
                 { id: 'lunch', label: 'Lunch', icon: 'utensils' },
                 { id: 'dinner', label: 'Dinner', icon: 'moon' },
                 { id: 'snack', label: 'Snack', icon: 'cookie' }
             ].map(meal => `
-                <button onclick="selectMeal('${meal.id}')" id="meal-btn-${meal.id}" 
+                <button onclick="selectMeal('\( {meal.id}')" id="meal-btn- \){meal.id}" 
                     class="meal-opt py-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all 
                     ${selectedMeal === meal.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-400'}">
                     <i data-lucide="${meal.icon}" class="w-4 h-4"></i>
@@ -1067,158 +1511,74 @@
             lucide.createIcons();
         }
 
-        window.selectMeal = (id) => { selectedMeal = id; initMealSelector(); };
+        window.selectMeal = (id) => {
+            selectedMeal = id;
+            initMealSelector();
+        };
 
         window.setAmountType = (type) => {
             amountType = type;
             document.getElementById('btn-type-items').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'items' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
             document.getElementById('btn-type-grams').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'grams' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
-            const label = document.getElementById('amount-unit-label');
-            label.innerText = type === 'items' ? 'items' : 'g';
+            
+            document.getElementById('amount-unit-label').innerText = type === 'items' ? 'items' : 'g';
             updatePopupCalculations();
         };
 
-        async function performSearch(query) {
-            if (!query) return;
-            document.getElementById('search-loading').classList.remove('hidden');
-            document.getElementById('search-results-list').innerHTML = '';
-            try {
-                const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=30&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
-                const offResponse = await fetch(offUrl);
-                const offData = await offResponse.json();
-                const offItems = (offData.products || []).map(p => processProductData(p));
-                renderSearchResults(offItems);
-            } catch (err) { console.error(err); } 
-            finally { document.getElementById('search-loading').classList.add('hidden'); }
-        }
+        // ───────────────────────────────────────────────
+        // FINAL INITIALIZATION
+        // ───────────────────────────────────────────────
 
-        function processProductData(p) {
-            const hasServingData = !!p.serving_size || p.nutriments?.['energy-kcal_serving'] !== undefined;
-            let calories = (hasServingData && p.nutriments?.['energy-kcal_serving']) ? Math.round(p.nutriments['energy-kcal_serving']) : Math.round(p.nutriments?.['energy-kcal_100g'] || 0);
-            let protein = (hasServingData && p.nutriments?.['energy-kcal_serving']) ? parseFloat(p.nutriments?.proteins_serving || 0).toFixed(1) : parseFloat(p.nutriments?.proteins_100g || 0).toFixed(1);
-            let portionPerServing = 1, servingUnit = 'portion', servingSizeStr = p.serving_size || '100 g';
-            const match = servingSizeStr.match(/^(\d+(?:\.\d+)?)\s*(.+?)(?:\s*\(|$)/i);
-            if (match) { portionPerServing = parseFloat(match[1]); servingUnit = match[2].trim(); }
-            return {
-                name: p.product_name || p.generic_name || "Unknown Product",
-                calories: calories, protein: protein, store: currentStore.name,
-                imageUrl: p.image_front_small_url || p.image_url || "https://placehold.co/100x100?text=Food",
-                servingSize: servingSizeStr, portionPerServing: portionPerServing, servingUnit: servingUnit, isServingBased: hasServingData
-            };
-        }
+        window.onload = () => {
+            // Load saved state
+            const saved = localStorage.getItem('fittrack_combined_v8');
+            if (saved) {
+                try {
+                    state = { ...state, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error("Failed to load saved state:", e);
+                }
+            }
 
-        function renderSearchResults(items) {
-            searchResults = items;
-            const list = document.getElementById('search-results-list');
-            list.innerHTML = items.map((item, idx) => `
-                <button onclick="openPopup(${idx})" class="w-full bg-white p-4 rounded-[28px] border border-slate-100 flex items-center gap-4 text-left shadow-sm active:scale-95 transition-all">
-                    <div class="w-14 h-14 bg-slate-50 rounded-xl overflow-hidden p-1 flex-shrink-0">
-                        <img src="${item.imageUrl}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/100x100?text=Food'">
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter bg-slate-100 text-slate-500">${item.store}</span>
-                            <span class="bg-blue-50 text-blue-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">${item.protein}g Protein</span>
-                        </div>
-                        <p class="font-bold text-sm truncate text-slate-800">${item.name}</p>
-                        <div class="flex items-center gap-1.5"><p class="text-[10px] text-slate-400 font-black uppercase tracking-tight">${item.calories} kcal / ${item.servingSize}</p></div>
-                    </div>
-                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></div>
-                </button>
-            `).join('');
-            lucide.createIcons();
-        }
+            // UI setup
+            document.getElementById('status-date').innerText = new Date().toLocaleDateString('en-US', {
+                weekday: 'short', month: 'short', day: 'numeric'
+            });
 
-        function syncDiary() { diaryItems = state.dailyMeals.filter(m => m.date === state.viewDate) || []; renderDiary(); }
+            document.getElementById('set-cal-goal').value = state.goals.calories;
+            document.getElementById('workout-date-input').value = state.viewDate;
 
-        function renderDiary() {
-            const container = document.getElementById('meal-sections');
-            let totalK = 0, totalP = 0;
-            container.innerHTML = [
-                { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
-                { id: 'lunch', label: 'Lunch', icon: 'utensils' },
-                { id: 'dinner', label: 'Dinner', icon: 'moon' },
-                { id: 'snack', label: 'Snack', icon: 'cookie' }
-            ].map(meal => {
-                const items = diaryItems.filter(i => i.meal === meal.id);
-                const itemsHtml = items.map(item => {
-                    totalK += item.calories; totalP += Number(item.protein);
-                    return `
-                        <div class="bg-white p-4 rounded-[24px] mb-2 border border-slate-100 flex items-center gap-4">
-                            <img src="${item.imageUrl}" class="w-12 h-12 object-contain bg-slate-50 rounded-lg p-1" onerror="this.src='https://placehold.co/100x100?text=Food'">
-                            <div class="flex-1 min-w-0"><p class="font-bold text-sm truncate">${item.name}</p><p class="text-[10px] text-slate-400 font-bold">${item.displayAmount} • ${item.calories}kcal • ${item.protein}g P</p></div>
-                            <button onclick="removeItem(${item.id})" class="text-slate-200 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>`;
-                }).join('');
-                return `<div class="mb-6"><div class="flex items-center gap-2 mb-3"><i data-lucide="${meal.icon}" class="w-4 h-4 text-slate-400"></i><h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${meal.label}</h3></div>${itemsHtml || '<p class="text-[10px] text-slate-300 italic px-4">Nothing logged yet</p>'}</div>`;
-            }).join('');
-            document.getElementById('total-kcal').innerText = totalK;
-            document.getElementById('total-protein').innerText = totalP.toFixed(1);
-            lucide.createIcons();
-        }
-
-        window.removeItem = (id) => { state.dailyMeals = state.dailyMeals.filter(i => i.id !== id); saveState(); renderDiary(); renderDashboard(); };
-
-        window.openPopup = (idx) => {
-            currentPopupItem = searchResults[idx];
-            document.getElementById('popup-image').src = currentPopupItem.imageUrl;
-            document.getElementById('popup-name').innerText = currentPopupItem.name;
-            document.getElementById('popup-store').innerText = currentPopupItem.store;
-            document.getElementById('popup-protein-ref').innerText = `${currentPopupItem.protein}g Protein per portion`;
-            document.getElementById('amount-input').value = 1;
-            setAmountType('items');
-            document.getElementById('portion-info').innerText = `1 portion = ${currentPopupItem.portionPerServing} ${currentPopupItem.servingUnit}`;
-            document.getElementById('item-popup').classList.remove('hidden');
-            updatePopupCalculations();
-            lucide.createIcons();
-        };
-
-        window.closePopup = () => { document.getElementById('item-popup').classList.add('hidden'); };
-
-        function updatePopupCalculations() {
-            if (!currentPopupItem) return;
-            const val = parseFloat(document.getElementById('amount-input').value) || 0;
-            let multiplier = (amountType === 'items') ? (val / currentPopupItem.portionPerServing) : (val / 100);
-            document.getElementById('preview-kcal').innerText = Math.round(currentPopupItem.calories * multiplier);
-            document.getElementById('preview-protein').innerText = `${(currentPopupItem.protein * multiplier).toFixed(1)}g`;
-        }
-
-        async function saveItemToDiary() {
-            if (!currentPopupItem) return;
-            const val = parseFloat(document.getElementById('amount-input').value) || 0;
-            let multiplier = (amountType === 'items') ? (val / currentPopupItem.portionPerServing) : (val / 100);
-            let displayAmount = (amountType === 'items') ? `${val} ${currentPopupItem.servingUnit} (${(val / currentPopupItem.portionPerServing).toFixed(1)} portions)` : `${val}g`;
-            const newItem = { ...currentPopupItem, id: Date.now(), meal: selectedMeal, displayAmount: displayAmount, calories: Math.round(currentPopupItem.calories * multiplier), protein: (currentPopupItem.protein * multiplier).toFixed(1), date: state.viewDate };
-            state.dailyMeals.unshift(newItem);
-            saveState();
-            closePopup();
-            setNutritionTab('diary');
+            initEquipmentSettings();
             renderDashboard();
-        }
+            renderMuscleSelection();
 
-        function initScanner() {
-            if (html5QrCode) return;
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => { lookupBarcode(decodedText); html5QrCode.stop(); }).catch(err => console.error(err));
-        }
+            document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
 
-        function stopScanner() { if (html5QrCode) { html5QrCode.stop().then(() => html5QrCode = null).catch(() => html5QrCode = null); } }
+            lucide.createIcons();
 
-        async function lookupBarcode(code) {
-            setNutritionTab('search');
-            document.getElementById('search-loading').classList.remove('hidden');
-            try {
-                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-                const data = await res.json();
-                if (data.status === 1) {
-                    const item = processProductData(data.product);
-                    searchResults = [item];
-                    openPopup(0);
-                } else alert("Product not found");
-            } catch (e) { console.error(e); } 
-            finally { document.getElementById('search-loading').classList.add('hidden'); }
-        }
+            initStoreDropdown();
+            initMealSelector();
+            setupEventListeners();
+
+            // Step date reset + periodic check
+            checkStepsDate();
+            setInterval(() => {
+                checkStepsDate();
+                renderDashboard();
+            }, 60000);
+
+            // Start step tracking if on dashboard
+            if (state.activeTab === 'dashboard') {
+                startContinuousMotionListening();
+            }
+
+            // Initial tab render
+            switchTab(state.activeTab || 'dashboard');
+        };
+
+        // ───────────────────────────────────────────────
+        // END OF SCRIPT – DOCUMENT FULLY COMPLETE
+        // ───────────────────────────────────────────────
     </script>
 </body>
-</html>
-
+                    </html>
