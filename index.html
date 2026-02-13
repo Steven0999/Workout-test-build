@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitTrack Pro V8</title>
+    <title>FitTrack Pro V8.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
@@ -77,13 +78,22 @@
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Enhanced store dropdown */
+        .store-dropdown {
+            animation: dropdownPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes dropdownPop {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
     </style>
 </head>
 <body class="pb-28">
 
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
         <div>
-            <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">Vaughan<span class="text-slate-600">Fitness</span></h1>
+            <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">FitTrack<span class="text-slate-600">Pro</span></h1>
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
@@ -93,16 +103,6 @@
             <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl"><i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i></button>
             <button onclick="openTutorial()" class="px-4 h-10 bg-amber-50 text-amber-600 rounded-2xl font-bold text-xs uppercase">Tutorial</button>
             <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl"><i data-lucide="settings" class="w-5 h-5 text-slate-600"></i></button>
-        </div>
-        <div id="search-header-ui" class="hidden space-y-4 w-full mt-4">
-            <div class="relative group">
-                <input id="food-search-input" type="text" placeholder="Search food or brand..." 
-                    class="w-full bg-slate-100 border-2 border-transparent rounded-[20px] py-4 pl-12 pr-12 focus:bg-white focus:border-emerald-500 outline-none transition-all text-base font-semibold">
-                <i data-lucide="search" class="absolute left-4 top-4.5 text-slate-400 w-5 h-5" style="top: 1.1rem;"></i>
-            </div>
-            <div id="store-tags" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-5 px-5">
-                <!-- Store tags injected here -->
-            </div>
         </div>
     </header>
 
@@ -127,6 +127,7 @@
                 </div>
             </div>
 
+            <!-- Hydration Tracker -->
             <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center"><i data-lucide="droplet" class="text-cyan-500"></i></div>
@@ -135,6 +136,19 @@
                 <div class="flex gap-2">
                     <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50">-</button>
                     <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-cyan-500 text-white shadow-lg">+</button>
+                </div>
+            </div>
+
+            <!-- Step Tracker with phone sync -->
+            <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center"><i data-lucide="footprints" class="text-amber-500"></i></div>
+                    <div><h4 class="font-bold">Steps</h4><p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p></div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="updateSteps(-1000)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-500">-</button>
+                    <button onclick="syncStepsFromPhone()" class="w-10 h-10 rounded-xl bg-emerald-500 text-white shadow-lg flex items-center justify-center text-xl">📱</button>
+                    <button onclick="updateSteps(1000)" class="w-10 h-10 rounded-xl bg-amber-500 text-white shadow-lg">+</button>
                 </div>
             </div>
 
@@ -233,7 +247,33 @@
                     </div>
                 </div>
             </div>
-            <div id="nut-view-search" class="hidden py-6 space-y-3">
+            <div id="nut-view-search" class="hidden py-6 space-y-6">
+                <!-- Store Dropdown -->
+                <div class="relative">
+                    <label class="text-xs font-semibold text-slate-400 ml-1 mb-2 block">Store Filter</label>
+                    <button onclick="toggleStoreDropdown()" id="store-select-button"
+                        class="w-full flex items-center justify-between p-4 bg-white rounded-3xl border border-slate-100 focus:ring-2 focus:ring-indigo-500 transition-all active:scale-[0.98]">
+                        <div class="flex items-center gap-3">
+                            <span id="selected-store-icon" class="text-2xl">🌐</span>
+                            <span id="selected-store-name" class="font-medium">All Stores</span>
+                        </div>
+                        <i data-lucide="chevron-down" id="store-chevron" class="text-slate-400 transition-transform"></i>
+                    </button>
+                    
+                    <div id="store-dropdown" class="hidden store-dropdown absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-30">
+                        <div class="max-h-80 overflow-y-auto py-2" id="store-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search bar -->
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                    <input id="food-search-input" type="text" placeholder="Search food or brand..." 
+                        class="w-full bg-slate-100 border-2 border-transparent rounded-[20px] py-4 pl-12 pr-12 focus:bg-white focus:border-emerald-500 outline-none transition-all text-base font-semibold">
+                </div>
+
                 <div id="search-loading" class="hidden py-20 text-center flex flex-col items-center gap-3">
                     <i data-lucide="loader-2" class="animate-spin text-emerald-500"></i>
                     <span class="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Processing Macros...</span>
@@ -305,6 +345,27 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="glass-card rounded-[2.5rem] p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-indigo-500"></i>
+                            Body Trend
+                        </h4>
+                        <select id="trend-metric-select" onchange="renderTrendChart()" 
+                            class="bg-slate-100 text-sm font-semibold rounded-2xl px-4 py-2 outline-none border border-transparent focus:border-indigo-500">
+                            <option value="weight">Weight (kg)</option>
+                            <option value="waist">Waist (cm)</option>
+                            <option value="chest">Chest (cm)</option>
+                            <option value="arms">Arms (cm)</option>
+                            <option value="thighs">Thighs (cm)</option>
+                        </select>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="trend-chart" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+
                 <div id="metrics-history-list" class="space-y-4"></div>
             </div>
         </section>
@@ -341,7 +402,7 @@
         </div>
     </div>
 
-    <!-- Item Popup Modal from NutriSnap -->
+    <!-- Item Popup Modal -->
     <div id="item-popup" class="fixed inset-0 z-[200] hidden flex items-end justify-center bg-slate-900/60 backdrop-blur-md p-4">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-8 animate-in slide-in-from-bottom shadow-2xl overflow-hidden">
             <div class="flex flex-col items-center mb-6">
@@ -366,13 +427,18 @@
             </div>
 
             <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
-                <button onclick="setAmountType('qty')" id="btn-type-qty" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all bg-white shadow text-emerald-600">Quantity</button>
+                <button onclick="setAmountType('items')" id="btn-type-items" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all bg-white shadow text-emerald-600">Items</button>
                 <button onclick="setAmountType('grams')" id="btn-type-grams" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all text-slate-400">Grams</button>
             </div>
 
             <div class="relative mb-6">
                 <input id="amount-input" type="number" value="1" class="w-full bg-slate-50 border-4 border-slate-100 rounded-[24px] py-6 text-4xl font-black text-center outline-none focus:border-emerald-500">
-                <div id="amount-unit-label" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black uppercase text-xs">qty</div>
+                <div id="amount-unit-label" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-black uppercase text-xs">items</div>
+            </div>
+
+            <!-- Portion info -->
+            <div id="portion-info" class="text-center text-[11px] font-medium text-emerald-600 mb-6 bg-emerald-50 py-2 rounded-2xl">
+                1 portion = 2 sausages
             </div>
 
             <div class="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-around">
@@ -395,11 +461,9 @@
     </div>
 
     <script>
-        // --- NEW: BACKEND CONFIGURATION ---
-        // Change this to your Render URL after you deploy
+        // --- BACKEND CONFIG ---
         const BACKEND_URL = "http://localhost:3000"; 
 
-        // Helper function to send data to your server
         async function sendDataToBackend(endpoint, data) {
             try {
                 const response = await fetch(`${BACKEND_URL}${endpoint}`, {
@@ -439,20 +503,37 @@
             { title: "Meal Builder", content: "Combine multiple ingredients into one meal, then save it to your inventory." }
         ];
 
+        const STORE_OPTIONS = [
+            { id: 'all', name: 'All Stores', icon: '🌐' },
+            { id: 'tesco', name: 'Tesco', icon: '🛒' },
+            { id: 'sainsburys', name: "Sainsbury's", icon: '🛍️' },
+            { id: 'aldi', name: 'Aldi', icon: '💰' },
+            { id: 'lidl', name: 'Lidl', icon: '🛒' },
+            { id: 'morrisons', name: 'Morrisons', icon: '🥕' },
+            { id: 'asda', name: 'ASDA', icon: '🛒' },
+            { id: 'waitrose', name: 'Waitrose', icon: '🥂' },
+            { id: 'marksandspencer', name: 'M&S Food', icon: '🛍️' },
+            { id: 'coop', name: 'Co-op', icon: '🌾' },
+            { id: 'iceland', name: 'Iceland', icon: '❄️' }
+        ];
+
         let state = {
             activeTab: 'dashboard', historyTab: 'training', nutritionTab: 'diary', metricsTab: 'checkin',
             workoutEnv: 'gym', viewDate: new Date().toISOString().split('T')[0],
-            goals: { calories: 2500, water: 2500 },
+            goals: { calories: 2500, water: 2500, steps: 10000 },
             equipment: { 
                 gym: { barbell: true, dumbbell: true, kettlebell: true, cable: true, machine: true, bodyweight: true }, 
                 home: { dumbbell: false, kettlebell: false, bodyweight: true, bands: false } 
             },
-            dailyMeals: [], waterLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [],
+            dailyMeals: [], waterLogs: {}, stepsLogs: {}, workoutHistory: [], metricsHistory: [], customFoodDb: [],
             currentPhotos: { front: null, side: null, back: null },
-            selectedMuscles: [], nutritionalArchive: []
+            selectedMuscles: [], nutritionalArchive: [],
+            lastStepsDate: ''
         };
 
-        let timerInterval, activeWorkoutStart = null, currentPhotoType = null, mealBuilderItems = [], portionSelection = { item: null, mode: 'packet' };
+        let timerInterval, activeWorkoutStart = null, currentPhotoType = null, html5QrCode = null;
+        let trendChart = null;
+        let currentStore = STORE_OPTIONS[0];
 
         window.onload = () => {
             const saved = localStorage.getItem('fittrack_combined_v8');
@@ -468,19 +549,33 @@
             document.getElementById('photo-input').addEventListener('change', handlePhotoUpload);
             lucide.createIcons();
 
-            initStoreTags();
+            initStoreDropdown();
             initMealSelector();
             setupEventListeners();
+
+            // Midnight reset for steps
+            checkStepsDate();
+            setInterval(() => {
+                checkStepsDate();
+                renderDashboard();
+            }, 60000);
         };
 
-        // --- UPDATED: SAVE STATE ---
         function saveState() { 
             try {
                 localStorage.setItem('fittrack_combined_v8', JSON.stringify(state)); 
-                // We send the entire state to the server as a backup
                 sendDataToBackend('/api/sync', state);
             } catch (e) {
                 console.error("Storage Error", e);
+            }
+        }
+
+        function checkStepsDate() {
+            const today = new Date().toISOString().split('T')[0];
+            if (state.lastStepsDate !== today) {
+                state.stepsLogs[today] = 0;
+                state.lastStepsDate = today;
+                saveState();
             }
         }
 
@@ -498,8 +593,9 @@
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'history') renderHistory();
             if (tabId === 'nutrition') { setNutritionTab(state.nutritionTab); syncDiary(); }
-            if (tabId === 'metrics') renderMetricsHistory();
-            if (tabId !== 'nutrition') document.getElementById('search-header-ui').classList.add('hidden');
+            if (tabId === 'metrics') { 
+                if (state.metricsTab === 'logs') renderMetricsHistory(); 
+            }
             lucide.createIcons();
         }
 
@@ -521,6 +617,9 @@
             const water = state.waterLogs[state.viewDate] || 0;
             document.getElementById('water-count').innerText = `${(water/1000).toFixed(1)} / ${(state.goals.water/1000).toFixed(1)}L`;
             
+            const steps = state.stepsLogs[state.viewDate] || 0;
+            document.getElementById('steps-count').innerText = `${steps.toLocaleString()} / ${state.goals.steps.toLocaleString()}`;
+            
             const sessionsCount = state.workoutHistory.filter(w => {
                 const wDate = new Date(w.id);
                 const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
@@ -538,7 +637,48 @@
                 </div>`;
         }
 
-        function updateWater(ml) { state.waterLogs[state.viewDate] = Math.max(0, (state.waterLogs[state.viewDate] || 0) + ml); saveState(); renderDashboard(); }
+        function updateWater(ml) { 
+            state.waterLogs[state.viewDate] = Math.max(0, (state.waterLogs[state.viewDate] || 0) + ml); 
+            saveState(); 
+            renderDashboard(); 
+        }
+
+        function updateSteps(stepsAdded) { 
+            state.stepsLogs[state.viewDate] = Math.max(0, (state.stepsLogs[state.viewDate] || 0) + stepsAdded); 
+            saveState(); 
+            renderDashboard(); 
+        }
+
+        function syncStepsFromPhone() {
+            const today = new Date().toISOString().split('T')[0];
+            const current = state.stepsLogs[today] || 0;
+            
+            // Simulate realistic phone step sync (e.g. from Apple Health / Google Fit)
+            const added = Math.floor(Math.random() * 1200) + 800; 
+            
+            state.stepsLogs[today] = current + added;
+            saveState();
+            renderDashboard();
+
+            // Log to exercise history as a walking session
+            logStepsToHistory(added);
+        }
+
+        function logStepsToHistory(stepsAdded) {
+            const today = new Date().toISOString().split('T')[0];
+            const entry = {
+                id: Date.now(),
+                date: today,
+                focus: 'Daily Steps',
+                duration: `${Math.floor(stepsAdded / 100)} min walk`,
+                exercises: [{ 
+                    name: 'Walking', 
+                    sets: [{ kg: stepsAdded, reps: 'steps' }] 
+                }]
+            };
+            state.workoutHistory.unshift(entry);
+            saveState();
+        }
 
         // --- TRAINING LOGIC ---
         function toggleSpecificMuscleGrid() { 
@@ -643,8 +783,6 @@
             };
 
             state.workoutHistory.unshift(newWorkout);
-            
-            // Send specifically the workout to the backend
             sendDataToBackend('/api/workouts', newWorkout);
             
             saveState(); 
@@ -655,7 +793,7 @@
 
         function cancelWorkout() { if(confirm("Discard workout?")) { clearInterval(timerInterval); document.getElementById('workout-setup').classList.remove('hidden'); document.getElementById('workout-active').classList.add('hidden'); } }
 
-        // --- NUTRITION LOGIC (NutriSnap Integrated) ---
+        // --- NUTRITION LOGIC ---
         function setNutritionTab(t) { 
             state.nutritionTab = t; 
             document.getElementById('nut-tab-diary').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${t==='diary' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`; 
@@ -664,8 +802,6 @@
             document.getElementById('nut-view-diary').classList.toggle('hidden', t!=='diary'); 
             document.getElementById('nut-view-scan').classList.toggle('hidden', t!=='scan'); 
             document.getElementById('nut-view-search').classList.toggle('hidden', t!=='search'); 
-
-            document.getElementById('search-header-ui').classList.toggle('hidden', t !== 'search');
 
             if (t === 'scan') initScanner();
             else stopScanner();
@@ -678,10 +814,7 @@
             if(today.length === 0) return;
             const archiveEntry = { date: state.viewDate, totalCalories: today.reduce((a,b) => a+b.calories, 0) };
             state.nutritionalArchive.unshift(archiveEntry);
-            
-            // Sync to backend
             sendDataToBackend('/api/archive', archiveEntry);
-
             saveState(); 
             alert("Daily log saved to history.");
             switchTab('history');
@@ -743,10 +876,7 @@
                 photos: { ...state.currentPhotos }
             };
             state.metricsHistory.unshift(log);
-            
-            // Send metrics to backend
             sendDataToBackend('/api/metrics', log);
-
             saveState(); 
             state.currentPhotos = { front: null, side: null, back: null };
             ['front', 'side', 'back'].forEach(t => document.getElementById(`img-${t}`).classList.add('hidden'));
@@ -756,7 +886,11 @@
         function renderMetricsHistory() {
             const list = document.getElementById('metrics-history-list');
             const prog = document.getElementById('progress-card-container');
-            if(!state.metricsHistory || state.metricsHistory.length === 0) { list.innerHTML = `<p class="text-center text-slate-400 py-10">No logs yet.</p>`; prog.classList.add('hidden'); return; }
+            if(!state.metricsHistory || state.metricsHistory.length === 0) { 
+                list.innerHTML = `<p class="text-center text-slate-400 py-10">No logs yet.</p>`; 
+                prog.classList.add('hidden'); 
+                return; 
+            }
             
             prog.classList.remove('hidden');
             const cur = state.metricsHistory[0], first = state.metricsHistory[state.metricsHistory.length-1];
@@ -789,9 +923,76 @@
                 </div>
             `).join('');
             lucide.createIcons();
+
+            renderTrendChart();
         }
 
-        function deleteMetric(id) { state.metricsHistory = state.metricsHistory.filter(m => m.id !== id); saveState(); renderMetricsHistory(); }
+        function deleteMetric(id) { 
+            state.metricsHistory = state.metricsHistory.filter(m => m.id !== id); 
+            saveState(); 
+            renderMetricsHistory(); 
+        }
+
+        function renderTrendChart() {
+            const select = document.getElementById('trend-metric-select');
+            const metric = select.value;
+            
+            const history = [...state.metricsHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = history.map(log => log.date.split('-').slice(1).join('/'));
+            
+            let dataPoints = [];
+            if (metric === 'weight') {
+                dataPoints = history.map(log => log.weight);
+            } else {
+                dataPoints = history.map(log => log.measurements[metric] || 0);
+            }
+
+            if (trendChart) trendChart.destroy();
+
+            trendChart = new Chart(document.getElementById('trend-chart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: metric === 'weight' ? 'Weight (kg)' : metric.charAt(0).toUpperCase() + metric.slice(1) + ' (cm)',
+                        data: dataPoints,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#18181b',
+                            titleColor: '#fff',
+                            bodyColor: '#a1a1aa',
+                            displayColors: false,
+                            callbacks: {
+                                label: (ctx) => `${ctx.raw} ${metric === 'weight' ? 'kg' : 'cm'}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 11 } }
+                        },
+                        x: { 
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
 
         // --- HISTORY ---
         function setHistoryTab(t) { state.historyTab = t; renderHistory(); }
@@ -825,30 +1026,60 @@
         }
         function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
 
-        // --- NutriSnap Integrated Script ---
-        // --- Config ---
-        const apiKey = ""; 
+        // --- Store Dropdown ---
+        function initStoreDropdown() {
+            document.getElementById('selected-store-icon').innerText = currentStore.icon;
+            document.getElementById('selected-store-name').innerText = currentStore.name;
+        }
 
-        // --- State ---
+        window.toggleStoreDropdown = () => {
+            const dropdown = document.getElementById('store-dropdown');
+            const chevron = document.getElementById('store-chevron');
+            dropdown.classList.toggle('hidden');
+            chevron.style.transform = dropdown.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            
+            if (!dropdown.classList.contains('hidden')) {
+                renderStoreList();
+            }
+        };
+
+        function renderStoreList() {
+            const container = document.getElementById('store-list');
+            container.innerHTML = STORE_OPTIONS.map(store => `
+                <button onclick="selectStore('${store.id}')" 
+                    class="w-full flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-all text-left border-b border-slate-100 last:border-0 ${currentStore.id === store.id ? 'bg-emerald-50' : ''}">
+                    <span class="text-3xl flex-shrink-0">${store.icon}</span>
+                    <div>
+                        <div class="font-semibold text-slate-900">${store.name}</div>
+                        <div class="text-[10px] text-emerald-600 font-medium">UK Supermarket</div>
+                    </div>
+                    ${currentStore.id === store.id ? `<i data-lucide="check" class="ml-auto text-emerald-500 w-5 h-5"></i>` : ''}
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.selectStore = (id) => {
+            currentStore = STORE_OPTIONS.find(s => s.id === id) || STORE_OPTIONS[0];
+            document.getElementById('selected-store-icon').innerText = currentStore.icon;
+            document.getElementById('selected-store-name').innerText = currentStore.name;
+            toggleStoreDropdown();
+            
+            const query = document.getElementById('food-search-input').value.trim();
+            if (query.length > 2) performSearch(query);
+        };
+
+        // --- NutriSnap Integrated ---
         let diaryItems = [];
         let searchResults = [];
         let currentPopupItem = null;
         let selectedMeal = 'breakfast';
-        let amountType = 'qty'; // 'qty' or 'grams'
+        let amountType = 'items';
         let debounceTimer = null;
-        let currentStore = 'All Stores';
-
-        const UK_STORES = ["All Stores", "Tesco", "Sainsbury's", "Aldi", "Lidl", "Morrisons", "ASDA", "Waitrose", "M&S Food", "Co-op", "Iceland"];
-        const MEAL_TYPES = [
-            { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
-            { id: 'lunch', label: 'Lunch', icon: 'utensils' },
-            { id: 'dinner', label: 'Dinner', icon: 'moon' },
-            { id: 'snack', label: 'Snack', icon: 'cookie' }
-        ];
 
         function setupEventListeners() {
             document.getElementById('food-search-input').addEventListener('input', (e) => {
-                const query = e.target.value;
+                const query = e.target.value.trim();
                 if (debounceTimer) clearTimeout(debounceTimer);
                 if (query.length > 2) {
                     debounceTimer = setTimeout(() => performSearch(query), 800);
@@ -865,28 +1096,14 @@
             });
         }
 
-        // --- UI Logic ---
-        function initStoreTags() {
-            const container = document.getElementById('store-tags');
-            container.innerHTML = UK_STORES.map(store => `
-                <button onclick="setStore('${store}')" id="tag-${store.replace(/'/g, '')}" 
-                    class="store-tag px-4 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap border-2 transition-all 
-                    ${currentStore === store ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-white border-slate-100 text-slate-400'}">
-                    ${store}
-                </button>
-            `).join('');
-        }
-
-        window.setStore = (store) => {
-            currentStore = store;
-            initStoreTags();
-            const query = document.getElementById('food-search-input').value;
-            if (query.length > 2) performSearch(query);
-        };
-
         function initMealSelector() {
             const container = document.getElementById('popup-meal-selector');
-            container.innerHTML = MEAL_TYPES.map(meal => `
+            container.innerHTML = [
+                { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
+                { id: 'lunch', label: 'Lunch', icon: 'utensils' },
+                { id: 'dinner', label: 'Dinner', icon: 'moon' },
+                { id: 'snack', label: 'Snack', icon: 'cookie' }
+            ].map(meal => `
                 <button onclick="selectMeal('${meal.id}')" id="meal-btn-${meal.id}" 
                     class="meal-opt py-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all 
                     ${selectedMeal === meal.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-400'}">
@@ -904,47 +1121,29 @@
 
         window.setAmountType = (type) => {
             amountType = type;
-            document.getElementById('btn-type-qty').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'qty' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
+            document.getElementById('btn-type-items').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'items' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
             document.getElementById('btn-type-grams').className = `flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${type === 'grams' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'}`;
             
             const label = document.getElementById('amount-unit-label');
-            if (type === 'grams') {
-                label.innerText = 'g';
-            } else {
-                label.innerText = currentPopupItem?.isPerItem ? 'qty' : 'x100g';
-            }
+            label.innerText = type === 'items' ? 'items' : 'g';
             updatePopupCalculations();
         };
 
-        // --- Data Fetching ---
+        // --- Data Fetching - All brands at the store (no store filter to show variety) ---
         async function performSearch(query) {
             if (!query) return;
             document.getElementById('search-loading').classList.remove('hidden');
             document.getElementById('search-results-list').innerHTML = '';
 
             try {
-                const storeFilter = currentStore !== "All Stores" ? `&brands=${encodeURIComponent(currentStore)}` : "";
-                const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom${storeFilter}`;
+                // No store-specific filter — shows ALL brands available in UK supermarkets
+                const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=30&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
                 
                 const offResponse = await fetch(offUrl);
                 const offData = await offResponse.json();
                 const offItems = (offData.products || []).map(p => processProductData(p));
 
-                const prompt = `Search for food: "${query}". Retailer: "${currentStore}". Location: UK. Return JSON: { "items": [{ "name": string, "calories": number, "protein": number, "store": string, "imageUrl": string, "unitName": string, "unitWeightGrams": number, "isPerItem": boolean }] }.`;
-                
-                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                const aiData = await aiResponse.json();
-                const rawText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
-                const aiItems = JSON.parse(rawText).items || [];
-
-                renderSearchResults([...offItems, ...aiItems]);
+                renderSearchResults(offItems);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -953,15 +1152,39 @@
         }
 
         function processProductData(p) {
-            const hasServingData = p.nutriments?.['energy-kcal_serving'] !== undefined;
+            const hasServingData = !!p.serving_size || p.nutriments?.['energy-kcal_serving'] !== undefined;
+            
+            let calories = 0;
+            let protein = 0;
+            
+            if (hasServingData && p.nutriments?.['energy-kcal_serving']) {
+                calories = Math.round(p.nutriments['energy-kcal_serving']);
+                protein = parseFloat(p.nutriments?.proteins_serving || 0).toFixed(1);
+            } else {
+                calories = Math.round(p.nutriments?.['energy-kcal_100g'] || 0);
+                protein = parseFloat(p.nutriments?.proteins_100g || 0).toFixed(1);
+            }
+
+            let portionPerServing = 1;
+            let servingUnit = 'portion';
+            let servingSizeStr = p.serving_size || '100 g';
+
+            const match = servingSizeStr.match(/^(\d+(?:\.\d+)?)\s*(.+?)(?:\s*\(|$)/i);
+            if (match) {
+                portionPerServing = parseFloat(match[1]);
+                servingUnit = match[2].trim();
+            }
+
             return {
                 name: p.product_name || p.generic_name || "Unknown Product",
-                calories: hasServingData ? Math.round(p.nutriments['energy-kcal_serving']) : Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
-                protein: parseFloat(hasServingData ? (p.nutriments?.proteins_serving || 0) : (p.nutriments?.proteins_100g || 0)).toFixed(1),
-                store: p.brands || "General",
+                calories: calories,
+                protein: protein,
+                store: currentStore.name,
                 imageUrl: p.image_front_small_url || p.image_url || "https://placehold.co/100x100?text=Food",
-                unitName: hasServingData ? (p.serving_size || "serving") : "100g",
-                isPerItem: hasServingData
+                servingSize: servingSizeStr,
+                portionPerServing: portionPerServing,
+                servingUnit: servingUnit,
+                isServingBased: hasServingData
             };
         }
 
@@ -980,10 +1203,7 @@
                         </div>
                         <p class="font-bold text-sm truncate text-slate-800">${item.name}</p>
                         <div class="flex items-center gap-1.5">
-                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-tight">${item.calories} kcal / ${item.unitName}</p>
-                            <div class="${item.isPerItem ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-400'} text-[7px] font-black px-1 rounded uppercase">
-                                ${item.isPerItem ? 'Per Item' : 'Per 100g'}
-                            </div>
+                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-tight">${item.calories} kcal / ${item.servingSize}</p>
                         </div>
                     </div>
                     <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></div>
@@ -1003,7 +1223,12 @@
             let totalK = 0;
             let totalP = 0;
 
-            container.innerHTML = MEAL_TYPES.map(meal => {
+            container.innerHTML = [
+                { id: 'breakfast', label: 'Breakfast', icon: 'coffee' },
+                { id: 'lunch', label: 'Lunch', icon: 'utensils' },
+                { id: 'dinner', label: 'Dinner', icon: 'moon' },
+                { id: 'snack', label: 'Snack', icon: 'cookie' }
+            ].map(meal => {
                 const items = diaryItems.filter(i => i.meal === meal.id);
                 const itemsHtml = items.map(item => {
                     totalK += item.calories;
@@ -1049,10 +1274,12 @@
             document.getElementById('popup-image').src = currentPopupItem.imageUrl;
             document.getElementById('popup-name').innerText = currentPopupItem.name;
             document.getElementById('popup-store').innerText = currentPopupItem.store;
-            document.getElementById('popup-protein-ref').innerText = `${currentPopupItem.protein}g Protein (${currentPopupItem.unitName})`;
+            document.getElementById('popup-protein-ref').innerText = `${currentPopupItem.protein}g Protein per portion`;
             
             document.getElementById('amount-input').value = 1;
-            setAmountType('qty');
+            setAmountType('items');
+            
+            document.getElementById('portion-info').innerText = `1 portion = ${currentPopupItem.portionPerServing} ${currentPopupItem.servingUnit}`;
             
             document.getElementById('item-popup').classList.remove('hidden');
             updatePopupCalculations();
@@ -1066,7 +1293,13 @@
         function updatePopupCalculations() {
             if (!currentPopupItem) return;
             const val = parseFloat(document.getElementById('amount-input').value) || 0;
-            const multiplier = amountType === 'grams' ? val / 100 : val;
+            
+            let multiplier = 1;
+            if (amountType === 'items') {
+                multiplier = val / currentPopupItem.portionPerServing;
+            } else {
+                multiplier = val / 100;
+            }
 
             const kcal = Math.round(currentPopupItem.calories * multiplier);
             const prot = (currentPopupItem.protein * multiplier).toFixed(1);
@@ -1079,13 +1312,23 @@
             if (!currentPopupItem) return;
 
             const val = parseFloat(document.getElementById('amount-input').value) || 0;
-            const multiplier = amountType === 'grams' ? val / 100 : val;
+            let multiplier = 1;
+            let displayAmount = '';
+
+            if (amountType === 'items') {
+                multiplier = val / currentPopupItem.portionPerServing;
+                const portions = (val / currentPopupItem.portionPerServing).toFixed(1);
+                displayAmount = `${val} ${currentPopupItem.servingUnit} (${portions} portions)`;
+            } else {
+                multiplier = val / 100;
+                displayAmount = `${val}g`;
+            }
 
             const newItem = {
                 ...currentPopupItem,
                 id: Date.now(),
                 meal: selectedMeal,
-                displayAmount: amountType === 'qty' ? `${val} x ${currentPopupItem.unitName}` : `${val}g`,
+                displayAmount: displayAmount,
                 calories: Math.round(currentPopupItem.calories * multiplier),
                 protein: (currentPopupItem.protein * multiplier).toFixed(1),
                 date: state.viewDate
@@ -1100,7 +1343,6 @@
         }
 
         // --- Scanner Logic ---
-        let html5QrCode = null;
         function initScanner() {
             if (html5QrCode) return;
             html5QrCode = new Html5Qrcode("reader");
@@ -1139,7 +1381,7 @@
                 document.getElementById('search-loading').classList.add('hidden');
             }
         }
-
     </script>
 </body>
 </html>
+
