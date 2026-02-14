@@ -78,9 +78,48 @@
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        button { transition: all 0.2s ease; }
-        button:active { transform: scale(0.95); }
-        button:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+        button { 
+            transition: all 0.2s ease;
+            min-height: 44px; /* Better touch target */
+        }
+        button:active { 
+            transform: scale(0.97); 
+        }
+        button:focus-visible { 
+            outline: 2px solid var(--brand-primary); 
+            outline-offset: 2px; 
+        }
+
+        /* Better touch targets for inputs */
+        input, select {
+            min-height: 48px;
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+
+        /* Larger tap areas for navigation */
+        .nav-item {
+            padding: 12px;
+            min-width: 64px;
+            min-height: 64px;
+        }
+
+        /* Smoother photo slot interactions */
+        .photo-slot {
+            min-height: 200px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .photo-slot:active {
+            transform: scale(0.98);
+        }
+
+        /* Better modal transitions */
+        .modal-overlay {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 <body class="pb-28">
@@ -127,9 +166,9 @@
                     <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center"><i data-lucide="droplet" class="text-cyan-500"></i></div>
                     <div><h4 class="font-bold">Hydration</h4><p id="water-count" class="text-xs text-slate-500">0 / 2.5L</p></div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50">-</button>
-                    <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-cyan-500 text-white shadow-lg">+</button>
+                <div class="flex gap-3">
+                    <button onclick="updateWater(-250)" class="w-14 h-14 rounded-2xl bg-slate-50 text-xl font-bold hover:bg-slate-100 active:bg-slate-200">-</button>
+                    <button onclick="updateWater(250)" class="w-14 h-14 rounded-2xl bg-cyan-500 text-white shadow-lg text-2xl font-bold hover:bg-cyan-600 active:bg-cyan-700">+</button>
                 </div>
             </div>
 
@@ -140,9 +179,9 @@
                         <div><h4 class="font-bold">Steps</h4><p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p></div>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="updateSteps(-500)" class="flex-1 h-10 rounded-xl bg-slate-50 text-slate-600 font-medium">-</button>
-                    <button onclick="updateSteps(500)" class="flex-1 h-10 rounded-xl bg-amber-500 text-white font-medium">+</button>
+                <div class="flex gap-3">
+                    <button onclick="updateSteps(-500)" class="flex-1 h-14 rounded-2xl bg-slate-50 text-slate-600 font-bold text-lg hover:bg-slate-100 active:bg-slate-200">-500</button>
+                    <button onclick="updateSteps(500)" class="flex-1 h-14 rounded-2xl bg-amber-500 text-white font-bold text-lg hover:bg-amber-600 active:bg-amber-700">+500</button>
                 </div>
             </div>
 
@@ -190,8 +229,8 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mt-6">
-                    <button onclick="startWorkout('manual')" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold">Manual</button>
-                    <button onclick="startWorkout('ai')" class="p-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold">AI Suggest</button>
+                    <button onclick="startWorkout('manual')" class="p-5 bg-slate-900 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-slate-800 active:bg-slate-700">Manual Entry</button>
+                    <button onclick="startWorkout('ai')" class="p-5 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-indigo-700 active:bg-indigo-800">AI Generate</button>
                 </div>
             </div>
 
@@ -211,9 +250,9 @@
 
         <!-- NUTRITION -->
         <section id="nutrition" class="tab-content space-y-6">
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setNutritionTab('diary')" id="nut-tab-diary" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
-                <button onclick="setNutritionTab('search')" id="nut-tab-search" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">Search</button>
+            <div class="flex bg-slate-100 p-2 rounded-2xl gap-2">
+                <button onclick="setNutritionTab('diary')" id="nut-tab-diary" class="flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
+                <button onclick="setNutritionTab('search')" id="nut-tab-search" class="flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400">Search</button>
             </div>
 
             <!-- DIARY TAB -->
@@ -252,7 +291,11 @@
                         <option value="coop">Co-op</option>
                         <option value="iceland">Iceland</option>
                         <option value="costco">Costco</option>
-                        <option value="marks">M&S</option>
+                        <option value="marks">M&S Food</option>
+                        <option value="ocado">Ocado</option>
+                        <option value="farmfoods">Farmfoods</option>
+                        <option value="booths">Booths</option>
+                        <option value="budgens">Budgens</option>
                     </select>
                 </div>
 
@@ -282,9 +325,9 @@
 
         <!-- LOGS -->
         <section id="logs" class="tab-content space-y-6">
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setLogsTab('training')" id="logs-tab-training" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Training</button>
-                <button onclick="setLogsTab('nutrition')" id="logs-tab-nutrition" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl text-slate-400">Nutrition</button>
+            <div class="flex bg-slate-100 p-2 rounded-2xl gap-2">
+                <button onclick="setLogsTab('training')" id="logs-tab-training" class="flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Training</button>
+                <button onclick="setLogsTab('nutrition')" id="logs-tab-nutrition" class="flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400">Nutrition</button>
             </div>
             
             <div id="logs-training-view" class="space-y-4">
@@ -359,68 +402,23 @@
                 </button>
             </div>
 
-            <!-- PHOTO COMPARISON -->
-            <div class="glass-card p-6 rounded-[2.5rem]">
-                <h4 class="font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="image-compare" class="w-5 h-5 text-indigo-500"></i>
-                    Compare Progress Photos
-                </h4>
-                
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">First Date</label>
-                            <select id="compare-date-1" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
-                                <option value="">Select date...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Second Date</label>
-                            <select id="compare-date-2" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
-                                <option value="">Select date...</option>
-                            </select>
-                        </div>
+            <!-- VIEW OPTIONS BUTTONS -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="openMetricsChart()" class="glass-card p-6 rounded-2xl text-center hover:shadow-lg transition-all active:scale-95">
+                    <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="line-chart" class="w-6 h-6 text-indigo-600"></i>
                     </div>
+                    <h4 class="font-bold text-sm mb-1">Progress Charts</h4>
+                    <p class="text-xs text-slate-400">View trends</p>
+                </button>
 
-                    <div>
-                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Photo Type</label>
-                        <select id="compare-photo-type" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
-                            <option value="front">Front</option>
-                            <option value="side">Side</option>
-                            <option value="back">Back</option>
-                        </select>
+                <button onclick="openPhotoComparison()" class="glass-card p-6 rounded-2xl text-center hover:shadow-lg transition-all active:scale-95">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="images" class="w-6 h-6 text-emerald-600"></i>
                     </div>
-
-                    <div id="comparison-view" class="grid grid-cols-2 gap-4 hidden">
-                        <div class="relative">
-                            <div class="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-lg text-xs font-bold z-10" id="compare-label-1"></div>
-                            <img id="compare-img-1" src="" class="w-full aspect-[3/4] object-cover rounded-2xl bg-slate-100" alt="Before">
-                        </div>
-                        <div class="relative">
-                            <div class="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-lg text-xs font-bold z-10" id="compare-label-2"></div>
-                            <img id="compare-img-2" src="" class="w-full aspect-[3/4] object-cover rounded-2xl bg-slate-100" alt="After">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- METRICS CHART -->
-            <div class="glass-card p-6 rounded-[2.5rem]">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="font-bold">Progress Chart</h4>
-                    <select id="chart-metric-select" onchange="renderMetricChart()" class="bg-slate-100 text-sm font-semibold rounded-2xl px-4 py-2 outline-none">
-                        <option value="weight">Weight</option>
-                        <option value="chest">Chest</option>
-                        <option value="shoulders">Shoulders</option>
-                        <option value="arms">Arms</option>
-                        <option value="waist">Waist</option>
-                        <option value="legs">Legs</option>
-                        <option value="glutes">Glutes</option>
-                    </select>
-                </div>
-                <div class="h-64 relative">
-                    <canvas id="metrics-chart"></canvas>
-                </div>
+                    <h4 class="font-bold text-sm mb-1">Compare Photos</h4>
+                    <p class="text-xs text-slate-400">Side by side</p>
+                </button>
             </div>
         </section>
 
@@ -546,7 +544,18 @@
                     <option value="tesco">Tesco</option>
                     <option value="sainsburys">Sainsbury's</option>
                     <option value="asda">ASDA</option>
+                    <option value="morrisons">Morrisons</option>
+                    <option value="aldi">Aldi</option>
+                    <option value="lidl">Lidl</option>
+                    <option value="waitrose">Waitrose</option>
+                    <option value="coop">Co-op</option>
+                    <option value="iceland">Iceland</option>
                     <option value="costco">Costco</option>
+                    <option value="marks">M&S Food</option>
+                    <option value="ocado">Ocado</option>
+                    <option value="farmfoods">Farmfoods</option>
+                    <option value="booths">Booths</option>
+                    <option value="budgens">Budgens</option>
                 </select>
             </div>
 
@@ -565,6 +574,85 @@
             </div>
 
             <button onclick="saveMeal()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold">Save Meal</button>
+        </div>
+    </div>
+
+    <!-- METRICS CHART MODAL -->
+    <div id="metrics-chart-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Progress Charts</h3>
+                <button onclick="closeMetricsChart()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <div class="mb-6">
+                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Select Metric</label>
+                <select id="chart-metric-select" onchange="renderMetricChart()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-lg">
+                    <option value="weight">Weight (kg)</option>
+                    <option value="chest">Chest (cm)</option>
+                    <option value="shoulders">Shoulders (cm)</option>
+                    <option value="arms">Arms (cm)</option>
+                    <option value="waist">Waist (cm)</option>
+                    <option value="legs">Legs (cm)</option>
+                    <option value="glutes">Glutes (cm)</option>
+                </select>
+            </div>
+
+            <div class="h-80 relative bg-slate-50 rounded-3xl p-4">
+                <canvas id="metrics-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHOTO COMPARISON MODAL -->
+    <div id="photo-comparison-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Compare Photos</h3>
+                <button onclick="closePhotoComparison()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">First Date</label>
+                        <select id="compare-date-1" onchange="loadComparisonPhotos()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                            <option value="">Select date...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Second Date</label>
+                        <select id="compare-date-2" onchange="loadComparisonPhotos()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                            <option value="">Select date...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Photo Angle</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setComparePhotoType('front')" id="compare-type-front" class="p-4 rounded-2xl font-bold text-sm bg-indigo-600 text-white">Front</button>
+                        <button onclick="setComparePhotoType('side')" id="compare-type-side" class="p-4 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600">Side</button>
+                        <button onclick="setComparePhotoType('back')" id="compare-type-back" class="p-4 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600">Back</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="comparison-view" class="grid grid-cols-2 gap-6 hidden">
+                <div class="relative">
+                    <div class="absolute top-3 left-3 bg-black/80 text-white px-4 py-2 rounded-xl text-sm font-bold z-10" id="compare-label-1"></div>
+                    <img id="compare-img-1" src="" class="w-full aspect-[3/4] object-cover rounded-3xl bg-slate-100 border-4 border-white shadow-xl" alt="Before">
+                </div>
+                <div class="relative">
+                    <div class="absolute top-3 left-3 bg-black/80 text-white px-4 py-2 rounded-xl text-sm font-bold z-10" id="compare-label-2"></div>
+                    <img id="compare-img-2" src="" class="w-full aspect-[3/4] object-cover rounded-3xl bg-slate-100 border-4 border-white shadow-xl" alt="After">
+                </div>
+            </div>
+
+            <div id="no-comparison-message" class="text-center py-12 text-slate-400">
+                <i data-lucide="images" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                <p class="font-bold">Select two dates to compare</p>
+            </div>
         </div>
     </div>
 
@@ -780,10 +868,6 @@
                 if (bg) bg.classList.toggle('bg-indigo-50', isActive);
             });
 
-            if (tabId === 'metrics') {
-                renderMetricChart();
-                populateComparisonDates();
-            }
             if (tabId === 'logs') renderLogs();
 
             lucide.createIcons();
@@ -977,8 +1061,8 @@
         // ============================================================================
 
         function setNutritionTab(tab) {
-            document.getElementById('nut-tab-diary').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${tab === 'diary' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('nut-tab-search').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${tab === 'search' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-diary').className = `flex-1 py-4 text-xs font-black uppercase rounded-xl ${tab === 'diary' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('nut-tab-search').className = `flex-1 py-4 text-xs font-black uppercase rounded-xl ${tab === 'search' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             
             document.getElementById('nut-view-diary').classList.toggle('hidden', tab !== 'diary');
             document.getElementById('nut-view-search').classList.toggle('hidden', tab !== 'search');
@@ -1359,8 +1443,8 @@
         // ============================================================================
 
         function setLogsTab(tab) {
-            document.getElementById('logs-tab-training').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${tab === 'training' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
-            document.getElementById('logs-tab-nutrition').className = `flex-1 py-3 text-[10px] font-black uppercase rounded-xl ${tab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('logs-tab-training').className = `flex-1 py-4 text-xs font-black uppercase rounded-xl ${tab === 'training' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+            document.getElementById('logs-tab-nutrition').className = `flex-1 py-4 text-xs font-black uppercase rounded-xl ${tab === 'nutrition' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
             
             document.getElementById('logs-training-view').classList.toggle('hidden', tab !== 'training');
             document.getElementById('logs-nutrition-view').classList.toggle('hidden', tab !== 'nutrition');
@@ -1515,13 +1599,28 @@
             document.getElementById('compare-date-2').innerHTML = html;
         }
 
+        let currentComparePhotoType = 'front';
+
+        function setComparePhotoType(type) {
+            currentComparePhotoType = type;
+            ['front', 'side', 'back'].forEach(t => {
+                const btn = document.getElementById(`compare-type-${t}`);
+                if (t === type) {
+                    btn.className = 'p-4 rounded-2xl font-bold text-sm bg-indigo-600 text-white';
+                } else {
+                    btn.className = 'p-4 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600';
+                }
+            });
+            loadComparisonPhotos();
+        }
+
         function loadComparisonPhotos() {
             const id1 = document.getElementById('compare-date-1').value;
             const id2 = document.getElementById('compare-date-2').value;
-            const photoType = document.getElementById('compare-photo-type').value;
 
             if (!id1 || !id2) {
                 document.getElementById('comparison-view').classList.add('hidden');
+                document.getElementById('no-comparison-message').classList.remove('hidden');
                 return;
             }
 
@@ -1530,8 +1629,8 @@
 
             if (!metric1 || !metric2) return;
 
-            const photo1 = metric1.photos?.[photoType];
-            const photo2 = metric2.photos?.[photoType];
+            const photo1 = metric1.photos?.[currentComparePhotoType];
+            const photo2 = metric2.photos?.[currentComparePhotoType];
 
             if (photo1 && photo2) {
                 document.getElementById('compare-img-1').src = photo1;
@@ -1539,10 +1638,37 @@
                 document.getElementById('compare-label-1').textContent = metric1.date;
                 document.getElementById('compare-label-2').textContent = metric2.date;
                 document.getElementById('comparison-view').classList.remove('hidden');
+                document.getElementById('no-comparison-message').classList.add('hidden');
+                lucide.createIcons();
             } else {
                 document.getElementById('comparison-view').classList.add('hidden');
+                document.getElementById('no-comparison-message').classList.remove('hidden');
                 showToast('Photos not available for selected dates');
             }
+        }
+
+        function openMetricsChart() {
+            document.getElementById('metrics-chart-modal').style.display = 'flex';
+            setTimeout(() => renderMetricChart(), 100); // Ensure canvas is visible
+            lucide.createIcons();
+        }
+
+        function closeMetricsChart() {
+            document.getElementById('metrics-chart-modal').style.display = 'none';
+        }
+
+        function openPhotoComparison() {
+            populateComparisonDates();
+            currentComparePhotoType = 'front';
+            setComparePhotoType('front');
+            document.getElementById('photo-comparison-modal').style.display = 'flex';
+            document.getElementById('comparison-view').classList.add('hidden');
+            document.getElementById('no-comparison-message').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closePhotoComparison() {
+            document.getElementById('photo-comparison-modal').style.display = 'none';
         }
 
         function renderMetricChart() {
