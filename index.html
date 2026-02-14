@@ -95,6 +95,9 @@
                 <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
             </div>
         </div>
+        <button onclick="switchTab('settings')" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors" aria-label="Settings">
+            <i data-lucide="settings" class="w-6 h-6 text-slate-700"></i>
+        </button>
     </header>
 
     <main class="max-w-xl mx-auto p-4 space-y-6">
@@ -328,11 +331,80 @@
                     </div>
                 </div>
 
+                <!-- PROGRESS PHOTOS -->
+                <div class="space-y-4">
+                    <h4 class="text-[10px] font-black uppercase text-slate-400 text-center">Progress Photos</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="photo-slot" onclick="triggerPhotoUpload('front')">
+                            <img id="photo-front-preview" class="hidden" alt="Front">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
+                        </div>
+                        <div class="photo-slot" onclick="triggerPhotoUpload('side')">
+                            <img id="photo-side-preview" class="hidden" alt="Side">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
+                        </div>
+                        <div class="photo-slot" onclick="triggerPhotoUpload('back')">
+                            <img id="photo-back-preview" class="hidden" alt="Back">
+                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
+                        </div>
+                    </div>
+                    <input type="file" id="photo-upload-input" accept="image/*" class="hidden">
+                </div>
+
                 <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase">
                     Save Metrics
                 </button>
             </div>
 
+            <!-- PHOTO COMPARISON -->
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h4 class="font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="image-compare" class="w-5 h-5 text-indigo-500"></i>
+                    Compare Progress Photos
+                </h4>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">First Date</label>
+                            <select id="compare-date-1" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
+                                <option value="">Select date...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Second Date</label>
+                            <select id="compare-date-2" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
+                                <option value="">Select date...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Photo Type</label>
+                        <select id="compare-photo-type" onchange="loadComparisonPhotos()" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none">
+                            <option value="front">Front</option>
+                            <option value="side">Side</option>
+                            <option value="back">Back</option>
+                        </select>
+                    </div>
+
+                    <div id="comparison-view" class="grid grid-cols-2 gap-4 hidden">
+                        <div class="relative">
+                            <div class="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-lg text-xs font-bold z-10" id="compare-label-1"></div>
+                            <img id="compare-img-1" src="" class="w-full aspect-[3/4] object-cover rounded-2xl bg-slate-100" alt="Before">
+                        </div>
+                        <div class="relative">
+                            <div class="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-lg text-xs font-bold z-10" id="compare-label-2"></div>
+                            <img id="compare-img-2" src="" class="w-full aspect-[3/4] object-cover rounded-2xl bg-slate-100" alt="After">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- METRICS CHART -->
             <div class="glass-card p-6 rounded-[2.5rem]">
                 <div class="flex justify-between items-center mb-4">
                     <h4 class="font-bold">Progress Chart</h4>
@@ -389,9 +461,6 @@
         </button>
         <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
             <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="scale"></i></div>
-        </button>
-        <button onclick="switchTab('settings')" data-tab="settings" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="settings"></i></div>
         </button>
     </nav>
 
@@ -506,29 +575,92 @@
         
         const EXERCISE_DB = {
             gym: {
-                'Full Body': ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press'],
-                'Upper': ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips'],
-                'Lower': ['Barbell Squat', 'Romanian Deadlift', 'Leg Press', 'Leg Curl', 'Calf Raise'],
-                'Push': ['Bench Press', 'Overhead Press', 'Incline Press', 'Tricep Dips', 'Lateral Raise'],
-                'Pull': ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'Face Pulls', 'Bicep Curl'],
-                'Legs': ['Squat', 'Deadlift', 'Leg Press', 'Lunges', 'Leg Curl'],
-                'Chest': ['Bench Press', 'Incline Press', 'Cable Flyes', 'Dumbbell Press'],
-                'Back': ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'Cable Row'],
-                'Shoulders': ['Overhead Press', 'Lateral Raise', 'Front Raise', 'Face Pulls'],
-                'Biceps': ['Barbell Curl', 'Hammer Curl', 'Preacher Curl'],
-                'Triceps': ['Tricep Dips', 'Skull Crushers', 'Cable Pushdown'],
-                'Quads': ['Squat', 'Leg Press', 'Lunges', 'Leg Extension'],
-                'Hamstrings': ['Romanian Deadlift', 'Leg Curl', 'Good Morning'],
-                'Glutes': ['Hip Thrust', 'Bulgarian Split Squat', 'Cable Kickback'],
-                'Calves': ['Standing Calf Raise', 'Seated Calf Raise']
+                'Full Body': {
+                    compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press'],
+                    isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise']
+                },
+                'Upper': {
+                    compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips'],
+                    isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Face Pulls', 'Cable Flyes']
+                },
+                'Lower': {
+                    compound: ['Barbell Squat', 'Romanian Deadlift', 'Leg Press', 'Lunges'],
+                    isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Abduction', 'Glute Kickback']
+                },
+                'Push': {
+                    compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips'],
+                    isolation: ['Tricep Pushdown', 'Lateral Raise', 'Cable Flyes', 'Skull Crushers']
+                },
+                'Pull': {
+                    compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row'],
+                    isolation: ['Bicep Curl', 'Face Pulls', 'Hammer Curl', 'Cable Row']
+                },
+                'Legs': {
+                    compound: ['Squat', 'Deadlift', 'Leg Press', 'Lunges'],
+                    isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust']
+                },
+                'Chest': {
+                    compound: ['Bench Press', 'Incline Press', 'Dumbbell Press'],
+                    isolation: ['Cable Flyes', 'Pec Deck', 'Dumbbell Flyes']
+                },
+                'Back': {
+                    compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row'],
+                    isolation: ['Cable Row', 'Face Pulls', 'Straight Arm Pulldown']
+                },
+                'Shoulders': {
+                    compound: ['Overhead Press', 'Arnold Press'],
+                    isolation: ['Lateral Raise', 'Front Raise', 'Face Pulls', 'Reverse Flyes']
+                },
+                'Biceps': {
+                    compound: ['Chin Ups'],
+                    isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl']
+                },
+                'Triceps': {
+                    compound: ['Close Grip Bench Press', 'Dips'],
+                    isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension']
+                },
+                'Quads': {
+                    compound: ['Squat', 'Leg Press', 'Lunges'],
+                    isolation: ['Leg Extension', 'Sissy Squat']
+                },
+                'Hamstrings': {
+                    compound: ['Romanian Deadlift', 'Good Morning'],
+                    isolation: ['Leg Curl', 'Nordic Curl']
+                },
+                'Glutes': {
+                    compound: ['Hip Thrust', 'Bulgarian Split Squat'],
+                    isolation: ['Cable Kickback', 'Hip Abduction', 'Glute Bridge']
+                },
+                'Calves': {
+                    compound: [],
+                    isolation: ['Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise']
+                }
             },
             home: {
-                'Full Body': ['Push Ups', 'Bodyweight Squat', 'Plank', 'Burpees'],
-                'Upper': ['Push Ups', 'Pike Push Ups', 'Dips', 'Inverted Row'],
-                'Lower': ['Bodyweight Squat', 'Lunges', 'Glute Bridge', 'Calf Raise'],
-                'Push': ['Push Ups', 'Pike Push Ups', 'Diamond Push Ups'],
-                'Pull': ['Inverted Row', 'Chin Ups', 'Superman'],
-                'Legs': ['Squat', 'Lunges', 'Single Leg Deadlift', 'Jump Squat']
+                'Full Body': {
+                    compound: ['Push Ups', 'Bodyweight Squat', 'Burpees'],
+                    isolation: ['Plank', 'Crunches', 'Leg Raises']
+                },
+                'Upper': {
+                    compound: ['Push Ups', 'Pike Push Ups', 'Inverted Row'],
+                    isolation: ['Tricep Dips', 'Plank to Push Up', 'Superman']
+                },
+                'Lower': {
+                    compound: ['Bodyweight Squat', 'Lunges', 'Step Ups'],
+                    isolation: ['Glute Bridge', 'Calf Raise', 'Donkey Kicks']
+                },
+                'Push': {
+                    compound: ['Push Ups', 'Pike Push Ups'],
+                    isolation: ['Diamond Push Ups', 'Tricep Dips', 'Shoulder Taps']
+                },
+                'Pull': {
+                    compound: ['Inverted Row', 'Chin Ups'],
+                    isolation: ['Superman', 'Reverse Snow Angels', 'Bicep Holds']
+                },
+                'Legs': {
+                    compound: ['Squat', 'Lunges', 'Jump Squat'],
+                    isolation: ['Glute Bridge', 'Calf Raise', 'Leg Raises']
+                }
             }
         };
 
@@ -543,6 +675,7 @@
             metricsHistory: [],
             createdMeals: [],
             workoutEnv: 'gym',
+            currentPhotos: { front: null, side: null, back: null },
             equipment: {
                 gym: {
                     'Barbell': true,
@@ -569,6 +702,7 @@
         let mealIngredients = [];
         let html5QrCode = null;
         let metricsChart = null;
+        let currentPhotoType = null;
 
         // ============================================================================
         // UTILITIES
@@ -646,7 +780,10 @@
                 if (bg) bg.classList.toggle('bg-indigo-50', isActive);
             });
 
-            if (tabId === 'metrics') renderMetricChart();
+            if (tabId === 'metrics') {
+                renderMetricChart();
+                populateComparisonDates();
+            }
             if (tabId === 'logs') renderLogs();
 
             lucide.createIcons();
@@ -729,11 +866,25 @@
             document.getElementById('exercise-list').innerHTML = '';
 
             if (mode === 'ai') {
-                const exercises = EXERCISE_DB[state.workoutEnv][muscle] || EXERCISE_DB[state.workoutEnv]['Full Body'];
-                exercises.slice(0, 5).forEach(ex => {
-                    addExercise(ex);
-                });
-                showToast('AI workout generated!');
+                const exercises = EXERCISE_DB[state.workoutEnv][muscle];
+                if (exercises) {
+                    // Get 2 compound exercises
+                    const compounds = exercises.compound || [];
+                    const selectedCompounds = compounds.sort(() => 0.5 - Math.random()).slice(0, 2);
+                    
+                    // Get 3 isolation exercises
+                    const isolations = exercises.isolation || [];
+                    const selectedIsolations = isolations.sort(() => 0.5 - Math.random()).slice(0, 3);
+                    
+                    // Add exercises in order: compounds first, then isolations
+                    [...selectedCompounds, ...selectedIsolations].forEach(ex => {
+                        addExercise(ex);
+                    });
+                    
+                    showToast('AI workout: 2 compound + 3 isolation exercises');
+                } else {
+                    showToast('No exercises found for this selection');
+                }
             }
 
             workoutStartTime = Date.now();
@@ -1260,6 +1411,56 @@
         // BODY METRICS
         // ============================================================================
 
+        function triggerPhotoUpload(type) {
+            currentPhotoType = type;
+            document.getElementById('photo-upload-input').click();
+        }
+
+        document.getElementById('photo-upload-input')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height *= maxSize / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width *= maxSize / height;
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                    state.currentPhotos[currentPhotoType] = compressedImage;
+
+                    // Show preview
+                    const preview = document.getElementById(`photo-${currentPhotoType}-preview`);
+                    preview.src = compressedImage;
+                    preview.classList.remove('hidden');
+
+                    showToast(`${currentPhotoType.charAt(0).toUpperCase() + currentPhotoType.slice(1)} photo added`);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
         function saveMetrics() {
             const weight = parseFloat(document.getElementById('metric-weight').value);
             if (!weight) {
@@ -1276,18 +1477,72 @@
                 arms: parseFloat(document.getElementById('metric-arms').value) || 0,
                 waist: parseFloat(document.getElementById('metric-waist').value) || 0,
                 legs: parseFloat(document.getElementById('metric-legs').value) || 0,
-                glutes: parseFloat(document.getElementById('metric-glutes').value) || 0
+                glutes: parseFloat(document.getElementById('metric-glutes').value) || 0,
+                photos: {
+                    front: state.currentPhotos.front,
+                    side: state.currentPhotos.side,
+                    back: state.currentPhotos.back
+                }
             });
 
             saveState();
             renderDashboard();
             renderMetricChart();
+            populateComparisonDates();
             showToast('Metrics saved!');
             
-            // Clear inputs
+            // Clear inputs and photos
             ['weight', 'chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].forEach(m => {
                 document.getElementById(`metric-${m}`).value = '';
             });
+            
+            state.currentPhotos = { front: null, side: null, back: null };
+            ['front', 'side', 'back'].forEach(type => {
+                document.getElementById(`photo-${type}-preview`).classList.add('hidden');
+            });
+        }
+
+        function populateComparisonDates() {
+            const dates = state.metricsHistory
+                .filter(m => m.photos && (m.photos.front || m.photos.side || m.photos.back))
+                .map(m => ({ date: m.date, id: m.id }));
+
+            const html = '<option value="">Select date...</option>' + dates.map(d => 
+                `<option value="${d.id}">${d.date}</option>`
+            ).join('');
+
+            document.getElementById('compare-date-1').innerHTML = html;
+            document.getElementById('compare-date-2').innerHTML = html;
+        }
+
+        function loadComparisonPhotos() {
+            const id1 = document.getElementById('compare-date-1').value;
+            const id2 = document.getElementById('compare-date-2').value;
+            const photoType = document.getElementById('compare-photo-type').value;
+
+            if (!id1 || !id2) {
+                document.getElementById('comparison-view').classList.add('hidden');
+                return;
+            }
+
+            const metric1 = state.metricsHistory.find(m => m.id == id1);
+            const metric2 = state.metricsHistory.find(m => m.id == id2);
+
+            if (!metric1 || !metric2) return;
+
+            const photo1 = metric1.photos?.[photoType];
+            const photo2 = metric2.photos?.[photoType];
+
+            if (photo1 && photo2) {
+                document.getElementById('compare-img-1').src = photo1;
+                document.getElementById('compare-img-2').src = photo2;
+                document.getElementById('compare-label-1').textContent = metric1.date;
+                document.getElementById('compare-label-2').textContent = metric2.date;
+                document.getElementById('comparison-view').classList.remove('hidden');
+            } else {
+                document.getElementById('comparison-view').classList.add('hidden');
+                showToast('Photos not available for selected dates');
+            }
         }
 
         function renderMetricChart() {
@@ -1397,5 +1652,3 @@
     </script>
 </body>
 </html>
-
-
