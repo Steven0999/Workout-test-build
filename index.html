@@ -1284,13 +1284,34 @@
             const card = document.createElement('div');
             card.className = "bg-white p-4 sm:p-5 rounded-2xl shadow-md border-2 border-indigo-100 mb-3 sm:mb-4 w-full";
             
-            // Exercise name
+            // Exercise name with dropdown
+            const nameContainer = document.createElement('div');
+            nameContainer.className = "relative mb-3 sm:mb-4";
+            
             const nameInput = document.createElement('input');
             nameInput.type = "text";
             nameInput.value = name;
-            nameInput.placeholder = "Exercise name";
-            nameInput.className = "w-full p-3 sm:p-3.5 mb-3 sm:mb-4 border-2 border-slate-200 rounded-xl font-bold text-base sm:text-lg";
+            nameInput.placeholder = "Search or type exercise name...";
+            nameInput.className = "w-full p-3 sm:p-3.5 border-2 border-slate-200 rounded-xl font-bold text-base sm:text-lg";
             nameInput.id = `ex-name-${id}`;
+            nameInput.autocomplete = "off";
+            
+            // Dropdown for exercise search
+            const dropdown = document.createElement('div');
+            dropdown.id = `dropdown-${id}`;
+            dropdown.className = "hidden absolute z-50 mt-1 w-full bg-white rounded-xl shadow-2xl border-2 border-indigo-100 max-h-60 overflow-y-auto";
+            
+            // Add event listeners for search
+            nameInput.addEventListener('focus', () => {
+                showExerciseDropdown(id);
+            });
+            
+            nameInput.addEventListener('input', (e) => {
+                filterExerciseDropdown(id, e.target.value);
+            });
+            
+            nameContainer.appendChild(nameInput);
+            nameContainer.appendChild(dropdown);
             
             // Sets container with header
             const setsContainer = document.createElement('div');
@@ -1320,7 +1341,7 @@
             deleteExBtn.textContent = "Delete Exercise";
             deleteExBtn.addEventListener('click', () => card.remove());
             
-            card.appendChild(nameInput);
+            card.appendChild(nameContainer);
             card.appendChild(setsContainer);
             card.appendChild(addSetBtn);
             card.appendChild(deleteExBtn);
@@ -1330,6 +1351,97 @@
             // Auto-add first set
             setTimeout(() => addSetToExercise(id, pr), 50);
         }
+
+        function showExerciseDropdown(id) {
+            const dropdown = document.getElementById(`dropdown-${id}`);
+            if (!dropdown) return;
+            
+            const html = ALL_EXERCISES.map(ex => {
+                const pr = getPersonalRecord(ex);
+                return `<div onclick="selectExerciseFromDropdown('${id}', '${ex}')" class="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-0 flex justify-between items-center transition-colors">
+                    <span class="font-medium text-sm">${ex}</span>
+                    ${pr ? `<span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
+                </div>`;
+            }).join('');
+            
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        }
+
+        function filterExerciseDropdown(id, query) {
+            const dropdown = document.getElementById(`dropdown-${id}`);
+            if (!dropdown) return;
+            
+            const filtered = ALL_EXERCISES.filter(ex => 
+                ex.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length === 0 && query.length > 0) {
+                dropdown.innerHTML = '<div class="p-3 text-slate-400 text-sm italic text-center">No exercises found - keep typing to use custom name</div>';
+                dropdown.classList.remove('hidden');
+            } else if (filtered.length > 0) {
+                const html = filtered.map(ex => {
+                    const pr = getPersonalRecord(ex);
+                    return `<div onclick="selectExerciseFromDropdown('${id}', '${ex}')" class="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-0 flex justify-between items-center transition-colors">
+                        <span class="font-medium text-sm">${ex}</span>
+                        ${pr ? `<span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
+                    </div>`;
+                }).join('');
+                dropdown.innerHTML = html;
+                dropdown.classList.remove('hidden');
+            } else if (query.length === 0) {
+                showExerciseDropdown(id);
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        function selectExerciseFromDropdown(id, exerciseName) {
+            const input = document.getElementById(`ex-name-${id}`);
+            const dropdown = document.getElementById(`dropdown-${id}`);
+            
+            if (input) {
+                input.value = exerciseName;
+            }
+            
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+            
+            // Get updated PR and refresh the set inputs
+            const pr = getPersonalRecord(exerciseName);
+            if (pr) {
+                showToast(`PR: ${pr}kg`);
+                // Update existing sets with new PR
+                const container = document.getElementById(`sets-${id}`);
+                if (container) {
+                    const setRows = container.querySelectorAll('.flex.gap-2');
+                    setRows.forEach(row => {
+                        const weightDiv = row.querySelector('.relative');
+                        if (weightDiv) {
+                            // Remove old PB badge
+                            const oldBadge = weightDiv.querySelector('.absolute');
+                            if (oldBadge) oldBadge.remove();
+                            
+                            // Add new PB badge
+                            const pbBadge = document.createElement('span');
+                            pbBadge.className = "absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap";
+                            pbBadge.textContent = `PB: ${pr}kg`;
+                            weightDiv.appendChild(pbBadge);
+                        }
+                    });
+                }
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.matches('[id^="ex-name-"]') && !e.target.closest('[id^="dropdown-"]')) {
+                document.querySelectorAll('[id^="dropdown-"]').forEach(d => {
+                    d.classList.add('hidden');
+                });
+            }
+        });
 
         function addSetToExercise(exerciseId, pr) {
             const container = document.getElementById(`sets-${exerciseId}`);
@@ -2174,3 +2286,4 @@
     </script>
 </body>
 </html>
+
