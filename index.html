@@ -715,18 +715,36 @@
 
     <!-- FOOD ITEM POPUP -->
     <div id="food-popup" class="modal-overlay">
-        <div class="bg-white w-full max-w-lg rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <!-- FOOD IMAGE -->
             <div class="flex flex-col items-center mb-6">
-                <div class="w-24 h-24 bg-slate-50 rounded-2xl overflow-hidden mb-4 p-2">
-                    <img id="popup-image" src="" class="w-full h-full object-contain" alt="">
+                <div class="w-32 h-32 sm:w-40 sm:h-40 bg-slate-50 rounded-3xl overflow-hidden mb-4 p-3 shadow-lg border-2 border-slate-100">
+                    <img id="popup-image" src="" class="w-full h-full object-contain" alt="Food image">
                 </div>
-                <h2 id="popup-name" class="text-xl font-black text-center leading-tight mb-1">Product</h2>
-                <p id="popup-nutrition" class="text-sm text-slate-500"></p>
+                <h2 id="popup-name" class="text-xl sm:text-2xl font-black text-center leading-tight mb-2">Product</h2>
             </div>
 
+            <!-- CALORIES & PROTEIN -->
+            <div class="bg-gradient-to-r from-indigo-50 to-blue-50 p-5 rounded-3xl mb-6 shadow-sm">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <p class="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-wide">Calories</p>
+                        <p id="popup-nutrition-cals" class="font-black text-3xl text-indigo-600">0</p>
+                        <p class="text-xs text-slate-400 mt-1">kcal</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-wide">Protein</p>
+                        <p id="popup-nutrition-protein" class="font-black text-3xl text-blue-600">0</p>
+                        <p class="text-xs text-slate-400 mt-1">grams</p>
+                    </div>
+                </div>
+                <p id="popup-nutrition" class="text-xs text-center text-slate-500 mt-3"></p>
+            </div>
+
+            <!-- MEAL TYPE -->
             <div class="mb-4">
-                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Meal Type</label>
-                <select id="popup-meal-type" class="w-full p-3 bg-slate-50 rounded-2xl font-bold outline-none">
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Meal Type</label>
+                <select id="popup-meal-type" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-base">
                     <option value="breakfast">Breakfast</option>
                     <option value="lunch">Lunch</option>
                     <option value="dinner">Dinner</option>
@@ -734,29 +752,39 @@
                 </select>
             </div>
 
-            <div class="flex bg-slate-100 p-1 rounded-2xl mb-4">
-                <button onclick="setAmountType('portion')" id="amount-type-portion" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase bg-white shadow text-emerald-600">Portion</button>
-                <button onclick="setAmountType('grams')" id="amount-type-grams" class="flex-1 py-3 rounded-xl text-[10px] font-black uppercase text-slate-400">Grams</button>
-            </div>
-
-            <div class="mb-6">
-                <input id="popup-amount" type="number" value="1" class="w-full bg-slate-50 border-4 border-slate-100 rounded-[24px] py-6 text-4xl font-black text-center outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-around">
-                <div class="text-center">
-                    <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Total Kcal</p>
-                    <p id="popup-total-kcal" class="font-black text-lg">0</p>
+            <!-- PORTION OR GRAMS -->
+            <div class="mb-4">
+                <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Amount</label>
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-4">
+                    <button onclick="setAmountType('portion')" id="amount-type-portion" class="flex-1 py-3 rounded-xl text-xs font-black uppercase bg-white shadow text-emerald-600">Portion</button>
+                    <button onclick="setAmountType('grams')" id="amount-type-grams" class="flex-1 py-3 rounded-xl text-xs font-black uppercase text-slate-400">Grams</button>
                 </div>
-                <div class="w-px h-8 bg-slate-200 mt-2"></div>
-                <div class="text-center">
-                    <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Total Protein</p>
-                    <p id="popup-total-protein" class="font-black text-lg text-blue-600">0g</p>
+                <input id="popup-amount" type="number" value="1" min="1" class="w-full bg-slate-50 border-4 border-slate-200 rounded-[24px] py-5 text-4xl font-black text-center outline-none focus:border-emerald-500 transition-colors">
+            </div>
+
+            <!-- TOTAL CALCULATION -->
+            <div class="bg-slate-900 text-white p-5 rounded-3xl mb-6 shadow-xl">
+                <p class="text-[10px] font-black uppercase text-slate-400 text-center mb-3">Total You're Adding</p>
+                <div class="flex justify-around items-center">
+                    <div class="text-center">
+                        <p id="popup-total-kcal" class="font-black text-3xl mb-1">0</p>
+                        <p class="text-xs text-slate-400 uppercase">Calories</p>
+                    </div>
+                    <div class="w-px h-12 bg-slate-700"></div>
+                    <div class="text-center">
+                        <p id="popup-total-protein" class="font-black text-3xl text-emerald-400 mb-1">0g</p>
+                        <p class="text-xs text-slate-400 uppercase">Protein</p>
+                    </div>
                 </div>
             </div>
 
-            <button onclick="addFoodItem()" class="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black mb-3">Add to Diary</button>
-            <button onclick="closeFoodPopup()" class="w-full py-4 text-xs font-black text-slate-300 uppercase">Close</button>
+            <!-- ADD BUTTON -->
+            <button onclick="addFoodItem()" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-5 rounded-[24px] font-black text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-3">
+                Add to Diary
+            </button>
+            <button onclick="closeFoodPopup()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase hover:text-slate-600 transition-colors">
+                Cancel
+            </button>
         </div>
     </div>
 
@@ -1686,7 +1714,9 @@
             currentFoodItem = searchResults[idx];
             document.getElementById('popup-image').src = currentFoodItem.image;
             document.getElementById('popup-name').innerText = currentFoodItem.name;
-            document.getElementById('popup-nutrition').innerText = `${currentFoodItem.calories}kcal, ${currentFoodItem.protein}g protein per ${currentFoodItem.serving}`;
+            document.getElementById('popup-nutrition').innerText = `Per ${currentFoodItem.serving}`;
+            document.getElementById('popup-nutrition-cals').innerText = currentFoodItem.calories;
+            document.getElementById('popup-nutrition-protein').innerText = currentFoodItem.protein;
             document.getElementById('popup-amount').value = 1;
             currentAmountType = 'portion';
             updateFoodPopup();
