@@ -1185,19 +1185,25 @@
                         <div class="flex-1 text-center">
                             <span class="text-[10px] font-black text-slate-400 uppercase">Reps</span>
                         </div>
+                        <div class="w-10"></div>
                     </div>`;
                 container.insertAdjacentHTML('beforeend', headerHtml);
             }
             
+            const setId = Date.now() + Math.random();
             const html = `
-                <div class="flex gap-2 items-center">
+                <div class="flex gap-2 items-center set-row" id="set-${setId}">
                     <div class="flex-1 relative">
                         <input type="number" placeholder="0" class="w-full bg-slate-50 p-3 rounded-xl text-center font-bold outline-none" step="0.5">
                         ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded">PB: ${pr}kg</span>` : ''}
                     </div>
                     <input type="number" placeholder="0" class="flex-1 bg-slate-50 p-3 rounded-xl text-center font-bold outline-none">
+                    <button onclick="document.getElementById('set-${setId}').remove()" class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
+            lucide.createIcons();
         }
 
         function saveWorkout() {
