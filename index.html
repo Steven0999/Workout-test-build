@@ -1056,8 +1056,12 @@
                         <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
                     </div>
                 </div>
-                <div class="sets-container-${id} space-y-3 mb-4 p-2 bg-white/50 rounded-xl"></div>
-                <button onclick="addSet(${id})" class="w-full py-3 bg-indigo-500 text-white text-sm font-black rounded-xl hover:bg-indigo-600 active:bg-indigo-700">+ Add Set</button>
+                <div class="sets-container-${id} space-y-3 mb-4 p-4 bg-yellow-100 rounded-xl border-4 border-red-500" style="min-height: 200px;">
+                    <div class="text-center p-4 bg-red-200 text-red-900 font-black text-xl">
+                        SETS APPEAR HERE - If you see this, the container is working!
+                    </div>
+                </div>
+                <button onclick="addSet(${id}); alert('Add Set clicked for exercise ' + ${id});" class="w-full py-4 bg-green-500 text-white text-lg font-black rounded-xl hover:bg-green-600 active:bg-green-700 border-4 border-green-700">CLICK HERE TO ADD SET</button>
             `;
             document.getElementById('exercise-list').appendChild(div);
             
@@ -1171,6 +1175,7 @@
 
         function addSet(exerciseId) {
             const container = document.querySelector(`.sets-container-${exerciseId}`);
+            
             if (!container) {
                 console.error('Container not found for exercise:', exerciseId);
                 return;
@@ -1196,12 +1201,11 @@
             }
             
             const setId = Date.now() + Math.random();
-            const setNumber = container.querySelectorAll('.set-row').length + 1;
             const html = `
-                <div class="flex gap-2 items-center set-row bg-white p-2 rounded-lg border border-slate-100" id="set-${setId}">
-                    <input type="number" placeholder="Enter reps" class="flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" min="0">
+                <div class="flex gap-2 items-center set-row bg-white p-2 rounded-lg border border-slate-100 mb-2" id="set-${setId}">
+                    <input type="number" placeholder="Reps" class="flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" min="0">
                     <div class="flex-1 relative">
-                        <input type="number" placeholder="Enter weight" class="w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" step="0.5" min="0">
+                        <input type="number" placeholder="Weight" class="w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" step="0.5" min="0">
                         ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-2 py-1 rounded-md shadow-sm">PB: ${pr}kg</span>` : ''}
                     </div>
                     <button onclick="document.getElementById('set-${setId}').remove()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remove set">
