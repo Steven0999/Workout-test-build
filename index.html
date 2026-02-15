@@ -228,6 +228,17 @@
                     </select>
                 </div>
 
+                <div class="bg-slate-50 p-4 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase text-slate-600">Add Cardio</span>
+                        <input type="checkbox" id="add-cardio-check" class="w-5 h-5 accent-indigo-600">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase text-slate-600">Add Core</span>
+                        <input type="checkbox" id="add-core-check" class="w-5 h-5 accent-indigo-600">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 mt-6">
                     <button onclick="startWorkout('manual')" class="p-5 bg-slate-900 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-slate-800 active:bg-slate-700">Manual Entry</button>
                     <button onclick="startWorkout('ai')" class="p-5 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-indigo-700 active:bg-indigo-800">AI Generate</button>
@@ -752,6 +763,27 @@
             }
         };
 
+        // All exercises list for dropdown
+        const ALL_EXERCISES = [
+            'Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press',
+            'Dumbbell Press', 'Incline Press', 'Dips', 'Barbell Row', 'Lat Pulldown',
+            'T-Bar Row', 'Romanian Deadlift', 'Leg Press', 'Lunges', 'Good Morning',
+            'Hip Thrust', 'Bulgarian Split Squat', 'Arnold Press', 'Close Grip Bench Press',
+            'Chin Ups', 'Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl',
+            'Calf Raise', 'Face Pulls', 'Cable Flyes', 'Leg Extension', 'Hip Abduction',
+            'Glute Kickback', 'Cable Row', 'Hammer Curl', 'Skull Crushers', 'Pec Deck',
+            'Dumbbell Flyes', 'Front Raise', 'Reverse Flyes', 'Preacher Curl', 'Cable Curl',
+            'Overhead Extension', 'Sissy Squat', 'Nordic Curl', 'Cable Kickback', 'Glute Bridge',
+            'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Straight Arm Pulldown',
+            'Push Ups', 'Bodyweight Squat', 'Burpees', 'Pike Push Ups', 'Inverted Row',
+            'Step Ups', 'Donkey Kicks', 'Diamond Push Ups', 'Shoulder Taps', 'Superman',
+            'Reverse Snow Angels', 'Bicep Holds', 'Jump Squat', 'Plank', 'Crunches',
+            'Leg Raises', 'Tricep Dips', 'Plank to Push Up'
+        ].sort();
+
+        const CARDIO_EXERCISES = ['Treadmill', 'Rowing Machine', 'Stationary Bike', 'Elliptical', 'Stair Climber'];
+        const CORE_EXERCISES = ['Plank', 'Crunches', 'Russian Twists', 'Leg Raises', 'Mountain Climbers', 'Dead Bug'];
+
         let state = {
             viewDate: new Date().toISOString().split('T')[0],
             goals: { calories: 2500, water: 2500, steps: 10000 },
@@ -951,6 +983,9 @@
 
             if (mode === 'ai') {
                 const exercises = EXERCISE_DB[state.workoutEnv][muscle];
+                const addCardio = document.getElementById('add-cardio-check').checked;
+                const addCore = document.getElementById('add-core-check').checked;
+                
                 if (exercises) {
                     // Get 2 compound exercises
                     const compounds = exercises.compound || [];
@@ -960,10 +995,24 @@
                     const isolations = exercises.isolation || [];
                     const selectedIsolations = isolations.sort(() => 0.5 - Math.random()).slice(0, 3);
                     
-                    // Add exercises in order: compounds first, then isolations
+                    // Add weight training exercises (compounds first, then isolations)
                     [...selectedCompounds, ...selectedIsolations].forEach(ex => {
                         addExercise(ex);
                     });
+                    
+                    // Add cardio after weight training if selected
+                    if (addCardio) {
+                        const cardio = CARDIO_EXERCISES[Math.floor(Math.random() * CARDIO_EXERCISES.length)];
+                        addExercise(cardio);
+                    }
+                    
+                    // Add core at the end if selected
+                    if (addCore) {
+                        const core1 = CORE_EXERCISES[Math.floor(Math.random() * CORE_EXERCISES.length)];
+                        const core2 = CORE_EXERCISES.filter(c => c !== core1)[Math.floor(Math.random() * (CORE_EXERCISES.length - 1))];
+                        addExercise(core1);
+                        addExercise(core2);
+                    }
                     
                     showToast('AI workout: 2 compound + 3 isolation exercises');
                 } else {
@@ -985,18 +1034,108 @@
 
         function addExercise(name = '') {
             const id = Date.now() + Math.random();
-            const html = `
-                <div class="glass-card p-4 rounded-2xl">
-                    <div class="flex justify-between mb-3">
-                        <input type="text" value="${name}" placeholder="Exercise name" class="bg-transparent font-bold flex-1 outline-none">
-                        <button onclick="this.parentElement.parentElement.remove()" class="text-slate-300 ml-2">×</button>
+            const pr = name ? getPersonalRecord(name) : null;
+            const div = document.createElement('div');
+            div.className = "glass-card p-4 rounded-2xl mb-4";
+            div.innerHTML = `
+                <div class="mb-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex-1 relative">
+                            <input type="text" id="exercise-search-${id}" value="${name}" placeholder="Search or type exercise..." 
+                                class="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none pr-20" 
+                                onfocus="showExerciseDropdown(${id})" 
+                                oninput="filterExercises(${id}, this.value)">
+                            ${pr ? `<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
+                            <div id="dropdown-${id}" class="hidden absolute z-20 mt-1 w-full bg-white rounded-xl shadow-xl border max-h-60 overflow-y-auto"></div>
+                        </div>
+                        <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
                     </div>
-                    <div class="sets-container-${id} space-y-2 mb-2"></div>
-                    <button onclick="addSet(${id})" class="w-full py-2 bg-slate-50 text-xs font-black text-slate-400 rounded-xl">+ Set</button>
-                </div>`;
-            document.getElementById('exercise-list').insertAdjacentHTML('beforeend', html);
+                </div>
+                <div class="sets-container-${id} space-y-2 mb-2"></div>
+                <button onclick="addSet(${id})" class="w-full py-3 bg-slate-50 text-xs font-black text-slate-400 rounded-xl hover:bg-slate-100">+ Add Set</button>
+            `;
+            document.getElementById('exercise-list').appendChild(div);
             addSet(id);
+            lucide.createIcons();
         }
+
+        function showExerciseDropdown(id) {
+            const dropdown = document.getElementById(`dropdown-${id}`);
+            const html = ALL_EXERCISES.map(ex => {
+                const pr = getPersonalRecord(ex);
+                return `<div onclick="selectExercise(${id}, '${ex}')" class="p-3 hover:bg-slate-50 cursor-pointer border-b last:border-0 flex justify-between items-center">
+                    <span class="font-medium text-sm">${ex}</span>
+                    ${pr ? `<span class="text-xs font-black text-emerald-600">PR: ${pr}kg</span>` : ''}
+                </div>`;
+            }).join('');
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        }
+
+        function filterExercises(id, query) {
+            const dropdown = document.getElementById(`dropdown-${id}`);
+            const filtered = ALL_EXERCISES.filter(ex => ex.toLowerCase().includes(query.toLowerCase()));
+            
+            if (filtered.length === 0 && query.length > 0) {
+                dropdown.innerHTML = '<div class="p-3 text-slate-400 text-sm italic">No exercises found - keep typing to add custom</div>';
+            } else if (filtered.length > 0) {
+                const html = filtered.map(ex => {
+                    const pr = getPersonalRecord(ex);
+                    return `<div onclick="selectExercise(${id}, '${ex}')" class="p-3 hover:bg-slate-50 cursor-pointer border-b last:border-0 flex justify-between items-center">
+                        <span class="font-medium text-sm">${ex}</span>
+                        ${pr ? `<span class="text-xs font-black text-emerald-600">PR: ${pr}kg</span>` : ''}
+                    </div>`;
+                }).join('');
+                dropdown.innerHTML = html;
+            }
+            
+            if (query.length > 0) {
+                dropdown.classList.remove('hidden');
+            }
+        }
+
+        function selectExercise(id, exerciseName) {
+            const input = document.getElementById(`exercise-search-${id}`);
+            const oldName = input.value;
+            input.value = exerciseName;
+            document.getElementById(`dropdown-${id}`).classList.add('hidden');
+            
+            // Update PR display
+            const pr = getPersonalRecord(exerciseName);
+            const parent = input.parentElement;
+            const existingPR = parent.querySelector('.absolute.right-3');
+            if (existingPR) existingPR.remove();
+            
+            if (pr) {
+                const prBadge = document.createElement('span');
+                prBadge.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded';
+                prBadge.textContent = `PR: ${pr}kg`;
+                parent.appendChild(prBadge);
+                showToast(`Personal Record: ${pr}kg`);
+            }
+        }
+
+        function getPersonalRecord(exerciseName) {
+            let maxWeight = 0;
+            state.workoutHistory.forEach(workout => {
+                workout.exercises.forEach(ex => {
+                    if (ex.name === exerciseName) {
+                        ex.sets.forEach(set => {
+                            const weight = parseFloat(set.kg) || 0;
+                            if (weight > maxWeight) maxWeight = weight;
+                        });
+                    }
+                });
+            });
+            return maxWeight > 0 ? maxWeight : null;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.matches('[id^="exercise-search-"]')) {
+                document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.classList.add('hidden'));
+            }
+        });
 
         function addSet(exerciseId) {
             const container = document.querySelector(`.sets-container-${exerciseId}`);
@@ -1013,7 +1152,8 @@
             
             const exercises = [];
             document.querySelectorAll('#exercise-list .glass-card').forEach(card => {
-                const name = card.querySelector('input[type="text"]').value;
+                const nameInput = card.querySelector('[id^="exercise-search-"]');
+                const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) return;
                 
                 const sets = [];
@@ -1029,7 +1169,7 @@
             });
 
             if (exercises.length === 0) {
-                showToast('Add at least one exercise');
+                showToast('Add at least one exercise with sets');
                 return;
             }
 
