@@ -803,7 +803,7 @@
 
             <!-- CALORIES & PROTEIN -->
             <div class="bg-gradient-to-r from-indigo-50 to-blue-50 p-5 rounded-3xl mb-6 shadow-sm">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
                     <div class="text-center">
                         <p class="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-wide">Calories</p>
                         <p id="popup-nutrition-cals" class="font-black text-3xl text-indigo-600">0</p>
@@ -815,6 +815,49 @@
                         <p class="text-xs text-slate-400 mt-1">grams</p>
                     </div>
                 </div>
+                
+                <!-- ADDITIONAL MACROS -->
+                <div class="grid grid-cols-3 gap-3 pt-3 border-t border-indigo-200">
+                    <div class="text-center">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase">Carbs</p>
+                        <p id="popup-nutrition-carbs" class="font-bold text-sm text-indigo-600">0g</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase">Fat</p>
+                        <p id="popup-nutrition-fat" class="font-bold text-sm text-indigo-600">0g</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase">Fiber</p>
+                        <p id="popup-nutrition-fiber" class="font-bold text-sm text-indigo-600">0g</p>
+                    </div>
+                </div>
+                
+                <!-- DETAILED NUTRITION (Collapsible) -->
+                <div id="detailed-nutrition" class="hidden mt-3 pt-3 border-t border-indigo-200">
+                    <div class="grid grid-cols-4 gap-2 text-xs">
+                        <div class="text-center">
+                            <p class="text-[8px] text-slate-400 uppercase">Sugar</p>
+                            <p id="popup-nutrition-sugar" class="font-bold text-indigo-600">0g</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[8px] text-slate-400 uppercase">Sat Fat</p>
+                            <p id="popup-nutrition-satfat" class="font-bold text-indigo-600">0g</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[8px] text-slate-400 uppercase">Sodium</p>
+                            <p id="popup-nutrition-sodium" class="font-bold text-indigo-600">0g</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[8px] text-slate-400 uppercase">Cholest</p>
+                            <p id="popup-nutrition-cholesterol" class="font-bold text-indigo-600">0mg</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="toggleDetailedNutrition()" class="w-full mt-2 text-[10px] font-bold text-indigo-600 hover:text-indigo-700">
+                    <span id="toggle-text">Show More ▼</span>
+                </button>
+                
                 <p id="popup-nutrition" class="text-xs text-center text-slate-500 mt-3"></p>
             </div>
 
@@ -1858,62 +1901,237 @@
                 const storeValue = document.getElementById('store-select').value;
                 const selectedStore = UK_STORES_RESTAURANTS.find(s => s.value === storeValue);
                 
-                let url = '';
                 let searchResults_temp = [];
+                const isFastFood = selectedStore && selectedStore.type === 'fastfood';
                 
                 if (storeValue && storeValue !== 'all' && selectedStore) {
-                    // Store/Restaurant specific search
                     const storeName = selectedStore.name;
-                    
-                    // Search with both the query AND the store/brand name
                     const combinedQuery = `${query} ${storeName}`;
-                    url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(combinedQuery)}&search_simple=1&json=1&page_size=50&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
                     
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
-                    // Map all results
-                    searchResults_temp = (data.products || []).map(p => ({
-                        name: p.product_name || 'Unknown',
-                        image: p.image_small_url || 'https://via.placeholder.com/100',
-                        calories: Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
-                        protein: (p.nutriments?.proteins_100g || 0).toFixed(1),
-                        serving: p.serving_size || '100g',
-                        brand: p.brands || '',
-                        categories: p.categories || ''
-                    }));
-                    
-                    // Filter to only show items from the selected store/restaurant
-                    const storeNameLower = storeName.toLowerCase();
-                    searchResults_temp = searchResults_temp.filter(item => {
-                        const brandLower = (item.brand || '').toLowerCase();
-                        const nameLower = (item.name || '').toLowerCase();
-                        const categoriesLower = (item.categories || '').toLowerCase();
+                    // 1. OpenFoodFacts - Best for UK supermarket products
+                    try {
+                        const offUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(combinedQuery)}&search_simple=1&json=1&page_size=50&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
+                        const offResponse = await fetch(offUrl);
+                        const offData = await offResponse.json();
                         
-                        return brandLower.includes(storeNameLower) || 
-                               nameLower.includes(storeNameLower) ||
-                               categoriesLower.includes(storeNameLower);
-                    });
+                        const offResults = (offData.products || []).map(p => ({
+                            name: p.product_name || 'Unknown',
+                            image: p.image_small_url || 'https://via.placeholder.com/100',
+                            calories: Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
+                            protein: parseFloat(p.nutriments?.proteins_100g || 0).toFixed(1),
+                            carbs: parseFloat(p.nutriments?.carbohydrates_100g || 0).toFixed(1),
+                            fat: parseFloat(p.nutriments?.fat_100g || 0).toFixed(1),
+                            fiber: parseFloat(p.nutriments?.fiber_100g || 0).toFixed(1),
+                            sugar: parseFloat(p.nutriments?.sugars_100g || 0).toFixed(1),
+                            sodium: parseFloat(p.nutriments?.sodium_100g || 0).toFixed(3),
+                            saturated_fat: parseFloat(p.nutriments?.['saturated-fat_100g'] || 0).toFixed(1),
+                            cholesterol: parseFloat(p.nutriments?.cholesterol_100g || 0).toFixed(1),
+                            serving: p.serving_size || '100g',
+                            brand: p.brands || '',
+                            categories: p.categories || '',
+                            source: 'OpenFoodFacts'
+                        }));
+                        
+                        const storeNameLower = storeName.toLowerCase();
+                        searchResults_temp = offResults.filter(item => {
+                            const brandLower = (item.brand || '').toLowerCase();
+                            const nameLower = (item.name || '').toLowerCase();
+                            const categoriesLower = (item.categories || '').toLowerCase();
+                            
+                            return brandLower.includes(storeNameLower) || 
+                                   nameLower.includes(storeNameLower) ||
+                                   categoriesLower.includes(storeNameLower);
+                        });
+                    } catch (error) {
+                        console.error('OpenFoodFacts error:', error);
+                    }
+                    
+                    // 2. USDA FoodData Central - Excellent for fast food chains
+                    if ((searchResults_temp.length < 10 && isFastFood) || searchResults_temp.length === 0) {
+                        try {
+                            const usdaUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(combinedQuery)}&dataType=Branded,Survey%20(FNDDS)&pageSize=50&api_key=DEMO_KEY`;
+                            const usdaResponse = await fetch(usdaUrl);
+                            const usdaData = await usdaResponse.json();
+                            
+                            const usdaResults = (usdaData.foods || [])
+                                .filter(f => {
+                                    const desc = (f.description || '').toLowerCase();
+                                    const brand = (f.brandName || '').toLowerCase();
+                                    const storeNameLower = storeName.toLowerCase();
+                                    return desc.includes(storeNameLower) || brand.includes(storeNameLower);
+                                })
+                                .map(f => {
+                                    const nutrients = f.foodNutrients || [];
+                                    const getNutrient = (names) => {
+                                        for (let name of names) {
+                                            const nutrient = nutrients.find(n => 
+                                                n.nutrientName?.toLowerCase().includes(name.toLowerCase())
+                                            );
+                                            if (nutrient) return parseFloat(nutrient.value || 0);
+                                        }
+                                        return 0;
+                                    };
+                                    
+                                    return {
+                                        name: f.description || 'Unknown',
+                                        image: 'https://via.placeholder.com/100',
+                                        calories: Math.round(getNutrient(['energy', 'calories'])),
+                                        protein: getNutrient(['protein']).toFixed(1),
+                                        carbs: getNutrient(['carbohydrate', 'carbs']).toFixed(1),
+                                        fat: getNutrient(['total lipid', 'total fat']).toFixed(1),
+                                        fiber: getNutrient(['fiber', 'dietary fiber']).toFixed(1),
+                                        sugar: getNutrient(['sugars', 'total sugars']).toFixed(1),
+                                        sodium: (getNutrient(['sodium']) / 1000).toFixed(3),
+                                        saturated_fat: getNutrient(['saturated', 'fatty acids, total saturated']).toFixed(1),
+                                        cholesterol: getNutrient(['cholesterol']).toFixed(1),
+                                        serving: f.servingSize ? `${f.servingSize}${f.servingSizeUnit || 'g'}` : '100g',
+                                        brand: f.brandName || f.brandOwner || storeName,
+                                        categories: f.foodCategory || '',
+                                        source: 'USDA'
+                                    };
+                                });
+                            
+                            searchResults_temp = [...searchResults_temp, ...usdaResults];
+                        } catch (error) {
+                            console.error('USDA error:', error);
+                        }
+                    }
+                    
+                    // 3. Nutritionix API (public endpoint) - Great for restaurant/fast food data
+                    if (searchResults_temp.length < 10 && isFastFood) {
+                        try {
+                            // Using Nutritionix's common foods endpoint (public access)
+                            const nutritionixUrl = `https://trackapi.nutritionix.com/v2/search/instant?query=${encodeURIComponent(combinedQuery)}`;
+                            const nutritionixResponse = await fetch(nutritionixUrl, {
+                                headers: {
+                                    'x-app-id': '0', // Public demo access
+                                    'x-app-key': 'demo'
+                                }
+                            });
+                            
+                            if (nutritionixResponse.ok) {
+                                const nutritionixData = await nutritionixResponse.json();
+                                const branded = nutritionixData.branded || [];
+                                
+                                const nutritionixResults = branded
+                                    .filter(item => {
+                                        const brandName = (item.brand_name || '').toLowerCase();
+                                        const foodName = (item.food_name || '').toLowerCase();
+                                        const storeNameLower = storeName.toLowerCase();
+                                        return brandName.includes(storeNameLower) || foodName.includes(storeNameLower);
+                                    })
+                                    .slice(0, 10)
+                                    .map(item => ({
+                                        name: item.food_name || 'Unknown',
+                                        image: item.photo?.thumb || 'https://via.placeholder.com/100',
+                                        calories: Math.round(item.nf_calories || 0),
+                                        protein: parseFloat(item.nf_protein || 0).toFixed(1),
+                                        carbs: parseFloat(item.nf_total_carbohydrate || 0).toFixed(1),
+                                        fat: parseFloat(item.nf_total_fat || 0).toFixed(1),
+                                        fiber: parseFloat(item.nf_dietary_fiber || 0).toFixed(1),
+                                        sugar: parseFloat(item.nf_sugars || 0).toFixed(1),
+                                        sodium: (parseFloat(item.nf_sodium || 0) / 1000).toFixed(3),
+                                        saturated_fat: parseFloat(item.nf_saturated_fat || 0).toFixed(1),
+                                        cholesterol: parseFloat(item.nf_cholesterol || 0).toFixed(1),
+                                        serving: item.serving_qty ? `${item.serving_qty} ${item.serving_unit}` : '100g',
+                                        brand: item.brand_name || storeName,
+                                        categories: item.brand_type || '',
+                                        source: 'Nutritionix'
+                                    }));
+                                
+                                searchResults_temp = [...searchResults_temp, ...nutritionixResults];
+                            }
+                        } catch (error) {
+                            console.error('Nutritionix error:', error);
+                        }
+                    }
                     
                 } else {
-                    // General search (all stores)
-                    url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&page_size=20&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
+                    // General search - use OpenFoodFacts and USDA
                     
-                    const response = await fetch(url);
-                    const data = await response.json();
+                    // OpenFoodFacts
+                    try {
+                        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&page_size=20&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        searchResults_temp = (data.products || []).map(p => ({
+                            name: p.product_name || 'Unknown',
+                            image: p.image_small_url || 'https://via.placeholder.com/100',
+                            calories: Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
+                            protein: parseFloat(p.nutriments?.proteins_100g || 0).toFixed(1),
+                            carbs: parseFloat(p.nutriments?.carbohydrates_100g || 0).toFixed(1),
+                            fat: parseFloat(p.nutriments?.fat_100g || 0).toFixed(1),
+                            fiber: parseFloat(p.nutriments?.fiber_100g || 0).toFixed(1),
+                            sugar: parseFloat(p.nutriments?.sugars_100g || 0).toFixed(1),
+                            sodium: parseFloat(p.nutriments?.sodium_100g || 0).toFixed(3),
+                            saturated_fat: parseFloat(p.nutriments?.['saturated-fat_100g'] || 0).toFixed(1),
+                            cholesterol: parseFloat(p.nutriments?.cholesterol_100g || 0).toFixed(1),
+                            serving: p.serving_size || '100g',
+                            brand: p.brands || '',
+                            categories: p.categories || '',
+                            source: 'OpenFoodFacts'
+                        }));
+                    } catch (error) {
+                        console.error('OpenFoodFacts general search error:', error);
+                    }
                     
-                    searchResults_temp = (data.products || []).map(p => ({
-                        name: p.product_name || 'Unknown',
-                        image: p.image_small_url || 'https://via.placeholder.com/100',
-                        calories: Math.round(p.nutriments?.['energy-kcal_100g'] || 0),
-                        protein: (p.nutriments?.proteins_100g || 0).toFixed(1),
-                        serving: p.serving_size || '100g',
-                        brand: p.brands || '',
-                        categories: p.categories || ''
-                    }));
+                    // Add USDA results
+                    try {
+                        const usdaUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=10&api_key=DEMO_KEY`;
+                        const usdaResponse = await fetch(usdaUrl);
+                        const usdaData = await usdaResponse.json();
+                        
+                        const usdaResults = (usdaData.foods || []).slice(0, 10).map(f => {
+                            const nutrients = f.foodNutrients || [];
+                            const getNutrient = (names) => {
+                                for (let name of names) {
+                                    const nutrient = nutrients.find(n => 
+                                        n.nutrientName?.toLowerCase().includes(name.toLowerCase())
+                                    );
+                                    if (nutrient) return parseFloat(nutrient.value || 0);
+                                }
+                                return 0;
+                            };
+                            
+                            return {
+                                name: f.description || 'Unknown',
+                                image: 'https://via.placeholder.com/100',
+                                calories: Math.round(getNutrient(['energy', 'calories'])),
+                                protein: getNutrient(['protein']).toFixed(1),
+                                carbs: getNutrient(['carbohydrate']).toFixed(1),
+                                fat: getNutrient(['total lipid', 'total fat']).toFixed(1),
+                                fiber: getNutrient(['fiber']).toFixed(1),
+                                sugar: getNutrient(['sugars']).toFixed(1),
+                                sodium: (getNutrient(['sodium']) / 1000).toFixed(3),
+                                saturated_fat: getNutrient(['saturated']).toFixed(1),
+                                cholesterol: getNutrient(['cholesterol']).toFixed(1),
+                                serving: '100g',
+                                brand: f.brandName || '',
+                                categories: f.foodCategory || '',
+                                source: 'USDA'
+                            };
+                        });
+                        
+                        searchResults_temp = [...searchResults_temp, ...usdaResults];
+                    } catch (error) {
+                        console.error('USDA general error:', error);
+                    }
                 }
                 
-                searchResults = searchResults_temp;
+                // Remove duplicates based on name similarity
+                const uniqueResults = [];
+                const seenNames = new Set();
+                
+                for (const item of searchResults_temp) {
+                    const normalizedName = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (!seenNames.has(normalizedName)) {
+                        seenNames.add(normalizedName);
+                        uniqueResults.push(item);
+                    }
+                }
+                
+                searchResults = uniqueResults;
                 renderSearchResults();
                 
             } catch (error) {
@@ -1965,9 +2183,12 @@
                 <div onclick="openFoodPopup(${idx})" class="bg-white p-4 rounded-[28px] border flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all">
                     <img src="${item.image}" class="w-14 h-14 object-contain bg-slate-50 rounded-xl p-1" onerror="this.src='https://via.placeholder.com/100'">
                     <div class="flex-1">
-                        <p class="font-bold text-sm">${item.name}</p>
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="font-bold text-sm">${item.name}</p>
+                            ${item.source ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded ${item.source === 'USDA' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${item.source}</span>` : ''}
+                        </div>
                         ${item.brand ? `<p class="text-[10px] text-indigo-600 font-semibold mb-1">${item.brand}</p>` : ''}
-                        <p class="text-xs text-slate-400">${item.calories}kcal • ${item.protein}g protein per ${item.serving}</p>
+                        <p class="text-xs text-slate-400">${item.calories}kcal • ${item.protein}g protein${item.carbs ? ` • ${item.carbs}g carbs` : ''} • ${item.serving}</p>
                     </div>
                     <i data-lucide="plus" class="text-emerald-600"></i>
                 </div>
@@ -1993,14 +2214,46 @@
             currentFoodItem = searchResults[idx];
             document.getElementById('popup-image').src = currentFoodItem.image;
             document.getElementById('popup-name').innerText = currentFoodItem.name;
-            document.getElementById('popup-nutrition').innerText = `Per ${currentFoodItem.serving}`;
+            document.getElementById('popup-nutrition').innerText = `Per ${currentFoodItem.serving}${currentFoodItem.source ? ' • ' + currentFoodItem.source : ''}`;
+            
+            // Main macros
             document.getElementById('popup-nutrition-cals').innerText = currentFoodItem.calories;
             document.getElementById('popup-nutrition-protein').innerText = currentFoodItem.protein;
+            
+            // Additional macros
+            document.getElementById('popup-nutrition-carbs').innerText = (currentFoodItem.carbs || 0) + 'g';
+            document.getElementById('popup-nutrition-fat').innerText = (currentFoodItem.fat || 0) + 'g';
+            document.getElementById('popup-nutrition-fiber').innerText = (currentFoodItem.fiber || 0) + 'g';
+            
+            // Detailed nutrition
+            document.getElementById('popup-nutrition-sugar').innerText = (currentFoodItem.sugar || 0) + 'g';
+            document.getElementById('popup-nutrition-satfat').innerText = (currentFoodItem.saturated_fat || 0) + 'g';
+            document.getElementById('popup-nutrition-sodium').innerText = (currentFoodItem.sodium || 0) + 'g';
+            document.getElementById('popup-nutrition-cholesterol').innerText = Math.round(currentFoodItem.cholesterol || 0) + 'mg';
+            
+            // Reset detailed view
+            document.getElementById('detailed-nutrition').classList.add('hidden');
+            document.getElementById('toggle-text').innerText = 'Show More ▼';
+            
             document.getElementById('popup-amount').value = 1;
             currentAmountType = 'portion';
             updateFoodPopup();
             document.getElementById('food-popup').style.display = 'flex';
             lucide.createIcons();
+        }
+
+        function toggleDetailedNutrition() {
+            const detailedDiv = document.getElementById('detailed-nutrition');
+            const toggleText = document.getElementById('toggle-text');
+            const isHidden = detailedDiv.classList.contains('hidden');
+            
+            if (isHidden) {
+                detailedDiv.classList.remove('hidden');
+                toggleText.innerText = 'Show Less ▲';
+            } else {
+                detailedDiv.classList.add('hidden');
+                toggleText.innerText = 'Show More ▼';
+            }
         }
 
         function closeFoodPopup() {
@@ -2043,7 +2296,15 @@
                 amount: currentAmountType === 'portion' ? `${amount} portion(s)` : `${amount}g`,
                 calories: Math.round(currentFoodItem.calories * multiplier),
                 protein: parseFloat((currentFoodItem.protein * multiplier).toFixed(1)),
-                mealType
+                carbs: parseFloat(((currentFoodItem.carbs || 0) * multiplier).toFixed(1)),
+                fat: parseFloat(((currentFoodItem.fat || 0) * multiplier).toFixed(1)),
+                fiber: parseFloat(((currentFoodItem.fiber || 0) * multiplier).toFixed(1)),
+                sugar: parseFloat(((currentFoodItem.sugar || 0) * multiplier).toFixed(1)),
+                sodium: parseFloat(((currentFoodItem.sodium || 0) * multiplier).toFixed(3)),
+                saturated_fat: parseFloat(((currentFoodItem.saturated_fat || 0) * multiplier).toFixed(1)),
+                cholesterol: parseFloat(((currentFoodItem.cholesterol || 0) * multiplier).toFixed(1)),
+                mealType,
+                source: currentFoodItem.source || 'Manual'
             });
 
             saveState();
@@ -2855,3 +3116,4 @@
     </script>
 </body>
 </html>
+
