@@ -120,13 +120,253 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* ============================================ */
+        /* MOBILE RESPONSIVE IMPROVEMENTS */
+        /* ============================================ */
+        
+        /* Ensure proper spacing on all screens */
+        * {
+            box-sizing: border-box;
+        }
+
+        main {
+            width: 100%;
+            max-width: 42rem;
+        }
+
+        /* Better mobile padding and spacing */
+        @media (max-width: 640px) {
+            main {
+                padding: 0.75rem !important;
+            }
+            
+            .space-y-6 > * + * {
+                margin-top: 1rem !important;
+            }
+
+            .glass-card {
+                padding: 1rem !important;
+            }
+
+            .rounded-\[2\.5rem\], .rounded-\[3rem\], .rounded-\[32px\], .rounded-\[40px\] {
+                border-radius: 1.5rem !important;
+            }
+        }
+
+        /* Responsive grid spacing */
+        .grid {
+            display: grid;
+            width: 100%;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+            .grid-cols-2, .grid-cols-3 {
+                gap: 0.5rem;
+            }
+        }
+
+        /* Exercise cards - full width and proper spacing */
+        #exercise-list > div {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* Set rows - responsive and equal spacing */
+        .flex.gap-2 {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .flex.gap-2 {
+                gap: 0.375rem;
+            }
+        }
+
+        /* Ensure flex items take equal space */
+        .flex-1 {
+            flex: 1 1 0%;
+            min-width: 0;
+        }
+
+        /* Input fields responsive */
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            touch-action: manipulation;
+        }
+
+        /* Better touch targets on touch devices */
+        @media (hover: none) {
+            button {
+                min-height: 48px !important;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            
+            .nav-item {
+                min-height: 68px !important;
+                padding: 0.875rem !important;
+            }
+
+            input, select {
+                min-height: 52px !important;
+                font-size: 16px !important;
+            }
+        }
+
+        /* Responsive typography */
+        @media (max-width: 640px) {
+            h1 { font-size: 1.125rem; }
+            h2 { font-size: 1rem; }
+            h3 { font-size: 0.9375rem; }
+            h4 { font-size: 0.875rem; }
+            
+            .text-5xl { font-size: 2.25rem !important; line-height: 1.2; }
+            .text-4xl { font-size: 1.875rem !important; line-height: 1.2; }
+            .text-3xl { font-size: 1.5rem !important; line-height: 1.3; }
+            .text-2xl { font-size: 1.25rem !important; }
+            .text-xl { font-size: 1.125rem !important; }
+            .text-lg { font-size: 1rem !important; }
+        }
+
+        /* Modal responsive */
+        .modal-overlay {
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .modal-overlay > div {
+            width: 100%;
+            max-width: 32rem;
+            margin: auto;
+        }
+
+        @media (max-width: 640px) {
+            .modal-overlay {
+                padding: 0.75rem;
+                align-items: flex-start;
+            }
+
+            .modal-overlay > div {
+                max-width: 100%;
+                border-radius: 1.5rem !important;
+                padding: 1.25rem !important;
+                margin-top: 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Bottom nav responsive */
+        nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 100px;
+        }
+
+        /* Toast responsive */
+        .toast {
+            max-width: 90%;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 640px) {
+            .toast {
+                bottom: 90px;
+                font-size: 0.8125rem;
+                padding: 0.625rem 1rem;
+            }
+        }
+
+        /* Sets container responsive */
+        #exercise-list .bg-slate-50 {
+            padding: 0.75rem;
+        }
+
+        @media (max-width: 640px) {
+            #exercise-list .bg-slate-50 {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Header responsive */
+        header {
+            padding: 1rem 1.25rem;
+        }
+
+        @media (max-width: 640px) {
+            header {
+                padding: 0.875rem 1rem;
+            }
+        }
+
+        /* Photo slots responsive */
+        .photo-slot {
+            min-height: 120px;
+        }
+
+        @media (min-width: 640px) {
+            .photo-slot {
+                min-height: 180px;
+            }
+        }
+
+        /* Better spacing for workout timer and controls */
+        @media (max-width: 640px) {
+            #workout-active .flex.justify-between {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            #workout-active .flex.justify-between > button {
+                align-self: flex-end;
+            }
+        }
+
+        /* Ensure all cards are full width */
+        .glass-card,
+        .bg-white {
+            width: 100%;
+        }
+
+        /* Better spacing in nutrition search */
+        @media (max-width: 640px) {
+            .flex.gap-2.mb-4 {
+                gap: 0.5rem;
+            }
+        }
     </style>
 </head>
-<body class="pb-28">
+<body class="pb-24 sm:pb-28">
 
     <div id="toast" class="toast"></div>
 
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 sm:px-6 py-4 sm:py-5 sticky top-0 z-40 flex justify-between items-center">
         <div>
             <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">FitTrack<span class="text-slate-600">Pro</span></h1>
             <div class="flex items-center gap-2">
@@ -139,7 +379,7 @@
         </button>
     </header>
 
-    <main class="max-w-xl mx-auto p-4 space-y-6">
+    <main class="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
         
         <!-- DASHBOARD -->
         <section id="dashboard" class="tab-content active space-y-6">
@@ -455,7 +695,7 @@
     </main>
 
     <!-- BOTTOM NAVIGATION -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-6 py-4 flex justify-between items-center z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-2 sm:px-6 py-3 sm:py-4 flex justify-between items-center z-50">
         <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex flex-col items-center gap-1.5 text-indigo-600">
             <div class="w-12 h-8 rounded-full flex items-center justify-center bg-indigo-50"><i data-lucide="layout-grid"></i></div>
         </button>
@@ -1042,41 +1282,41 @@
             const pr = name ? getPersonalRecord(name) : null;
             
             const card = document.createElement('div');
-            card.className = "bg-white p-5 rounded-2xl shadow-md border-2 border-indigo-100 mb-4";
+            card.className = "bg-white p-4 sm:p-5 rounded-2xl shadow-md border-2 border-indigo-100 mb-3 sm:mb-4 w-full";
             
             // Exercise name
             const nameInput = document.createElement('input');
             nameInput.type = "text";
             nameInput.value = name;
             nameInput.placeholder = "Exercise name";
-            nameInput.className = "w-full p-3 mb-4 border-2 border-slate-200 rounded-xl font-bold text-lg";
+            nameInput.className = "w-full p-3 sm:p-3.5 mb-3 sm:mb-4 border-2 border-slate-200 rounded-xl font-bold text-base sm:text-lg";
             nameInput.id = `ex-name-${id}`;
             
             // Sets container with header
             const setsContainer = document.createElement('div');
             setsContainer.id = `sets-${id}`;
-            setsContainer.className = "bg-slate-50 p-4 rounded-xl mb-4 min-h-[100px]";
+            setsContainer.className = "bg-slate-50 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4 min-h-[100px] w-full";
             
             const header = document.createElement('div');
-            header.className = "flex gap-2 mb-3";
+            header.className = "flex gap-2 sm:gap-3 mb-2 sm:mb-3";
             header.innerHTML = `
-                <div class="flex-1 text-center"><span class="text-xs font-black text-slate-600 uppercase">Reps</span></div>
-                <div class="flex-1 text-center"><span class="text-xs font-black text-slate-600 uppercase">Weight (kg)</span></div>
-                <div class="w-10"></div>
+                <div class="flex-1 text-center"><span class="text-xs sm:text-sm font-black text-slate-600 uppercase">Reps</span></div>
+                <div class="flex-1 text-center"><span class="text-xs sm:text-sm font-black text-slate-600 uppercase">Weight (kg)</span></div>
+                <div class="w-9 sm:w-10"></div>
             `;
             setsContainer.appendChild(header);
             
             // Add set button
             const addSetBtn = document.createElement('button');
             addSetBtn.type = "button";
-            addSetBtn.className = "w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700";
+            addSetBtn.className = "w-full py-3 sm:py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-indigo-700 active:bg-indigo-800";
             addSetBtn.textContent = "+ Add Set";
             addSetBtn.addEventListener('click', () => addSetToExercise(id, pr));
             
             // Delete exercise button
             const deleteExBtn = document.createElement('button');
             deleteExBtn.type = "button";
-            deleteExBtn.className = "w-full py-2 mt-2 bg-red-50 text-red-600 rounded-xl font-bold text-sm";
+            deleteExBtn.className = "w-full py-2 sm:py-2.5 mt-2 bg-red-50 text-red-600 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-100";
             deleteExBtn.textContent = "Delete Exercise";
             deleteExBtn.addEventListener('click', () => card.remove());
             
@@ -1099,14 +1339,14 @@
             }
             
             const setRow = document.createElement('div');
-            setRow.className = "flex gap-2 items-center mb-2 bg-white p-2 rounded-lg border border-slate-200";
+            setRow.className = "flex gap-2 sm:gap-3 items-center mb-2 bg-white p-2 sm:p-3 rounded-lg border border-slate-200";
             
             // Reps input
             const repsInput = document.createElement('input');
             repsInput.type = "number";
             repsInput.placeholder = "Reps";
             repsInput.min = "0";
-            repsInput.className = "flex-1 p-3 bg-slate-50 rounded-lg text-center font-bold text-lg border-2 border-transparent focus:border-indigo-500";
+            repsInput.className = "flex-1 p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
             
             // Weight container
             const weightDiv = document.createElement('div');
@@ -1117,14 +1357,14 @@
             weightInput.placeholder = "Weight";
             weightInput.min = "0";
             weightInput.step = "0.5";
-            weightInput.className = "w-full p-3 bg-slate-50 rounded-lg text-center font-bold text-lg border-2 border-transparent focus:border-indigo-500";
+            weightInput.className = "w-full p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
             
             weightDiv.appendChild(weightInput);
             
             // Add PB badge if exists
             if (pr) {
                 const pbBadge = document.createElement('span');
-                pbBadge.className = "absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded";
+                pbBadge.className = "absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded whitespace-nowrap";
                 pbBadge.textContent = `PB: ${pr}kg`;
                 weightDiv.appendChild(pbBadge);
             }
@@ -1132,7 +1372,7 @@
             // Delete button
             const deleteBtn = document.createElement('button');
             deleteBtn.type = "button";
-            deleteBtn.className = "w-10 h-10 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 font-bold text-xl";
+            deleteBtn.className = "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 font-bold text-lg sm:text-xl flex-shrink-0";
             deleteBtn.textContent = "×";
             deleteBtn.addEventListener('click', () => setRow.remove());
             
