@@ -444,6 +444,24 @@
 
         <!-- TRAINING -->
         <section id="training" class="tab-content space-y-6">
+            <!-- DATE SELECTOR -->
+            <div class="glass-card p-4 rounded-2xl">
+                <div class="flex items-center justify-between gap-3">
+                    <button onclick="changeWorkoutDate(-1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex-1">
+                        <input type="date" id="workout-date-picker" onchange="selectWorkoutDate(this.value)" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none">
+                    </div>
+                    <button onclick="changeWorkoutDate(1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div id="workout-date-warning" class="hidden mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="text-xs text-amber-800 font-bold text-center">⚠️ Editing past date - Click "Save Workout" to confirm</p>
+                </div>
+            </div>
+
             <div id="workout-setup" class="glass-card p-6 rounded-[2.5rem] space-y-4">
                 <div class="flex bg-slate-100 p-1 rounded-2xl mb-4">
                     <button onclick="setWorkoutEnv('gym')" id="env-tab-gym" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Gym</button>
@@ -518,6 +536,34 @@
 
             <!-- DIARY TAB -->
             <div id="nut-view-diary" class="space-y-6">
+                <!-- DATE SELECTOR -->
+                <div class="glass-card p-4 rounded-2xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <button onclick="changeNutritionDate(-1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                        <div class="flex-1">
+                            <input type="date" id="nutrition-date-picker" onchange="selectNutritionDate(this.value)" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none">
+                        </div>
+                        <button onclick="changeNutritionDate(1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div id="nutrition-date-warning" class="hidden mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <p class="text-xs text-amber-800 font-bold text-center">⚠️ Editing past date - Click "Save Changes" to confirm</p>
+                    </div>
+                </div>
+
+                <!-- SAVE/CANCEL BUTTONS (hidden for today) -->
+                <div id="nutrition-save-buttons" class="hidden flex gap-3">
+                    <button onclick="saveNutritionChanges()" class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700">
+                        Save Changes
+                    </button>
+                    <button onclick="cancelNutritionChanges()" class="flex-1 py-4 bg-slate-200 text-slate-700 rounded-2xl font-bold hover:bg-slate-300">
+                        Cancel
+                    </button>
+                </div>
+
                 <div class="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
                     <div class="flex justify-between items-start">
                         <div>
@@ -1702,9 +1748,12 @@
                 return;
             }
 
+            // Use selected date from date picker or current date
+            const workoutDate = window.selectedWorkoutDate || document.getElementById('workout-date-picker').value || new Date().toISOString().split('T')[0];
+
             state.workoutHistory.unshift({
                 id: Date.now(),
-                date: state.viewDate,
+                date: workoutDate,
                 focus: document.getElementById('active-workout-title').innerText,
                 duration: document.getElementById('workout-timer').innerText,
                 exercises
@@ -2058,18 +2107,28 @@
         // Created Meals
         function renderCreatedMeals() {
             const html = state.createdMeals.map((meal, idx) => `
-                <div onclick="addCreatedMeal(${idx})" class="bg-white p-4 rounded-[28px] border flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all">
-                    <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center">
+                <div class="bg-white p-4 rounded-[28px] border flex items-center gap-4 transition-all">
+                    <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
                         <i data-lucide="chef-hat" class="text-emerald-600"></i>
                     </div>
-                    <div class="flex-1">
+                    <div class="flex-1 min-w-0" onclick="addCreatedMeal(${idx})" class="cursor-pointer">
                         <p class="font-bold text-sm">${meal.name}</p>
                         <p class="text-xs text-slate-400">${meal.calories}kcal • ${meal.protein}g protein • ${meal.ingredients.length} ingredients</p>
                     </div>
-                    <i data-lucide="plus" class="text-emerald-600"></i>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="addCreatedMeal(${idx}); event.stopPropagation();" class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 flex items-center justify-center">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="editCreatedMeal(${idx}); event.stopPropagation();" class="w-9 h-9 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 flex items-center justify-center">
+                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteCreatedMeal(${idx}); event.stopPropagation();" class="w-9 h-9 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 flex items-center justify-center">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
-            document.getElementById('created-meals-list').innerHTML = html;
+            document.getElementById('created-meals-list').innerHTML = html || '<p class="text-center text-slate-400 py-8 text-sm">No custom meals created yet</p>';
             lucide.createIcons();
         }
 
@@ -2102,6 +2161,11 @@
 
         function closeCreateMeal() {
             document.getElementById('create-meal-modal').style.display = 'none';
+            window.editingMealIndex = null;
+            
+            // Reset modal title
+            const modalTitle = document.querySelector('#create-meal-modal h3');
+            if (modalTitle) modalTitle.textContent = 'Create Meal';
         }
 
         let mealSearchDebounce;
@@ -2192,18 +2256,160 @@
             const totalCals = mealIngredients.reduce((sum, ing) => sum + ing.calories, 0);
             const totalProtein = mealIngredients.reduce((sum, ing) => sum + ing.protein, 0);
 
-            state.createdMeals.push({
+            const mealData = {
                 id: Date.now(),
                 name,
                 calories: totalCals,
                 protein: totalProtein,
                 ingredients: [...mealIngredients]
-            });
+            };
+
+            if (window.editingMealIndex !== null && window.editingMealIndex !== undefined) {
+                // Update existing meal
+                mealData.id = state.createdMeals[window.editingMealIndex].id;
+                state.createdMeals[window.editingMealIndex] = mealData;
+                showToast('Meal updated!');
+            } else {
+                // Create new meal
+                state.createdMeals.push(mealData);
+                showToast('Meal saved!');
+            }
 
             saveState();
             closeCreateMeal();
             renderCreatedMeals();
-            showToast('Meal saved!');
+        }
+
+        function editCreatedMeal(idx) {
+            const meal = state.createdMeals[idx];
+            
+            // Open create meal modal
+            document.getElementById('meal-name-input').value = meal.name;
+            mealIngredients = [...meal.ingredients];
+            renderMealIngredients();
+            document.getElementById('create-meal-modal').style.display = 'flex';
+            
+            // Store the index for updating
+            window.editingMealIndex = idx;
+            
+            // Change save button to update
+            const modalTitle = document.querySelector('#create-meal-modal h3');
+            if (modalTitle) modalTitle.textContent = 'Edit Meal';
+            
+            lucide.createIcons();
+        }
+
+        function deleteCreatedMeal(idx) {
+            const meal = state.createdMeals[idx];
+            if (confirm(`Delete "${meal.name}"?`)) {
+                state.createdMeals.splice(idx, 1);
+                saveState();
+                renderCreatedMeals();
+                showToast('Meal deleted');
+            }
+        }
+
+        // ============================================================================
+        // DATE MANAGEMENT - NUTRITION
+        // ============================================================================
+
+        function changeNutritionDate(days) {
+            const currentDate = new Date(state.viewDate);
+            currentDate.setDate(currentDate.getDate() + days);
+            const newDate = currentDate.toISOString().split('T')[0];
+            selectNutritionDate(newDate);
+        }
+
+        function selectNutritionDate(dateStr) {
+            state.viewDate = dateStr;
+            document.getElementById('nutrition-date-picker').value = dateStr;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const isToday = dateStr === today;
+            
+            // Show/hide warning and save buttons
+            document.getElementById('nutrition-date-warning').classList.toggle('hidden', isToday);
+            document.getElementById('nutrition-save-buttons').classList.toggle('hidden', isToday);
+            
+            renderDiary();
+            renderDashboard();
+            lucide.createIcons();
+        }
+
+        function saveNutritionChanges() {
+            // Save current meals to history if not today
+            const today = new Date().toISOString().split('T')[0];
+            if (state.viewDate !== today) {
+                const todayMeals = state.dailyMeals.filter(m => m.date === state.viewDate);
+                if (todayMeals.length > 0) {
+                    const totalCals = todayMeals.reduce((sum, m) => sum + m.calories, 0);
+                    const totalProtein = todayMeals.reduce((sum, m) => sum + m.protein, 0);
+                    
+                    // Remove old entry for this date
+                    state.nutritionHistory = state.nutritionHistory.filter(h => h.date !== state.viewDate);
+                    
+                    // Add updated entry
+                    state.nutritionHistory.unshift({
+                        date: state.viewDate,
+                        calories: totalCals,
+                        protein: totalProtein,
+                        meals: todayMeals
+                    });
+                }
+            }
+            
+            saveState();
+            showToast('Changes saved!');
+            
+            // Return to today
+            selectNutritionDate(new Date().toISOString().split('T')[0]);
+        }
+
+        function cancelNutritionChanges() {
+            // Reload data from saved state
+            loadState();
+            
+            // Return to today
+            selectNutritionDate(new Date().toISOString().split('T')[0]);
+            showToast('Changes cancelled');
+        }
+
+        // ============================================================================
+        // DATE MANAGEMENT - TRAINING
+        // ============================================================================
+
+        function changeWorkoutDate(days) {
+            const currentDate = document.getElementById('workout-date-picker').value || new Date().toISOString().split('T')[0];
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() + days);
+            const newDate = date.toISOString().split('T')[0];
+            selectWorkoutDate(newDate);
+        }
+
+        function selectWorkoutDate(dateStr) {
+            document.getElementById('workout-date-picker').value = dateStr;
+            window.selectedWorkoutDate = dateStr;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const isToday = dateStr === today;
+            
+            // Show/hide warning
+            document.getElementById('workout-date-warning').classList.toggle('hidden', isToday);
+            
+            // Check if there's a workout for this date
+            const existingWorkout = state.workoutHistory.find(w => w.date === dateStr);
+            if (existingWorkout && !document.getElementById('workout-active').classList.contains('hidden')) {
+                // Load existing workout
+                loadExistingWorkout(existingWorkout);
+            }
+            
+            lucide.createIcons();
+        }
+
+        function loadExistingWorkout(workout) {
+            // This would populate the workout form with existing data
+            // For now, just show a message
+            showToast(`Workout found for this date (${workout.exercises.length} exercises)`);
         }
 
         // ============================================================================
@@ -2630,6 +2836,14 @@
             const storeInput = document.getElementById('store-search-input');
             if (storeInput) storeInput.value = 'All Stores & Restaurants';
 
+            // Initialize date pickers to today
+            const today = new Date().toISOString().split('T')[0];
+            const nutritionDatePicker = document.getElementById('nutrition-date-picker');
+            const workoutDatePicker = document.getElementById('workout-date-picker');
+            if (nutritionDatePicker) nutritionDatePicker.value = today;
+            if (workoutDatePicker) workoutDatePicker.value = today;
+            window.selectedWorkoutDate = today;
+
             renderDashboard();
             renderDiary();
             renderSettings();
@@ -2641,5 +2855,3 @@
     </script>
 </body>
 </html>
-
-
