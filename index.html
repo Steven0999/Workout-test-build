@@ -1040,33 +1040,45 @@
         function addExercise(name = '') {
             const id = Date.now() + Math.random();
             const pr = name ? getPersonalRecord(name) : null;
-            const div = document.createElement('div');
-            div.className = "glass-card p-4 rounded-2xl mb-4";
-            div.innerHTML = `
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex-1 relative">
-                            <input type="text" id="exercise-search-${id}" value="${name}" placeholder="Search or type exercise..." 
-                                class="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none pr-20" 
-                                onfocus="showExerciseDropdown(${id})" 
-                                oninput="filterExercises(${id}, this.value)">
-                            ${pr ? `<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
-                            <div id="dropdown-${id}" class="hidden absolute z-20 mt-1 w-full bg-white rounded-xl shadow-xl border max-h-60 overflow-y-auto"></div>
-                        </div>
-                        <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
-                    </div>
-                </div>
-                <div class="sets-container-${id} space-y-3 mb-4 p-4 bg-yellow-100 rounded-xl border-4 border-red-500" style="min-height: 200px;">
-                    <div class="text-center p-4 bg-red-200 text-red-900 font-black text-xl">
-                        SETS APPEAR HERE - If you see this, the container is working!
-                    </div>
-                </div>
-                <button onclick="addSet(${id}); alert('Add Set clicked for exercise ' + ${id});" class="w-full py-4 bg-green-500 text-white text-lg font-black rounded-xl hover:bg-green-600 active:bg-green-700 border-4 border-green-700">CLICK HERE TO ADD SET</button>
-            `;
-            document.getElementById('exercise-list').appendChild(div);
             
-            // Add first set with PR showing if exercise name is provided
-            addSet(id);
+            const exerciseCard = document.createElement('div');
+            exerciseCard.className = "glass-card p-5 rounded-2xl mb-4";
+            
+            // Exercise name input
+            const nameSection = document.createElement('div');
+            nameSection.className = "mb-4";
+            nameSection.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex-1 relative">
+                        <input type="text" id="exercise-search-${id}" value="${name}" placeholder="Search or type exercise..." 
+                            class="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none pr-20" 
+                            onfocus="showExerciseDropdown(${id})" 
+                            oninput="filterExercises(${id}, this.value)">
+                        ${pr ? `<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
+                        <div id="dropdown-${id}" class="hidden absolute z-20 mt-1 w-full bg-white rounded-xl shadow-xl border max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
+                </div>`;
+            
+            // Sets container
+            const setsContainer = document.createElement('div');
+            setsContainer.className = `sets-container-${id} space-y-3 mb-4 p-4 bg-slate-50 rounded-xl min-h-[100px]`;
+            
+            // Add set button
+            const addButton = document.createElement('button');
+            addButton.className = "w-full py-4 bg-indigo-600 text-white text-sm font-black rounded-xl hover:bg-indigo-700";
+            addButton.textContent = "+ Add Set";
+            addButton.onclick = () => addSet(id);
+            
+            // Assemble the card
+            exerciseCard.appendChild(nameSection);
+            exerciseCard.appendChild(setsContainer);
+            exerciseCard.appendChild(addButton);
+            
+            document.getElementById('exercise-list').appendChild(exerciseCard);
+            
+            // Add first set immediately
+            setTimeout(() => addSet(id), 10);
             
             lucide.createIcons();
         }
@@ -1177,43 +1189,85 @@
             const container = document.querySelector(`.sets-container-${exerciseId}`);
             
             if (!container) {
-                console.error('Container not found for exercise:', exerciseId);
+                console.error('ERROR: Container not found for exercise ID:', exerciseId);
+                alert('Container not found! ID: ' + exerciseId);
                 return;
             }
             
             const exerciseInput = document.querySelector(`#exercise-search-${exerciseId}`);
-            const exerciseName = exerciseInput ? exerciseInput.value : '';
+            const exerciseName = exerciseInput ? exerciseInput.value.trim() : '';
             const pr = exerciseName ? getPersonalRecord(exerciseName) : null;
             
-            // Add header labels if this is the first set
+            // Add header if first set
             if (container.children.length === 0) {
-                const headerHtml = `
-                    <div class="flex gap-2 mb-2 px-1">
-                        <div class="flex-1 text-center">
-                            <span class="text-xs font-black text-slate-600 uppercase tracking-wide">Reps</span>
-                        </div>
-                        <div class="flex-1 text-center">
-                            <span class="text-xs font-black text-slate-600 uppercase tracking-wide">Weight (kg)</span>
-                        </div>
-                        <div class="w-10"></div>
-                    </div>`;
-                container.insertAdjacentHTML('beforeend', headerHtml);
+                const header = document.createElement('div');
+                header.className = "flex gap-2 mb-3 px-1";
+                header.innerHTML = `
+                    <div class="flex-1 text-center">
+                        <span class="text-sm font-black text-slate-700 uppercase">Reps</span>
+                    </div>
+                    <div class="flex-1 text-center">
+                        <span class="text-sm font-black text-slate-700 uppercase">Weight (kg)</span>
+                    </div>
+                    <div class="w-10"></div>`;
+                container.appendChild(header);
             }
             
-            const setId = Date.now() + Math.random();
-            const html = `
-                <div class="flex gap-2 items-center set-row bg-white p-2 rounded-lg border border-slate-100 mb-2" id="set-${setId}">
-                    <input type="number" placeholder="Reps" class="flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" min="0">
-                    <div class="flex-1 relative">
-                        <input type="number" placeholder="Weight" class="w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" step="0.5" min="0">
-                        ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-2 py-1 rounded-md shadow-sm">PB: ${pr}kg</span>` : ''}
-                    </div>
-                    <button onclick="document.getElementById('set-${setId}').remove()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remove set">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>`;
-            container.insertAdjacentHTML('beforeend', html);
+            // Create set row
+            const setRow = document.createElement('div');
+            const setId = 'set-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            setRow.id = setId;
+            setRow.className = "flex gap-2 items-center set-row bg-white p-3 rounded-xl border-2 border-slate-200 mb-2";
+            
+            // Reps input
+            const repsInput = document.createElement('input');
+            repsInput.type = "number";
+            repsInput.placeholder = "0";
+            repsInput.min = "0";
+            repsInput.className = "flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-lg border-2 border-transparent focus:border-indigo-500";
+            
+            // Weight container
+            const weightContainer = document.createElement('div');
+            weightContainer.className = "flex-1 relative";
+            
+            const weightInput = document.createElement('input');
+            weightInput.type = "number";
+            weightInput.placeholder = "0";
+            weightInput.min = "0";
+            weightInput.step = "0.5";
+            weightInput.className = "w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-lg border-2 border-transparent focus:border-indigo-500";
+            
+            weightContainer.appendChild(weightInput);
+            
+            // Add PB badge if exists
+            if (pr) {
+                const pbBadge = document.createElement('span');
+                pbBadge.className = "absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md";
+                pbBadge.textContent = `PB: ${pr}kg`;
+                weightContainer.appendChild(pbBadge);
+            }
+            
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = "button";
+            deleteBtn.className = "w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg";
+            deleteBtn.innerHTML = '<i data-lucide="x" class="w-5 h-5"></i>';
+            deleteBtn.onclick = function() {
+                setRow.remove();
+            };
+            
+            // Assemble row
+            setRow.appendChild(repsInput);
+            setRow.appendChild(weightContainer);
+            setRow.appendChild(deleteBtn);
+            
+            // Add to container
+            container.appendChild(setRow);
+            
+            // Refresh icons
             lucide.createIcons();
+            
+            console.log('Set added successfully to exercise', exerciseId);
         }
 
         function saveWorkout() {
