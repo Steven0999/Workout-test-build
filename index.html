@@ -1038,129 +1038,109 @@
         }
 
         function addExercise(name = '') {
-            const id = Date.now() + Math.random();
+            const id = 'ex-' + Date.now() + Math.random().toString(36).substr(2, 9);
             const pr = name ? getPersonalRecord(name) : null;
             
-            const exerciseCard = document.createElement('div');
-            exerciseCard.className = "glass-card p-5 rounded-2xl mb-4";
+            const card = document.createElement('div');
+            card.className = "bg-white p-5 rounded-2xl shadow-md border-2 border-indigo-100 mb-4";
             
-            // Exercise name input
-            const nameSection = document.createElement('div');
-            nameSection.className = "mb-4";
-            nameSection.innerHTML = `
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex-1 relative">
-                        <input type="text" id="exercise-search-${id}" value="${name}" placeholder="Search or type exercise..." 
-                            class="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none pr-20" 
-                            onfocus="showExerciseDropdown(${id})" 
-                            oninput="filterExercises(${id}, this.value)">
-                        ${pr ? `<span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded">PR: ${pr}kg</span>` : ''}
-                        <div id="dropdown-${id}" class="hidden absolute z-20 mt-1 w-full bg-white rounded-xl shadow-xl border max-h-60 overflow-y-auto"></div>
-                    </div>
-                    <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
-                </div>`;
+            // Exercise name
+            const nameInput = document.createElement('input');
+            nameInput.type = "text";
+            nameInput.value = name;
+            nameInput.placeholder = "Exercise name";
+            nameInput.className = "w-full p-3 mb-4 border-2 border-slate-200 rounded-xl font-bold text-lg";
+            nameInput.id = `ex-name-${id}`;
             
-            // Sets container
+            // Sets container with header
             const setsContainer = document.createElement('div');
-            setsContainer.className = `sets-container-${id} space-y-3 mb-4 p-4 bg-slate-50 rounded-xl min-h-[100px]`;
+            setsContainer.id = `sets-${id}`;
+            setsContainer.className = "bg-slate-50 p-4 rounded-xl mb-4 min-h-[100px]";
+            
+            const header = document.createElement('div');
+            header.className = "flex gap-2 mb-3";
+            header.innerHTML = `
+                <div class="flex-1 text-center"><span class="text-xs font-black text-slate-600 uppercase">Reps</span></div>
+                <div class="flex-1 text-center"><span class="text-xs font-black text-slate-600 uppercase">Weight (kg)</span></div>
+                <div class="w-10"></div>
+            `;
+            setsContainer.appendChild(header);
             
             // Add set button
-            const addButton = document.createElement('button');
-            addButton.className = "w-full py-4 bg-indigo-600 text-white text-sm font-black rounded-xl hover:bg-indigo-700";
-            addButton.textContent = "+ Add Set";
-            addButton.onclick = () => addSet(id);
+            const addSetBtn = document.createElement('button');
+            addSetBtn.type = "button";
+            addSetBtn.className = "w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700";
+            addSetBtn.textContent = "+ Add Set";
+            addSetBtn.addEventListener('click', () => addSetToExercise(id, pr));
             
-            // Assemble the card
-            exerciseCard.appendChild(nameSection);
-            exerciseCard.appendChild(setsContainer);
-            exerciseCard.appendChild(addButton);
+            // Delete exercise button
+            const deleteExBtn = document.createElement('button');
+            deleteExBtn.type = "button";
+            deleteExBtn.className = "w-full py-2 mt-2 bg-red-50 text-red-600 rounded-xl font-bold text-sm";
+            deleteExBtn.textContent = "Delete Exercise";
+            deleteExBtn.addEventListener('click', () => card.remove());
             
-            document.getElementById('exercise-list').appendChild(exerciseCard);
+            card.appendChild(nameInput);
+            card.appendChild(setsContainer);
+            card.appendChild(addSetBtn);
+            card.appendChild(deleteExBtn);
             
-            // Add first set immediately
-            setTimeout(() => addSet(id), 10);
+            document.getElementById('exercise-list').appendChild(card);
             
-            lucide.createIcons();
+            // Auto-add first set
+            setTimeout(() => addSetToExercise(id, pr), 50);
         }
 
-        function showExerciseDropdown(id) {
-            const dropdown = document.getElementById(`dropdown-${id}`);
-            const html = ALL_EXERCISES.map(ex => {
-                const pr = getPersonalRecord(ex);
-                return `<div onclick="selectExercise(${id}, '${ex}')" class="p-3 hover:bg-slate-50 cursor-pointer border-b last:border-0 flex justify-between items-center">
-                    <span class="font-medium text-sm">${ex}</span>
-                    ${pr ? `<span class="text-xs font-black text-emerald-600">PR: ${pr}kg</span>` : ''}
-                </div>`;
-            }).join('');
-            dropdown.innerHTML = html;
-            dropdown.classList.remove('hidden');
-        }
-
-        function filterExercises(id, query) {
-            const dropdown = document.getElementById(`dropdown-${id}`);
-            const filtered = ALL_EXERCISES.filter(ex => ex.toLowerCase().includes(query.toLowerCase()));
-            
-            if (filtered.length === 0 && query.length > 0) {
-                dropdown.innerHTML = '<div class="p-3 text-slate-400 text-sm italic">No exercises found - keep typing to add custom</div>';
-            } else if (filtered.length > 0) {
-                const html = filtered.map(ex => {
-                    const pr = getPersonalRecord(ex);
-                    return `<div onclick="selectExercise(${id}, '${ex}')" class="p-3 hover:bg-slate-50 cursor-pointer border-b last:border-0 flex justify-between items-center">
-                        <span class="font-medium text-sm">${ex}</span>
-                        ${pr ? `<span class="text-xs font-black text-emerald-600">PR: ${pr}kg</span>` : ''}
-                    </div>`;
-                }).join('');
-                dropdown.innerHTML = html;
+        function addSetToExercise(exerciseId, pr) {
+            const container = document.getElementById(`sets-${exerciseId}`);
+            if (!container) {
+                console.error('Container not found:', exerciseId);
+                return;
             }
             
-            if (query.length > 0) {
-                dropdown.classList.remove('hidden');
-            }
-        }
-
-        function selectExercise(id, exerciseName) {
-            const input = document.getElementById(`exercise-search-${id}`);
-            const oldName = input.value;
-            input.value = exerciseName;
-            document.getElementById(`dropdown-${id}`).classList.add('hidden');
+            const setRow = document.createElement('div');
+            setRow.className = "flex gap-2 items-center mb-2 bg-white p-2 rounded-lg border border-slate-200";
             
-            // Update PR display in exercise name field
-            const pr = getPersonalRecord(exerciseName);
-            const parent = input.parentElement;
-            const existingPR = parent.querySelector('.absolute.right-3');
-            if (existingPR) existingPR.remove();
+            // Reps input
+            const repsInput = document.createElement('input');
+            repsInput.type = "number";
+            repsInput.placeholder = "Reps";
+            repsInput.min = "0";
+            repsInput.className = "flex-1 p-3 bg-slate-50 rounded-lg text-center font-bold text-lg border-2 border-transparent focus:border-indigo-500";
             
+            // Weight container
+            const weightDiv = document.createElement('div');
+            weightDiv.className = "flex-1 relative";
+            
+            const weightInput = document.createElement('input');
+            weightInput.type = "number";
+            weightInput.placeholder = "Weight";
+            weightInput.min = "0";
+            weightInput.step = "0.5";
+            weightInput.className = "w-full p-3 bg-slate-50 rounded-lg text-center font-bold text-lg border-2 border-transparent focus:border-indigo-500";
+            
+            weightDiv.appendChild(weightInput);
+            
+            // Add PB badge if exists
             if (pr) {
-                const prBadge = document.createElement('span');
-                prBadge.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded';
-                prBadge.textContent = `PR: ${pr}kg`;
-                parent.appendChild(prBadge);
-                showToast(`Personal Record: ${pr}kg`);
+                const pbBadge = document.createElement('span');
+                pbBadge.className = "absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded";
+                pbBadge.textContent = `PB: ${pr}kg`;
+                weightDiv.appendChild(pbBadge);
             }
             
-            // Update PR display in all weight input fields for this exercise
-            const container = document.querySelector(`.sets-container-${id}`);
-            if (container) {
-                // Skip the header row and update actual set inputs
-                const setRows = Array.from(container.children).filter(child => 
-                    child.querySelector('input[type="number"]')
-                );
-                
-                setRows.forEach(row => {
-                    const weightInputParent = row.querySelector('.relative');
-                    if (weightInputParent) {
-                        const existingPB = weightInputParent.querySelector('.absolute');
-                        if (existingPB) existingPB.remove();
-                        
-                        if (pr) {
-                            const pbBadge = document.createElement('span');
-                            pbBadge.className = 'absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded';
-                            pbBadge.textContent = `PB: ${pr}kg`;
-                            weightInputParent.appendChild(pbBadge);
-                        }
-                    }
-                });
-            }
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = "button";
+            deleteBtn.className = "w-10 h-10 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 font-bold text-xl";
+            deleteBtn.textContent = "×";
+            deleteBtn.addEventListener('click', () => setRow.remove());
+            
+            setRow.appendChild(repsInput);
+            setRow.appendChild(weightDiv);
+            setRow.appendChild(deleteBtn);
+            
+            container.appendChild(setRow);
         }
 
         function getPersonalRecord(exerciseName) {
@@ -1169,7 +1149,7 @@
                 workout.exercises.forEach(ex => {
                     if (ex.name === exerciseName) {
                         ex.sets.forEach(set => {
-                            const weight = parseFloat(set.kg) || 0;
+                            const weight = parseFloat(set.weight) || parseFloat(set.kg) || 0;
                             if (weight > maxWeight) maxWeight = weight;
                         });
                     }
@@ -1178,114 +1158,27 @@
             return maxWeight > 0 ? maxWeight : null;
         }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.matches('[id^="exercise-search-"]')) {
-                document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.classList.add('hidden'));
-            }
-        });
-
-        function addSet(exerciseId) {
-            const container = document.querySelector(`.sets-container-${exerciseId}`);
-            
-            if (!container) {
-                console.error('ERROR: Container not found for exercise ID:', exerciseId);
-                alert('Container not found! ID: ' + exerciseId);
-                return;
-            }
-            
-            const exerciseInput = document.querySelector(`#exercise-search-${exerciseId}`);
-            const exerciseName = exerciseInput ? exerciseInput.value.trim() : '';
-            const pr = exerciseName ? getPersonalRecord(exerciseName) : null;
-            
-            // Add header if first set
-            if (container.children.length === 0) {
-                const header = document.createElement('div');
-                header.className = "flex gap-2 mb-3 px-1";
-                header.innerHTML = `
-                    <div class="flex-1 text-center">
-                        <span class="text-sm font-black text-slate-700 uppercase">Reps</span>
-                    </div>
-                    <div class="flex-1 text-center">
-                        <span class="text-sm font-black text-slate-700 uppercase">Weight (kg)</span>
-                    </div>
-                    <div class="w-10"></div>`;
-                container.appendChild(header);
-            }
-            
-            // Create set row
-            const setRow = document.createElement('div');
-            const setId = 'set-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            setRow.id = setId;
-            setRow.className = "flex gap-2 items-center set-row bg-white p-3 rounded-xl border-2 border-slate-200 mb-2";
-            
-            // Reps input
-            const repsInput = document.createElement('input');
-            repsInput.type = "number";
-            repsInput.placeholder = "0";
-            repsInput.min = "0";
-            repsInput.className = "flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-lg border-2 border-transparent focus:border-indigo-500";
-            
-            // Weight container
-            const weightContainer = document.createElement('div');
-            weightContainer.className = "flex-1 relative";
-            
-            const weightInput = document.createElement('input');
-            weightInput.type = "number";
-            weightInput.placeholder = "0";
-            weightInput.min = "0";
-            weightInput.step = "0.5";
-            weightInput.className = "w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-lg border-2 border-transparent focus:border-indigo-500";
-            
-            weightContainer.appendChild(weightInput);
-            
-            // Add PB badge if exists
-            if (pr) {
-                const pbBadge = document.createElement('span');
-                pbBadge.className = "absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md";
-                pbBadge.textContent = `PB: ${pr}kg`;
-                weightContainer.appendChild(pbBadge);
-            }
-            
-            // Delete button
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = "button";
-            deleteBtn.className = "w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg";
-            deleteBtn.innerHTML = '<i data-lucide="x" class="w-5 h-5"></i>';
-            deleteBtn.onclick = function() {
-                setRow.remove();
-            };
-            
-            // Assemble row
-            setRow.appendChild(repsInput);
-            setRow.appendChild(weightContainer);
-            setRow.appendChild(deleteBtn);
-            
-            // Add to container
-            container.appendChild(setRow);
-            
-            // Refresh icons
-            lucide.createIcons();
-            
-            console.log('Set added successfully to exercise', exerciseId);
-        }
-
         function saveWorkout() {
             clearInterval(workoutTimer);
             
             const exercises = [];
-            document.querySelectorAll('#exercise-list .glass-card').forEach(card => {
-                const nameInput = card.querySelector('[id^="exercise-search-"]');
+            document.querySelectorAll('#exercise-list > div').forEach(card => {
+                const nameInput = card.querySelector('input[type="text"]');
                 const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) return;
                 
                 const sets = [];
-                const inputs = card.querySelectorAll('input[type="number"]');
-                for (let i = 0; i < inputs.length; i += 2) {
-                    if (inputs[i].value && inputs[i+1].value) {
-                        sets.push({ kg: inputs[i].value, reps: inputs[i+1].value });
+                const setRows = card.querySelectorAll('.flex.gap-2.items-center.mb-2');
+                setRows.forEach(row => {
+                    const inputs = row.querySelectorAll('input[type="number"]');
+                    if (inputs.length >= 2 && inputs[0].value && inputs[1].value) {
+                        sets.push({ 
+                            reps: inputs[0].value, 
+                            weight: inputs[1].value 
+                        });
                     }
-                }
+                });
+                
                 if (sets.length > 0) {
                     exercises.push({ name, sets });
                 }
