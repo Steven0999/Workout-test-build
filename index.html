@@ -996,25 +996,30 @@
                     const selectedIsolations = isolations.sort(() => 0.5 - Math.random()).slice(0, 3);
                     
                     // Add weight training exercises (compounds first, then isolations)
+                    // Use setTimeout to stagger the additions slightly so each gets a unique ID
+                    let delay = 0;
                     [...selectedCompounds, ...selectedIsolations].forEach(ex => {
-                        addExercise(ex);
+                        setTimeout(() => addExercise(ex), delay);
+                        delay += 10;
                     });
                     
                     // Add cardio after weight training if selected
                     if (addCardio) {
                         const cardio = CARDIO_EXERCISES[Math.floor(Math.random() * CARDIO_EXERCISES.length)];
-                        addExercise(cardio);
+                        setTimeout(() => addExercise(cardio), delay);
+                        delay += 10;
                     }
                     
                     // Add core at the end if selected
                     if (addCore) {
                         const core1 = CORE_EXERCISES[Math.floor(Math.random() * CORE_EXERCISES.length)];
                         const core2 = CORE_EXERCISES.filter(c => c !== core1)[Math.floor(Math.random() * (CORE_EXERCISES.length - 1))];
-                        addExercise(core1);
-                        addExercise(core2);
+                        setTimeout(() => addExercise(core1), delay);
+                        delay += 10;
+                        setTimeout(() => addExercise(core2), delay);
                     }
                     
-                    showToast('AI workout: 2 compound + 3 isolation exercises');
+                    showToast('AI workout generated: 2 compound + 3 isolation');
                 } else {
                     showToast('No exercises found for this selection');
                 }
@@ -1055,7 +1060,10 @@
                 <button onclick="addSet(${id})" class="w-full py-3 bg-slate-50 text-xs font-black text-slate-400 rounded-xl hover:bg-slate-100">+ Add Set</button>
             `;
             document.getElementById('exercise-list').appendChild(div);
+            
+            // Add first set with PR showing if exercise name is provided
             addSet(id);
+            
             lucide.createIcons();
         }
 
@@ -1100,7 +1108,7 @@
             input.value = exerciseName;
             document.getElementById(`dropdown-${id}`).classList.add('hidden');
             
-            // Update PR display
+            // Update PR display in exercise name field
             const pr = getPersonalRecord(exerciseName);
             const parent = input.parentElement;
             const existingPR = parent.querySelector('.absolute.right-3');
@@ -1112,6 +1120,30 @@
                 prBadge.textContent = `PR: ${pr}kg`;
                 parent.appendChild(prBadge);
                 showToast(`Personal Record: ${pr}kg`);
+            }
+            
+            // Update PR display in all weight input fields for this exercise
+            const container = document.querySelector(`.sets-container-${id}`);
+            if (container) {
+                // Skip the header row and update actual set inputs
+                const setRows = Array.from(container.children).filter(child => 
+                    child.querySelector('input[type="number"]')
+                );
+                
+                setRows.forEach(row => {
+                    const weightInputParent = row.querySelector('.relative');
+                    if (weightInputParent) {
+                        const existingPB = weightInputParent.querySelector('.absolute');
+                        if (existingPB) existingPB.remove();
+                        
+                        if (pr) {
+                            const pbBadge = document.createElement('span');
+                            pbBadge.className = 'absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded';
+                            pbBadge.textContent = `PB: ${pr}kg`;
+                            weightInputParent.appendChild(pbBadge);
+                        }
+                    }
+                });
             }
         }
 
@@ -1139,10 +1171,31 @@
 
         function addSet(exerciseId) {
             const container = document.querySelector(`.sets-container-${exerciseId}`);
+            const exerciseInput = document.querySelector(`#exercise-search-${exerciseId}`);
+            const exerciseName = exerciseInput ? exerciseInput.value : '';
+            const pr = exerciseName ? getPersonalRecord(exerciseName) : null;
+            
+            // Add header labels if this is the first set
+            if (container.children.length === 0) {
+                const headerHtml = `
+                    <div class="flex gap-2 mb-1">
+                        <div class="flex-1 text-center">
+                            <span class="text-[10px] font-black text-slate-400 uppercase">Weight (kg)</span>
+                        </div>
+                        <div class="flex-1 text-center">
+                            <span class="text-[10px] font-black text-slate-400 uppercase">Reps</span>
+                        </div>
+                    </div>`;
+                container.insertAdjacentHTML('beforeend', headerHtml);
+            }
+            
             const html = `
-                <div class="flex gap-2">
-                    <input type="number" placeholder="kg" class="flex-1 bg-slate-50 p-2 rounded text-center font-bold outline-none">
-                    <input type="number" placeholder="reps" class="flex-1 bg-slate-50 p-2 rounded text-center font-bold outline-none">
+                <div class="flex gap-2 items-center">
+                    <div class="flex-1 relative">
+                        <input type="number" placeholder="0" class="w-full bg-slate-50 p-3 rounded-xl text-center font-bold outline-none" step="0.5">
+                        ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded">PB: ${pr}kg</span>` : ''}
+                    </div>
+                    <input type="number" placeholder="0" class="flex-1 bg-slate-50 p-3 rounded-xl text-center font-bold outline-none">
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
         }
