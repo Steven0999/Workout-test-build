@@ -1043,8 +1043,8 @@
             const div = document.createElement('div');
             div.className = "glass-card p-4 rounded-2xl mb-4";
             div.innerHTML = `
-                <div class="mb-3">
-                    <div class="flex justify-between items-center mb-2">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-3">
                         <div class="flex-1 relative">
                             <input type="text" id="exercise-search-${id}" value="${name}" placeholder="Search or type exercise..." 
                                 class="w-full bg-slate-50 p-3 rounded-xl font-bold outline-none pr-20" 
@@ -1056,8 +1056,8 @@
                         <button onclick="this.closest('.glass-card').remove()" class="text-slate-300 ml-3 w-10 h-10 hover:bg-slate-100 rounded-lg flex items-center justify-center">×</button>
                     </div>
                 </div>
-                <div class="sets-container-${id} space-y-2 mb-2"></div>
-                <button onclick="addSet(${id})" class="w-full py-3 bg-slate-50 text-xs font-black text-slate-400 rounded-xl hover:bg-slate-100">+ Add Set</button>
+                <div class="sets-container-${id} space-y-3 mb-4 p-2 bg-white/50 rounded-xl"></div>
+                <button onclick="addSet(${id})" class="w-full py-3 bg-indigo-500 text-white text-sm font-black rounded-xl hover:bg-indigo-600 active:bg-indigo-700">+ Add Set</button>
             `;
             document.getElementById('exercise-list').appendChild(div);
             
@@ -1171,6 +1171,11 @@
 
         function addSet(exerciseId) {
             const container = document.querySelector(`.sets-container-${exerciseId}`);
+            if (!container) {
+                console.error('Container not found for exercise:', exerciseId);
+                return;
+            }
+            
             const exerciseInput = document.querySelector(`#exercise-search-${exerciseId}`);
             const exerciseName = exerciseInput ? exerciseInput.value : '';
             const pr = exerciseName ? getPersonalRecord(exerciseName) : null;
@@ -1178,12 +1183,12 @@
             // Add header labels if this is the first set
             if (container.children.length === 0) {
                 const headerHtml = `
-                    <div class="flex gap-2 mb-1">
+                    <div class="flex gap-2 mb-2 px-1">
                         <div class="flex-1 text-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase">Weight (kg)</span>
+                            <span class="text-xs font-black text-slate-600 uppercase tracking-wide">Reps</span>
                         </div>
                         <div class="flex-1 text-center">
-                            <span class="text-[10px] font-black text-slate-400 uppercase">Reps</span>
+                            <span class="text-xs font-black text-slate-600 uppercase tracking-wide">Weight (kg)</span>
                         </div>
                         <div class="w-10"></div>
                     </div>`;
@@ -1191,15 +1196,16 @@
             }
             
             const setId = Date.now() + Math.random();
+            const setNumber = container.querySelectorAll('.set-row').length + 1;
             const html = `
-                <div class="flex gap-2 items-center set-row" id="set-${setId}">
+                <div class="flex gap-2 items-center set-row bg-white p-2 rounded-lg border border-slate-100" id="set-${setId}">
+                    <input type="number" placeholder="Enter reps" class="flex-1 bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" min="0">
                     <div class="flex-1 relative">
-                        <input type="number" placeholder="0" class="w-full bg-slate-50 p-3 rounded-xl text-center font-bold outline-none" step="0.5">
-                        ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded">PB: ${pr}kg</span>` : ''}
+                        <input type="number" placeholder="Enter weight" class="w-full bg-slate-50 p-4 rounded-xl text-center font-bold outline-none text-base border-2 border-transparent focus:border-indigo-500 transition-colors" step="0.5" min="0">
+                        ${pr ? `<span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 whitespace-nowrap bg-emerald-50 px-2 py-1 rounded-md shadow-sm">PB: ${pr}kg</span>` : ''}
                     </div>
-                    <input type="number" placeholder="0" class="flex-1 bg-slate-50 p-3 rounded-xl text-center font-bold outline-none">
-                    <button onclick="document.getElementById('set-${setId}').remove()" class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                        <i data-lucide="x" class="w-4 h-4"></i>
+                    <button onclick="document.getElementById('set-${setId}').remove()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remove set">
+                        <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
