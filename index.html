@@ -360,6 +360,19 @@
                 gap: 0.5rem;
             }
         }
+
+        /* Sidebar animations */
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .translate-x-0 {
+            transform: translateX(0);
+        }
+        
+        .-translate-x-full {
+            transform: translateX(-100%);
+        }
     </style>
 </head>
 <body class="pb-24 sm:pb-28">
@@ -367,9 +380,12 @@
     <div id="toast" class="toast"></div>
 
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 sm:px-6 py-4 sm:py-5 sticky top-0 z-40 flex justify-between items-center">
-        <div>
+        <button onclick="toggleSidebar()" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors" aria-label="Menu">
+            <i data-lucide="menu" class="w-6 h-6 text-slate-700"></i>
+        </button>
+        <div class="text-center">
             <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">FitTrack<span class="text-slate-600">Pro</span></h1>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 justify-center">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
             </div>
@@ -511,6 +527,11 @@
                     <button onclick="startWorkout('manual')" class="p-5 bg-slate-900 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-slate-800 active:bg-slate-700">Manual Entry</button>
                     <button onclick="startWorkout('ai')" class="p-5 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-base min-h-[60px] hover:bg-indigo-700 active:bg-indigo-800">AI Generate</button>
                 </div>
+                
+                <button onclick="openCardioModal()" class="w-full mt-3 p-5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-[1.5rem] font-bold text-base flex items-center justify-center gap-2 hover:from-cyan-600 hover:to-blue-600">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                    Log Outdoor Cardio
+                </button>
             </div>
 
             <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6">
@@ -631,6 +652,14 @@
                     <i data-lucide="loader-2" class="animate-spin text-emerald-500 mx-auto"></i>
                 </div>
                 <div id="search-results-list" class="space-y-3"></div>
+                
+                <!-- MANUAL FOOD ENTRY -->
+                <div class="text-center py-4">
+                    <p class="text-xs text-slate-400 mb-3">Can't find what you're looking for?</p>
+                    <button onclick="openManualFoodEntry()" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all">
+                        + Add Food Manually
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -642,10 +671,42 @@
             </div>
             
             <div id="logs-training-view" class="space-y-4">
+                <!-- WORKOUT TYPE FILTERS -->
+                <div class="glass-card p-4 rounded-2xl">
+                    <p class="text-xs font-black uppercase text-slate-400 mb-3">Filter Workouts</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" id="filter-weights" checked onchange="filterWorkouts()" class="w-4 h-4 accent-indigo-600">
+                            <span class="text-sm font-bold">💪 Weights</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" id="filter-cardio" checked onchange="filterWorkouts()" class="w-4 h-4 accent-indigo-600">
+                            <span class="text-sm font-bold">🏃 Cardio</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" id="filter-core" checked onchange="filterWorkouts()" class="w-4 h-4 accent-indigo-600">
+                            <span class="text-sm font-bold">🎯 Core</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <input type="checkbox" id="filter-walking" checked onchange="filterWorkouts()" class="w-4 h-4 accent-indigo-600">
+                            <span class="text-sm font-bold">🚶 Walking</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div id="training-logs-list"></div>
             </div>
 
             <div id="logs-nutrition-view" class="hidden space-y-4">
+                <!-- HYDRATION LOGS -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-lg font-black mb-4 flex items-center gap-2">
+                        <i data-lucide="droplet" class="w-5 h-5 text-cyan-500"></i>
+                        Hydration History
+                    </h3>
+                    <div id="hydration-logs-list" class="space-y-2"></div>
+                </div>
+                
                 <div id="nutrition-logs-list"></div>
             </div>
         </section>
@@ -767,9 +828,292 @@
                         <div id="habits-list" class="space-y-2"></div>
                     </div>
                 </div>
+
+                <!-- TRACKING OPTIONS -->
+                <div class="border-t border-slate-200 pt-6">
+                    <h3 class="text-[11px] font-black uppercase text-slate-400 mb-4">Tracking Options</h3>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <div>
+                                <p class="font-bold text-sm">Track Hydration</p>
+                                <p class="text-xs text-slate-500">Log daily water intake</p>
+                            </div>
+                            <input type="checkbox" id="track-hydration" onchange="toggleTracking('hydration')" class="w-5 h-5 accent-indigo-600" checked>
+                        </label>
+                        
+                        <label class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                            <div>
+                                <p class="font-bold text-sm">Track Steps</p>
+                                <p class="text-xs text-slate-500">Count daily steps</p>
+                            </div>
+                            <input type="checkbox" id="track-steps" onchange="toggleTracking('steps')" class="w-5 h-5 accent-indigo-600" checked>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- GOAL SETTING -->
+                <div class="border-t border-slate-200 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-[11px] font-black uppercase text-slate-400">Goals</h3>
+                        <button onclick="openGoalSetting()" class="text-xs font-bold text-indigo-600 hover:text-indigo-700">+ Add Goal</button>
+                    </div>
+                    <div id="goals-list" class="space-y-2"></div>
+                </div>
             </div>
         </section>
     </main>
+
+    <!-- MANUAL FOOD ENTRY MODAL -->
+    <div id="manual-food-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Add Food Manually</h3>
+                <button onclick="closeManualFoodEntry()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <!-- FOOD IMAGE (Optional) -->
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Food Image (Optional)</label>
+                <div class="flex items-center gap-4">
+                    <div id="manual-food-preview" class="w-24 h-24 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden">
+                        <i data-lucide="image" class="w-10 h-10 text-slate-300"></i>
+                    </div>
+                    <div class="flex-1">
+                        <input type="file" id="manual-food-image" accept="image/*" class="hidden" onchange="previewManualFoodImage(event)">
+                        <button onclick="document.getElementById('manual-food-image').click()" class="w-full py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-100">
+                            Choose Image
+                        </button>
+                        <button onclick="clearManualFoodImage()" class="w-full mt-2 py-2 text-xs text-slate-400 hover:text-red-600">
+                            Clear Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOD NAME -->
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Food Name</label>
+                <input type="text" id="manual-food-name" placeholder="e.g., Chicken Sandwich" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500">
+            </div>
+
+            <!-- STORE/RESTAURANT -->
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Store / Restaurant</label>
+                <div class="relative">
+                    <input 
+                        id="manual-food-store-input" 
+                        type="text" 
+                        placeholder="Search stores or restaurants..." 
+                        class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500"
+                        onfocus="showManualStoreDropdown()"
+                        oninput="filterManualStoreDropdown(this.value)"
+                        autocomplete="off">
+                    <div id="manual-store-dropdown" class="hidden absolute z-50 mt-1 w-full bg-white rounded-2xl shadow-2xl border-2 border-indigo-100 max-h-48 overflow-y-auto">
+                        <!-- Dropdown populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUTRITION INFO -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Calories (kcal)</label>
+                    <input type="number" id="manual-food-calories" min="0" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-center outline-none border-2 border-transparent focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Protein (g)</label>
+                    <input type="number" id="manual-food-protein" min="0" step="0.1" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-center outline-none border-2 border-transparent focus:border-indigo-500">
+                </div>
+            </div>
+
+            <!-- OPTIONAL MACROS (Collapsible) -->
+            <div class="mb-6">
+                <button onclick="toggleManualFoodMacros()" class="w-full text-left text-xs font-bold text-indigo-600 hover:text-indigo-700 mb-3">
+                    <span id="manual-macros-toggle">+ Add More Details (Optional)</span>
+                </button>
+                <div id="manual-food-macros" class="hidden grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Carbs (g)</label>
+                        <input type="number" id="manual-food-carbs" min="0" step="0.1" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Fat (g)</label>
+                        <input type="number" id="manual-food-fat" min="0" step="0.1" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Fiber (g)</label>
+                        <input type="number" id="manual-food-fiber" min="0" step="0.1" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Sugar (g)</label>
+                        <input type="number" id="manual-food-sugar" min="0" step="0.1" placeholder="0" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SERVING SIZE -->
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Serving Size</label>
+                <input type="text" id="manual-food-serving" placeholder="e.g., 1 sandwich, 100g" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+            </div>
+
+            <!-- BUTTONS -->
+            <button onclick="saveManualFood()" class="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black text-lg shadow-lg hover:bg-emerald-700 mb-3">
+                Save to My Foods
+            </button>
+            <button onclick="closeManualFoodEntry()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase hover:text-slate-600">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- SIDEBAR MENU -->
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" onclick="toggleSidebar()"></div>
+    <div id="sidebar" class="fixed left-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-[101] transform -translate-x-full transition-transform duration-300">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-2xl font-black text-indigo-600">Menu</h2>
+                <button onclick="toggleSidebar()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <nav class="space-y-2">
+                <button onclick="switchTab('dashboard'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Dashboard</span>
+                </button>
+                
+                <button onclick="switchTab('training'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="dumbbell" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Training</span>
+                </button>
+                
+                <button onclick="switchTab('nutrition'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="apple" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Nutrition</span>
+                </button>
+                
+                <button onclick="switchTab('logs'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Logs</span>
+                </button>
+                
+                <button onclick="switchTab('metrics'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Metrics</span>
+                </button>
+                
+                <button onclick="switchTab('photos'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="camera" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Progress Photos</span>
+                </button>
+                
+                <button onclick="switchTab('settings'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                        <i data-lucide="settings" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold text-slate-700">Settings</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- GOAL SETTING MODAL -->
+    <div id="goal-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Set Goal</h3>
+                <button onclick="closeGoalModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Goal Type</label>
+                <select id="goal-type" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                    <option value="short">Short-term (1-4 weeks)</option>
+                    <option value="medium">Medium-term (1-3 months)</option>
+                    <option value="long">Long-term (3+ months)</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Goal Description</label>
+                <input type="text" id="goal-description" placeholder="e.g., Lose 5kg, Run 5k" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+            </div>
+
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Target Date</label>
+                <input type="date" id="goal-deadline" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+            </div>
+
+            <button onclick="saveGoal()" class="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black hover:bg-indigo-700 mb-3">
+                Save Goal
+            </button>
+            <button onclick="closeGoalModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
+
+    <!-- CARDIO LOGGING MODAL -->
+    <div id="cardio-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Log Cardio Activity</h3>
+                <button onclick="closeCardioModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Activity Type</label>
+                <select id="cardio-type" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                    <option value="running">🏃 Running</option>
+                    <option value="cycling">🚴 Cycling</option>
+                    <option value="swimming">🏊 Swimming</option>
+                    <option value="walking">🚶 Walking</option>
+                    <option value="hiking">⛰️ Hiking</option>
+                    <option value="rowing">🚣 Rowing</option>
+                    <option value="elliptical">⚡ Elliptical</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Duration (min)</label>
+                    <input type="number" id="cardio-duration" min="1" placeholder="30" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-center outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Distance (km)</label>
+                    <input type="number" id="cardio-distance" min="0" step="0.1" placeholder="5.0" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-center outline-none">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Calories Burned (optional)</label>
+                <input type="number" id="cardio-calories" min="0" placeholder="300" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-center outline-none">
+            </div>
+
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Notes (optional)</label>
+                <textarea id="cardio-notes" rows="3" placeholder="How did it feel?" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none resize-none"></textarea>
+            </div>
+
+            <button onclick="saveCardio()" class="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black hover:bg-emerald-700 mb-3">
+                Save Activity
+            </button>
+            <button onclick="closeCardioModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
 
     <!-- BOTTOM NAVIGATION -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-2 sm:px-6 py-3 sm:py-4 flex justify-between items-center z-50">
@@ -1222,11 +1566,18 @@
             nutritionHistory: [],
             metricsHistory: [],
             createdMeals: [],
+            customFoods: [],
             workoutEnv: 'gym',
             currentPhotos: { front: null, side: null, back: null },
             habits: [],
             habitsEnabled: false,
             habitCompletions: {},
+            trackHydration: true,
+            trackSteps: true,
+            goals: [],
+            cardioLogs: [],
+            hydrationLogs: {},
+            stepsLogs: {},
             equipment: {
                 gym: {
                     'Barbell': true,
@@ -1376,6 +1727,7 @@
 
         function updateWater(ml) {
             state.waterLogs[state.viewDate] = Math.max(0, (state.waterLogs[state.viewDate] || 0) + ml);
+            state.hydrationLogs[state.viewDate] = state.waterLogs[state.viewDate];
             saveState();
             renderDashboard();
             showToast(ml > 0 ? 'Water added' : 'Water removed');
@@ -2132,6 +2484,20 @@
                 }
                 
                 searchResults = uniqueResults;
+                
+                // Add custom foods matching the query
+                const customMatches = state.customFoods.filter(food => {
+                    const foodName = food.name.toLowerCase();
+                    const foodBrand = (food.brand || '').toLowerCase();
+                    const queryLower = query.toLowerCase();
+                    const storeMatch = selectedStore ? foodBrand.includes(selectedStore.name.toLowerCase()) : true;
+                    
+                    return (foodName.includes(queryLower) || foodBrand.includes(queryLower)) && storeMatch;
+                });
+                
+                // Add custom foods to the beginning
+                searchResults = [...customMatches, ...searchResults];
+                
                 renderSearchResults();
                 
             } catch (error) {
@@ -2180,12 +2546,13 @@
             }
             
             const html = searchResults.map((item, idx) => `
-                <div onclick="openFoodPopup(${idx})" class="bg-white p-4 rounded-[28px] border flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openFoodPopup(${idx})" class="bg-white p-4 rounded-[28px] border ${item.source === 'Custom' ? 'border-purple-200 bg-purple-50' : ''} flex items-center gap-4 cursor-pointer hover:shadow-lg transition-all">
                     <img src="${item.image}" class="w-14 h-14 object-contain bg-slate-50 rounded-xl p-1" onerror="this.src='https://via.placeholder.com/100'">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
                             <p class="font-bold text-sm">${item.name}</p>
-                            ${item.source ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded ${item.source === 'USDA' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${item.source}</span>` : ''}
+                            ${item.source === 'Custom' ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-purple-500 text-white">MY FOOD</span>` : ''}
+                            ${item.source && item.source !== 'Custom' ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded ${item.source === 'USDA' ? 'bg-green-100 text-green-700' : item.source === 'Nutritionix' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}">${item.source}</span>` : ''}
                         </div>
                         ${item.brand ? `<p class="text-[10px] text-indigo-600 font-semibold mb-1">${item.brand}</p>` : ''}
                         <p class="text-xs text-slate-400">${item.calories}kcal • ${item.protein}g protein${item.carbs ? ` • ${item.carbs}g carbs` : ''} • ${item.serving}</p>
@@ -2209,6 +2576,169 @@
                 searchFood(foodSearchInput.value.trim());
             }
         }
+
+        // ============================================================================
+        // MANUAL FOOD ENTRY
+        // ============================================================================
+
+        let manualFoodImageData = null;
+
+        function openManualFoodEntry() {
+            document.getElementById('manual-food-modal').style.display = 'flex';
+            // Reset form
+            document.getElementById('manual-food-name').value = '';
+            document.getElementById('manual-food-store-input').value = '';
+            document.getElementById('manual-food-calories').value = '';
+            document.getElementById('manual-food-protein').value = '';
+            document.getElementById('manual-food-carbs').value = '';
+            document.getElementById('manual-food-fat').value = '';
+            document.getElementById('manual-food-fiber').value = '';
+            document.getElementById('manual-food-sugar').value = '';
+            document.getElementById('manual-food-serving').value = '100g';
+            clearManualFoodImage();
+            lucide.createIcons();
+        }
+
+        function closeManualFoodEntry() {
+            document.getElementById('manual-food-modal').style.display = 'none';
+            manualFoodImageData = null;
+        }
+
+        function previewManualFoodImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    manualFoodImageData = e.target.result;
+                    const preview = document.getElementById('manual-food-preview');
+                    preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearManualFoodImage() {
+            manualFoodImageData = null;
+            document.getElementById('manual-food-preview').innerHTML = '<i data-lucide="image" class="w-10 h-10 text-slate-300"></i>';
+            document.getElementById('manual-food-image').value = '';
+            lucide.createIcons();
+        }
+
+        function toggleManualFoodMacros() {
+            const macrosDiv = document.getElementById('manual-food-macros');
+            const toggleText = document.getElementById('manual-macros-toggle');
+            const isHidden = macrosDiv.classList.contains('hidden');
+            
+            if (isHidden) {
+                macrosDiv.classList.remove('hidden');
+                toggleText.innerText = '- Hide Extra Details';
+            } else {
+                macrosDiv.classList.add('hidden');
+                toggleText.innerText = '+ Add More Details (Optional)';
+            }
+        }
+
+        function showManualStoreDropdown() {
+            const dropdown = document.getElementById('manual-store-dropdown');
+            if (!dropdown) return;
+            
+            const html = UK_STORES_RESTAURANTS.map(store => {
+                const typeLabel = store.type === 'fastfood' ? '🍔' : store.type === 'supermarket' ? '🛒' : '';
+                return `<div onclick="selectManualStore('${store.name}')" class="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-0 flex items-center gap-2 transition-colors">
+                    <span>${typeLabel}</span>
+                    <span class="font-medium text-sm flex-1">${store.name}</span>
+                </div>`;
+            }).join('');
+            
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        }
+
+        function filterManualStoreDropdown(query) {
+            const dropdown = document.getElementById('manual-store-dropdown');
+            if (!dropdown) return;
+            
+            const filtered = UK_STORES_RESTAURANTS.filter(store => 
+                store.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="p-3 text-slate-400 text-sm italic text-center">No stores found</div>';
+            } else {
+                const html = filtered.map(store => {
+                    const typeLabel = store.type === 'fastfood' ? '🍔' : store.type === 'supermarket' ? '🛒' : '';
+                    return `<div onclick="selectManualStore('${store.name}')" class="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-0 flex items-center gap-2 transition-colors">
+                        <span>${typeLabel}</span>
+                        <span class="font-medium text-sm flex-1">${store.name}</span>
+                    </div>`;
+                }).join('');
+                dropdown.innerHTML = html;
+            }
+            
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectManualStore(storeName) {
+            document.getElementById('manual-food-store-input').value = storeName;
+            document.getElementById('manual-store-dropdown').classList.add('hidden');
+        }
+
+        function saveManualFood() {
+            const name = document.getElementById('manual-food-name').value.trim();
+            const store = document.getElementById('manual-food-store-input').value.trim();
+            const calories = parseFloat(document.getElementById('manual-food-calories').value) || 0;
+            const protein = parseFloat(document.getElementById('manual-food-protein').value) || 0;
+            const carbs = parseFloat(document.getElementById('manual-food-carbs').value) || 0;
+            const fat = parseFloat(document.getElementById('manual-food-fat').value) || 0;
+            const fiber = parseFloat(document.getElementById('manual-food-fiber').value) || 0;
+            const sugar = parseFloat(document.getElementById('manual-food-sugar').value) || 0;
+            const serving = document.getElementById('manual-food-serving').value.trim() || '100g';
+
+            if (!name) {
+                showToast('Please enter food name');
+                return;
+            }
+            if (calories === 0 && protein === 0) {
+                showToast('Please enter at least calories or protein');
+                return;
+            }
+
+            const customFood = {
+                id: Date.now(),
+                name,
+                brand: store || 'Custom',
+                image: manualFoodImageData || 'https://via.placeholder.com/100',
+                calories,
+                protein: protein.toFixed(1),
+                carbs: carbs.toFixed(1),
+                fat: fat.toFixed(1),
+                fiber: fiber.toFixed(1),
+                sugar: sugar.toFixed(1),
+                sodium: '0',
+                saturated_fat: '0',
+                cholesterol: '0',
+                serving,
+                source: 'Custom',
+                categories: 'user-added'
+            };
+
+            state.customFoods.push(customFood);
+            saveState();
+            closeManualFoodEntry();
+            showToast(`${name} saved to your foods!`);
+            
+            // Add to search results for immediate use
+            searchResults.unshift(customFood);
+            renderSearchResults();
+        }
+
+        // Close manual store dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.matches('#manual-food-store-input') && !e.target.closest('#manual-store-dropdown')) {
+                const dropdown = document.getElementById('manual-store-dropdown');
+                if (dropdown) dropdown.classList.add('hidden');
+            }
+        });
 
         function openFoodPopup(idx) {
             currentFoodItem = searchResults[idx];
@@ -2684,6 +3214,12 @@
             document.getElementById('logs-training-view').classList.toggle('hidden', tab !== 'training');
             document.getElementById('logs-nutrition-view').classList.toggle('hidden', tab !== 'nutrition');
             
+            if (tab === 'nutrition') {
+                renderHydrationLogs();
+            } else {
+                filterWorkouts();
+            }
+            
             renderLogs();
         }
 
@@ -2992,6 +3528,13 @@
                 renderHabitsSettings();
                 renderDashboardHabits();
             }
+            
+            // Tracking toggles
+            document.getElementById('track-hydration').checked = state.trackHydration !== false;
+            document.getElementById('track-steps').checked = state.trackSteps !== false;
+            
+            // Goals
+            renderGoals();
         }
 
         function toggleEquipment(env, equipment) {
@@ -3081,6 +3624,312 @@
             document.getElementById('dashboard-habits-list').innerHTML = html || '<p class="text-xs text-slate-400 italic text-center py-4">No habits to track today</p>';
             lucide.createIcons();
         }
+
+        // ============================================================================
+        // SIDEBAR MENU
+        // ============================================================================
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            
+            if (isOpen) {
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            } else {
+                sidebar.classList.add('translate-x-0');
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        // ============================================================================
+        // GOAL SETTING
+        // ============================================================================
+
+        function openGoalSetting() {
+            document.getElementById('goal-modal').style.display = 'flex';
+            document.getElementById('goal-description').value = '';
+            document.getElementById('goal-deadline').value = '';
+            lucide.createIcons();
+        }
+
+        function closeGoalModal() {
+            document.getElementById('goal-modal').style.display = 'none';
+        }
+
+        function saveGoal() {
+            const type = document.getElementById('goal-type').value;
+            const description = document.getElementById('goal-description').value.trim();
+            const deadline = document.getElementById('goal-deadline').value;
+            
+            if (!description || !deadline) {
+                showToast('Please fill all fields');
+                return;
+            }
+            
+            state.goals.push({
+                id: Date.now(),
+                type,
+                description,
+                deadline,
+                completed: false,
+                createdAt: new Date().toISOString()
+            });
+            
+            saveState();
+            closeGoalModal();
+            renderGoals();
+            showToast('Goal added!');
+        }
+
+        function renderGoals() {
+            const html = state.goals.filter(g => !g.completed).map(goal => {
+                const typeColors = {
+                    short: 'bg-green-100 text-green-700',
+                    medium: 'bg-yellow-100 text-yellow-700',
+                    long: 'bg-purple-100 text-purple-700'
+                };
+                const typeLabels = {
+                    short: 'Short-term',
+                    medium: 'Medium-term',
+                    long: 'Long-term'
+                };
+                
+                return `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <div class="flex-1">
+                            <span class="text-[9px] font-black ${typeColors[goal.type]} px-2 py-1 rounded uppercase">${typeLabels[goal.type]}</span>
+                            <p class="font-bold text-sm mt-2">${goal.description}</p>
+                            <p class="text-xs text-slate-400 mt-1">Due: ${new Date(goal.deadline).toLocaleDateString()}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="completeGoal(${goal.id})" class="w-8 h-8 bg-green-50 text-green-600 rounded-lg hover:bg-green-100">
+                                <i data-lucide="check" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                            <button onclick="deleteGoal(${goal.id})" class="w-8 h-8 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                                <i data-lucide="x" class="w-4 h-4 mx-auto"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('goals-list').innerHTML = html || '<p class="text-xs text-slate-400 text-center py-4">No active goals</p>';
+            lucide.createIcons();
+        }
+
+        function completeGoal(id) {
+            const goal = state.goals.find(g => g.id === id);
+            if (goal) {
+                goal.completed = true;
+                saveState();
+                renderGoals();
+                showToast('Goal completed! 🎉');
+            }
+        }
+
+        function deleteGoal(id) {
+            state.goals = state.goals.filter(g => g.id !== id);
+            saveState();
+            renderGoals();
+        }
+
+        // ============================================================================
+        // CARDIO LOGGING
+        // ============================================================================
+
+        function openCardioModal() {
+            document.getElementById('cardio-modal').style.display = 'flex';
+            document.getElementById('cardio-duration').value = '';
+            document.getElementById('cardio-distance').value = '';
+            document.getElementById('cardio-calories').value = '';
+            document.getElementById('cardio-notes').value = '';
+            lucide.createIcons();
+        }
+
+        function closeCardioModal() {
+            document.getElementById('cardio-modal').style.display = 'none';
+        }
+
+        function saveCardio() {
+            const type = document.getElementById('cardio-type').value;
+            const duration = parseFloat(document.getElementById('cardio-duration').value);
+            const distance = parseFloat(document.getElementById('cardio-distance').value) || 0;
+            const calories = parseFloat(document.getElementById('cardio-calories').value) || 0;
+            const notes = document.getElementById('cardio-notes').value.trim();
+            const workoutDate = window.selectedWorkoutDate || document.getElementById('workout-date-picker').value || new Date().toISOString().split('T')[0];
+            
+            if (!duration) {
+                showToast('Please enter duration');
+                return;
+            }
+            
+            const cardioActivity = {
+                id: Date.now(),
+                date: workoutDate,
+                type,
+                duration,
+                distance,
+                calories,
+                notes,
+                category: 'cardio'
+            };
+            
+            state.cardioLogs.push(cardioActivity);
+            
+            // Also add to workout history
+            state.workoutHistory.unshift({
+                id: Date.now(),
+                date: workoutDate,
+                focus: `${type.charAt(0).toUpperCase() + type.slice(1)} Cardio`,
+                duration: `${duration} min`,
+                exercises: [{
+                    name: `${type.charAt(0).toUpperCase() + type.slice(1)}`,
+                    sets: [{reps: duration, weight: distance}]
+                }],
+                category: 'cardio',
+                cardioData: cardioActivity
+            });
+            
+            saveState();
+            closeCardioModal();
+            renderDashboard();
+            showToast('Cardio activity logged!');
+        }
+
+        // ============================================================================
+        // TRACKING TOGGLES
+        // ============================================================================
+
+        function toggleTracking(type) {
+            if (type === 'hydration') {
+                state.trackHydration = document.getElementById('track-hydration').checked;
+                document.getElementById('hydration-tracker')?.classList.toggle('hidden', !state.trackHydration);
+            } else if (type === 'steps') {
+                state.trackSteps = document.getElementById('track-steps').checked;
+                document.getElementById('steps-tracker')?.classList.toggle('hidden', !state.trackSteps);
+            }
+            saveState();
+            renderDashboard();
+        }
+
+        // ============================================================================
+        // WORKOUT FILTERING
+        // ============================================================================
+
+        function filterWorkouts() {
+            const showWeights = document.getElementById('filter-weights').checked;
+            const showCardio = document.getElementById('filter-cardio').checked;
+            const showCore = document.getElementById('filter-core').checked;
+            const showWalking = document.getElementById('filter-walking').checked;
+            
+            renderTrainingLogs(showWeights, showCardio, showCore, showWalking);
+        }
+
+        function renderTrainingLogs(showWeights = true, showCardio = true, showCore = true, showWalking = true) {
+            const filteredWorkouts = state.workoutHistory.filter(workout => {
+                const category = workout.category || 'weights';
+                const focus = (workout.focus || '').toLowerCase();
+                
+                if (category === 'cardio') {
+                    const isWalking = (workout.cardioData?.type || focus).includes('walk');
+                    return isWalking ? showWalking : showCardio;
+                }
+                if (focus.includes('core')) return showCore;
+                return showWeights;
+            });
+            
+            const html = filteredWorkouts.map(w => `
+                <div class="glass-card p-6 rounded-2xl">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-xs text-slate-400">${w.date}</p>
+                            <h4 class="font-black text-lg">${w.focus}</h4>
+                            ${w.cardioData ? `
+                                <p class="text-sm text-indigo-600 mt-1">
+                                    ${w.cardioData.distance}km • ${w.cardioData.duration}min
+                                    ${w.cardioData.calories ? ` • ${w.cardioData.calories}kcal` : ''}
+                                </p>
+                            ` : `<p class="text-sm text-slate-500">${w.exercises.length} exercises • ${w.duration}</p>`}
+                        </div>
+                    </div>
+                    ${w.cardioData && w.cardioData.notes ? `<p class="text-xs text-slate-500 mt-2">${w.cardioData.notes}</p>` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('training-logs-list').innerHTML = html || '<p class="text-center text-slate-400 py-8">No workouts logged</p>';
+            lucide.createIcons();
+        }
+
+        // ============================================================================
+        // HYDRATION & STEPS LOGGING
+        // ============================================================================
+
+        function logWaterToHistory() {
+            const date = state.viewDate;
+            const amount = state.waterLogs[date] || 0;
+            
+            if (!state.hydrationLogs[date]) {
+                state.hydrationLogs[date] = amount;
+                saveState();
+            }
+        }
+
+        function logStepsToHistory() {
+            const date = state.viewDate;
+            const steps = state.stepsLogs[date] || 0;
+            
+            if (steps > 0) {
+                saveState();
+            }
+        }
+
+        function renderHydrationLogs() {
+            const logs = Object.entries(state.hydrationLogs)
+                .sort(([a], [b]) => b.localeCompare(a))
+                .slice(0, 30);
+            
+            const html = logs.map(([date, ml]) => `
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                    <span class="text-sm font-bold">${new Date(date).toLocaleDateString()}</span>
+                    <span class="text-sm text-cyan-600 font-bold">${ml}ml</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('hydration-logs-list').innerHTML = html || '<p class="text-xs text-slate-400 text-center py-4">No hydration logs</p>';
+        }
+
+        // ============================================================================
+        // EXERCISE CHECKBOXES FOR SPECIFIC MUSCLES
+        // ============================================================================
+
+        function toggleSpecificMuscle() {
+            const focus = document.getElementById('workout-focus').value;
+            const container = document.getElementById('specific-muscle-container');
+            
+            if (focus === 'Specific Muscle') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // Update AI workout generation to use muscle-specific exercises with checkboxes
+        const MUSCLE_EXERCISES = {
+            'Chest': ['Barbell Bench Press', 'Incline Dumbbell Press', 'Cable Flyes', 'Push-ups', 'Dips', 'Decline Press'],
+            'Back': ['Pull-ups', 'Barbell Rows', 'Lat Pulldown', 'T-Bar Rows', 'Cable Rows', 'Deadlifts'],
+            'Shoulders': ['Overhead Press', 'Lateral Raises', 'Front Raises', 'Face Pulls', 'Arnold Press', 'Upright Rows'],
+            'Biceps': ['Barbell Curls', 'Hammer Curls', 'Preacher Curls', 'Cable Curls', 'Concentration Curls'],
+            'Triceps': ['Tricep Dips', 'Skull Crushers', 'Cable Pushdowns', 'Overhead Extension', 'Close Grip Press'],
+            'Quads': ['Squats', 'Leg Press', 'Lunges', 'Leg Extensions', 'Bulgarian Split Squats'],
+            'Hamstrings': ['Romanian Deadlifts', 'Leg Curls', 'Nordic Curls', 'Good Mornings'],
+            'Glutes': ['Hip Thrusts', 'Glute Bridges', 'Cable Kickbacks', 'Bulgarian Split Squats'],
+            'Calves': ['Standing Calf Raises', 'Seated Calf Raises', 'Jump Rope']
+        };
 
         // ============================================================================
         // INITIALIZATION
