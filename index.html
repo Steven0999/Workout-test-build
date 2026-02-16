@@ -388,28 +388,36 @@
                 </div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center"><i data-lucide="droplet" class="text-cyan-500"></i></div>
-                    <div><h4 class="font-bold">Hydration</h4><p id="water-count" class="text-xs text-slate-500">0 / 2.5L</p></div>
+            <div id="hydration-tracker" class="glass-card rounded-[2.5rem] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center"><i data-lucide="droplet" class="text-cyan-500"></i></div>
+                        <div>
+                            <h4 class="font-bold">Hydration Goal</h4>
+                            <p id="water-count" class="text-xs text-slate-500">0 / 2.5L</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleHydrationGoal()" id="hydration-check" class="w-16 h-16 rounded-2xl border-4 border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
+                        <i data-lucide="check" class="w-8 h-8 text-transparent"></i>
+                    </button>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="updateWater(-250)" class="w-14 h-14 rounded-2xl bg-slate-50 text-xl font-bold hover:bg-slate-100 active:bg-slate-200">-</button>
-                    <button onclick="updateWater(250)" class="w-14 h-14 rounded-2xl bg-cyan-500 text-white shadow-lg text-2xl font-bold hover:bg-cyan-600 active:bg-cyan-700">+</button>
-                </div>
+                <div class="text-xs text-slate-400 text-center">Click ✓ when you reach your daily goal</div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-4">
+            <div id="steps-tracker" class="glass-card rounded-[2.5rem] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
                         <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center"><i data-lucide="footprints" class="text-amber-500"></i></div>
-                        <div><h4 class="font-bold">Steps</h4><p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p></div>
+                        <div>
+                            <h4 class="font-bold">Steps Goal</h4>
+                            <p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p>
+                        </div>
                     </div>
+                    <button onclick="toggleStepsGoal()" id="steps-check" class="w-16 h-16 rounded-2xl border-4 border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
+                        <i data-lucide="check" class="w-8 h-8 text-transparent"></i>
+                    </button>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="updateSteps(-500)" class="flex-1 h-14 rounded-2xl bg-slate-50 text-slate-600 font-bold text-lg hover:bg-slate-100 active:bg-slate-200">-500</button>
-                    <button onclick="updateSteps(500)" class="flex-1 h-14 rounded-2xl bg-amber-500 text-white font-bold text-lg hover:bg-amber-600 active:bg-amber-700">+500</button>
-                </div>
+                <div class="text-xs text-slate-400 text-center">Click ✓ when you reach your daily goal</div>
             </div>
 
             <div id="habits-tracker" class="hidden glass-card rounded-[2.5rem] p-6">
@@ -684,6 +692,24 @@
 
         <!-- BODY METRICS -->
         <section id="metrics" class="tab-content space-y-6">
+            <!-- DATE SELECTOR FOR METRICS -->
+            <div class="glass-card p-4 rounded-2xl">
+                <div class="flex items-center justify-between gap-3">
+                    <button onclick="changeMetricsDate(-1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex-1">
+                        <input type="date" id="metrics-date-picker" onchange="selectMetricsDate(this.value)" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-center outline-none">
+                    </div>
+                    <button onclick="changeMetricsDate(1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div id="metrics-date-warning" class="hidden mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <p class="text-xs text-amber-800 font-bold text-center">⚠️ Recording for past date - Click "Save Metrics" to confirm</p>
+                </div>
+            </div>
+
             <div class="glass-card p-8 rounded-[3rem] space-y-8">
                 <div class="bg-slate-50 p-6 rounded-3xl text-center border">
                     <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">Weight (kg)</span>
@@ -1549,6 +1575,7 @@
 
         let state = {
             viewDate: new Date().toISOString().split('T')[0],
+            metricsDate: new Date().toISOString().split('T')[0],
             goals: { calories: 2500, water: 2500, steps: 10000 },
             waterLogs: {},
             stepsLogs: {},
@@ -1563,6 +1590,8 @@
             habits: [],
             habitsEnabled: false,
             habitCompletions: {},
+            hydrationGoalCompletions: {},
+            stepsGoalCompletions: {},
             trackHydration: true,
             trackSteps: true,
             goals: [],
@@ -1693,6 +1722,40 @@
             const steps = state.stepsLogs[state.viewDate] || 0;
             document.getElementById('steps-count').innerText = `${steps.toLocaleString()} / ${state.goals.steps.toLocaleString()}`;
 
+            // Update hydration goal checkbox
+            const hydrationComplete = state.hydrationGoalCompletions[state.viewDate] || false;
+            const hydrationCheckBtn = document.getElementById('hydration-check');
+            if (hydrationCheckBtn) {
+                if (hydrationComplete) {
+                    hydrationCheckBtn.classList.add('bg-cyan-500', 'border-cyan-500');
+                    hydrationCheckBtn.classList.remove('border-slate-200');
+                    hydrationCheckBtn.querySelector('i').classList.remove('text-transparent');
+                    hydrationCheckBtn.querySelector('i').classList.add('text-white');
+                } else {
+                    hydrationCheckBtn.classList.remove('bg-cyan-500', 'border-cyan-500');
+                    hydrationCheckBtn.classList.add('border-slate-200');
+                    hydrationCheckBtn.querySelector('i').classList.add('text-transparent');
+                    hydrationCheckBtn.querySelector('i').classList.remove('text-white');
+                }
+            }
+
+            // Update steps goal checkbox
+            const stepsComplete = state.stepsGoalCompletions[state.viewDate] || false;
+            const stepsCheckBtn = document.getElementById('steps-check');
+            if (stepsCheckBtn) {
+                if (stepsComplete) {
+                    stepsCheckBtn.classList.add('bg-amber-500', 'border-amber-500');
+                    stepsCheckBtn.classList.remove('border-slate-200');
+                    stepsCheckBtn.querySelector('i').classList.remove('text-transparent');
+                    stepsCheckBtn.querySelector('i').classList.add('text-white');
+                } else {
+                    stepsCheckBtn.classList.remove('bg-amber-500', 'border-amber-500');
+                    stepsCheckBtn.classList.add('border-slate-200');
+                    stepsCheckBtn.querySelector('i').classList.add('text-transparent');
+                    stepsCheckBtn.querySelector('i').classList.remove('text-white');
+                }
+            }
+
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
             const weekWorkouts = state.workoutHistory.filter(w => new Date(w.date) > weekAgo).length;
@@ -1706,6 +1769,24 @@
                     <div class="text-[10px] opacity-70 uppercase">Last Weight</div>
                     <div class="font-bold text-xl">${state.metricsHistory[0]?.weight || '--'} kg</div>
                 </div>`;
+        }
+
+        function toggleHydrationGoal() {
+            const date = state.viewDate;
+            state.hydrationGoalCompletions[date] = !state.hydrationGoalCompletions[date];
+            saveState();
+            renderDashboard();
+            showToast(state.hydrationGoalCompletions[date] ? 'Hydration goal completed! 💧' : 'Hydration goal unmarked');
+            lucide.createIcons();
+        }
+
+        function toggleStepsGoal() {
+            const date = state.viewDate;
+            state.stepsGoalCompletions[date] = !state.stepsGoalCompletions[date];
+            saveState();
+            renderDashboard();
+            showToast(state.stepsGoalCompletions[date] ? 'Steps goal completed! 👟' : 'Steps goal unmarked');
+            lucide.createIcons();
         }
 
         function updateWater(ml) {
@@ -3206,6 +3287,71 @@
         }
 
         // ============================================================================
+        // DATE MANAGEMENT - METRICS
+        // ============================================================================
+
+        function changeMetricsDate(days) {
+            const currentDate = document.getElementById('metrics-date-picker').value || new Date().toISOString().split('T')[0];
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() + days);
+            const newDate = date.toISOString().split('T')[0];
+            selectMetricsDate(newDate);
+        }
+
+        function selectMetricsDate(dateStr) {
+            state.metricsDate = dateStr;
+            document.getElementById('metrics-date-picker').value = dateStr;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const isToday = dateStr === today;
+            
+            // Show/hide warning
+            document.getElementById('metrics-date-warning').classList.toggle('hidden', isToday);
+            
+            // Load existing metrics for this date if available
+            const existingMetrics = state.metricsHistory.find(m => m.date === dateStr);
+            
+            if (existingMetrics) {
+                // Populate form with existing data
+                document.getElementById('metric-weight').value = existingMetrics.weight || '';
+                document.getElementById('metric-chest').value = existingMetrics.chest || '';
+                document.getElementById('metric-shoulders').value = existingMetrics.shoulders || '';
+                document.getElementById('metric-arms').value = existingMetrics.arms || '';
+                document.getElementById('metric-waist').value = existingMetrics.waist || '';
+                document.getElementById('metric-legs').value = existingMetrics.legs || '';
+                document.getElementById('metric-glutes').value = existingMetrics.glutes || '';
+                
+                // Load photos
+                if (existingMetrics.photos) {
+                    state.currentPhotos = { ...existingMetrics.photos };
+                    ['front', 'side', 'back'].forEach(type => {
+                        const img = document.getElementById(`photo-${type}-preview`);
+                        if (existingMetrics.photos[type]) {
+                            img.src = existingMetrics.photos[type];
+                            img.classList.remove('hidden');
+                        } else {
+                            img.classList.add('hidden');
+                        }
+                    });
+                }
+                
+                showToast('Loaded metrics for ' + new Date(dateStr).toLocaleDateString());
+            } else {
+                // Clear form for new entry
+                ['weight', 'chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].forEach(m => {
+                    document.getElementById(`metric-${m}`).value = '';
+                });
+                
+                state.currentPhotos = { front: null, side: null, back: null };
+                ['front', 'side', 'back'].forEach(type => {
+                    document.getElementById(`photo-${type}-preview`).classList.add('hidden');
+                });
+            }
+            
+            lucide.createIcons();
+        }
+
+        // ============================================================================
         // LOGS
         // ============================================================================
 
@@ -3325,9 +3471,14 @@
                 return;
             }
 
-            state.metricsHistory.unshift({
-                id: Date.now(),
-                date: state.viewDate,
+            const metricsDate = state.metricsDate || new Date().toISOString().split('T')[0];
+            
+            // Check if metrics already exist for this date
+            const existingIndex = state.metricsHistory.findIndex(m => m.date === metricsDate);
+            
+            const metricsData = {
+                id: existingIndex >= 0 ? state.metricsHistory[existingIndex].id : Date.now(),
+                date: metricsDate,
                 weight,
                 chest: parseFloat(document.getElementById('metric-chest').value) || 0,
                 shoulders: parseFloat(document.getElementById('metric-shoulders').value) || 0,
@@ -3340,13 +3491,22 @@
                     side: state.currentPhotos.side,
                     back: state.currentPhotos.back
                 }
-            });
+            };
+            
+            if (existingIndex >= 0) {
+                // Update existing metrics
+                state.metricsHistory[existingIndex] = metricsData;
+                showToast('Metrics updated!');
+            } else {
+                // Add new metrics
+                state.metricsHistory.unshift(metricsData);
+                showToast('Metrics saved!');
+            }
 
             saveState();
             renderDashboard();
             renderMetricChart();
             populateComparisonDates();
-            showToast('Metrics saved!');
             
             // Clear inputs and photos
             ['weight', 'chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].forEach(m => {
@@ -3357,6 +3517,12 @@
             ['front', 'side', 'back'].forEach(type => {
                 document.getElementById(`photo-${type}-preview`).classList.add('hidden');
             });
+            
+            // Return to today
+            const today = new Date().toISOString().split('T')[0];
+            if (metricsDate !== today) {
+                selectMetricsDate(today);
+            }
         }
 
         function populateComparisonDates() {
@@ -4134,6 +4300,383 @@
                     'Stay upright for more triceps',
                     'Don\'t go too low if shoulders hurt'
                 ]
+            },
+            // Additional Chest
+            'Cable Flyes': {
+                video: 'https://www.youtube.com/embed/Iwe6AmxVf7o',
+                instructions: [
+                    'Set cables to chest height',
+                    'Step forward with slight lean',
+                    'Arms extended with slight bend',
+                    'Bring hands together in arc motion',
+                    'Control the return'
+                ],
+                muscles: ['Chest', 'Shoulders'],
+                tips: ['Focus on chest squeeze', 'Don\'t lock elbows', 'Maintain slight forward lean']
+            },
+            'Dips': {
+                video: 'https://www.youtube.com/embed/2z8JmcrW-As',
+                instructions: [
+                    'Grip parallel bars shoulder-width',
+                    'Support body with arms straight',
+                    'Lower by bending elbows',
+                    'Go until shoulders at elbow level',
+                    'Press back up'
+                ],
+                muscles: ['Chest', 'Triceps', 'Shoulders'],
+                tips: ['Lean forward for chest', 'Keep shoulders down', 'Full lockout at top']
+            },
+            'Decline Press': {
+                video: 'https://www.youtube.com/embed/LfyQBUKR8SE',
+                instructions: [
+                    'Set bench to 15-30 degree decline',
+                    'Secure feet at top of bench',
+                    'Lower bar to lower chest',
+                    'Press straight up',
+                    'Maintain control'
+                ],
+                muscles: ['Lower Chest', 'Triceps'],
+                tips: ['Target lower pecs', 'Don\'t arch too much', 'Breathe properly']
+            },
+            // Additional Back
+            'Lat Pulldown': {
+                video: 'https://www.youtube.com/embed/CAwf7n6Luuc',
+                instructions: [
+                    'Sit with thighs under pads',
+                    'Grip bar wider than shoulders',
+                    'Pull bar down to upper chest',
+                    'Squeeze shoulder blades together',
+                    'Control the return'
+                ],
+                muscles: ['Lats', 'Biceps', 'Upper Back'],
+                tips: ['Pull with elbows', 'Chest up throughout', 'Don\'t lean back too much']
+            },
+            'T-Bar Rows': {
+                video: 'https://www.youtube.com/embed/j3Igk5nyZE4',
+                instructions: [
+                    'Straddle bar with slight knee bend',
+                    'Grip handles with both hands',
+                    'Keep back flat',
+                    'Pull bar to chest',
+                    'Lower with control'
+                ],
+                muscles: ['Mid Back', 'Lats', 'Biceps'],
+                tips: ['Keep core tight', 'Pull to sternum', 'Don\'t round back']
+            },
+            'Cable Rows': {
+                video: 'https://www.youtube.com/embed/GZbfZ033f74',
+                instructions: [
+                    'Sit with feet on platform',
+                    'Grip handle with both hands',
+                    'Keep torso upright',
+                    'Pull handle to abdomen',
+                    'Squeeze shoulder blades'
+                ],
+                muscles: ['Mid Back', 'Lats', 'Biceps'],
+                tips: ['Don\'t rock back and forth', 'Keep elbows close', 'Full stretch at start']
+            },
+            'Romanian Deadlifts': {
+                video: 'https://www.youtube.com/embed/hNPvI7JNqKk',
+                instructions: [
+                    'Hold bar with shoulder-width grip',
+                    'Keep slight knee bend',
+                    'Hinge at hips, bar close to legs',
+                    'Lower until hamstrings stretch',
+                    'Drive hips forward to stand'
+                ],
+                muscles: ['Hamstrings', 'Glutes', 'Lower Back'],
+                tips: ['Feel stretch in hamstrings', 'Keep back flat', 'Don\'t bend knees more']
+            },
+            // Shoulders
+            'Arnold Press': {
+                video: 'https://www.youtube.com/embed/6Z15_WdXmVw',
+                instructions: [
+                    'Start with dumbbells at shoulders, palms facing you',
+                    'Press up while rotating palms forward',
+                    'End with palms facing forward at top',
+                    'Reverse motion on descent',
+                    'Control throughout'
+                ],
+                muscles: ['Shoulders', 'Triceps'],
+                tips: ['Smooth rotation', 'Full range of motion', 'Don\'t arch back']
+            },
+            'Front Raises': {
+                video: 'https://www.youtube.com/embed/y5cdch8lqDY',
+                instructions: [
+                    'Hold dumbbells in front of thighs',
+                    'Raise arms straight ahead',
+                    'Go to shoulder height',
+                    'Lower with control',
+                    'Keep core tight'
+                ],
+                muscles: ['Front Delts', 'Upper Chest'],
+                tips: ['Don\'t swing', 'Slight bend in elbows', 'Control the negative']
+            },
+            'Face Pulls': {
+                video: 'https://www.youtube.com/embed/rep-qVOkqgk',
+                instructions: [
+                    'Set cable at face height',
+                    'Grip rope with thumbs near ears',
+                    'Pull rope to face',
+                    'Spread handles apart at face',
+                    'Squeeze shoulder blades'
+                ],
+                muscles: ['Rear Delts', 'Upper Back'],
+                tips: ['High reps work well', 'Focus on rear delts', 'External rotation at end']
+            },
+            'Upright Rows': {
+                video: 'https://www.youtube.com/embed/S4cJUMto2R0',
+                instructions: [
+                    'Hold bar with narrow grip',
+                    'Pull bar up along body',
+                    'Lead with elbows',
+                    'Go to chin height',
+                    'Lower with control'
+                ],
+                muscles: ['Traps', 'Shoulders'],
+                tips: ['Don\'t go too heavy', 'Stop if shoulder pain', 'Keep bar close']
+            },
+            // Arms
+            'Hammer Curls': {
+                video: 'https://www.youtube.com/embed/zC3nLlEvin4',
+                instructions: [
+                    'Hold dumbbells with neutral grip',
+                    'Keep elbows at sides',
+                    'Curl up toward shoulders',
+                    'Squeeze at top',
+                    'Lower with control'
+                ],
+                muscles: ['Biceps', 'Forearms', 'Brachialis'],
+                tips: ['Neutral grip throughout', 'Don\'t swing', 'Alternate or together']
+            },
+            'Preacher Curls': {
+                video: 'https://www.youtube.com/embed/fIWP-FRFNU0',
+                instructions: [
+                    'Sit at preacher bench',
+                    'Upper arms on pad',
+                    'Curl bar toward shoulders',
+                    'Full contraction at top',
+                    'Extend arms fully'
+                ],
+                muscles: ['Biceps'],
+                tips: ['Isolates biceps', 'Full range', 'Don\'t rock']
+            },
+            'Cable Curls': {
+                video: 'https://www.youtube.com/embed/8O7LhSJuI5Y',
+                instructions: [
+                    'Stand facing cable machine',
+                    'Grip handle with underhand grip',
+                    'Keep elbows at sides',
+                    'Curl toward shoulders',
+                    'Squeeze and return'
+                ],
+                muscles: ['Biceps'],
+                tips: ['Constant tension', 'Don\'t move elbows', 'Control the negative']
+            },
+            'Concentration Curls': {
+                video: 'https://www.youtube.com/embed/Jvj2wV0zz5U',
+                instructions: [
+                    'Sit with elbow against inner thigh',
+                    'Let arm hang straight',
+                    'Curl weight toward shoulder',
+                    'Squeeze hard at top',
+                    'Lower slowly'
+                ],
+                muscles: ['Biceps Peak'],
+                tips: ['Perfect for peak contraction', 'Slow and controlled', 'Full extension']
+            },
+            'Skull Crushers': {
+                video: 'https://www.youtube.com/embed/d_KZxkY_0cM',
+                instructions: [
+                    'Lie on bench with bar overhead',
+                    'Lower bar to forehead',
+                    'Keep upper arms stationary',
+                    'Extend arms back up',
+                    'Don\'t move elbows'
+                ],
+                muscles: ['Triceps'],
+                tips: ['Protect your face', 'Keep elbows in', 'Full extension']
+            },
+            'Cable Pushdowns': {
+                video: 'https://www.youtube.com/embed/2-LAMcpzODU',
+                instructions: [
+                    'Stand facing cable machine',
+                    'Grip bar with overhand grip',
+                    'Elbows at sides',
+                    'Push down until arms straight',
+                    'Return with control'
+                ],
+                muscles: ['Triceps'],
+                tips: ['Keep elbows tucked', 'Full lockout', 'Don\'t lean forward']
+            },
+            'Overhead Extension': {
+                video: 'https://www.youtube.com/embed/nRiJVZDpdL0',
+                instructions: [
+                    'Hold dumbbell overhead with both hands',
+                    'Lower behind head',
+                    'Keep elbows pointing up',
+                    'Extend back to start',
+                    'Control throughout'
+                ],
+                muscles: ['Triceps Long Head'],
+                tips: ['Stretch at bottom', 'Don\'t flare elbows', 'Can do seated or standing']
+            },
+            'Close Grip Press': {
+                video: 'https://www.youtube.com/embed/JUpgGe1rWu8',
+                instructions: [
+                    'Lie on bench, grip bar narrower than shoulders',
+                    'Lower to lower chest',
+                    'Keep elbows closer to body',
+                    'Press straight up',
+                    'Full lockout at top'
+                ],
+                muscles: ['Triceps', 'Inner Chest'],
+                tips: ['Don\'t go too narrow', 'Elbows at 45 degrees', 'Good mass builder']
+            },
+            // Legs
+            'Leg Press': {
+                video: 'https://www.youtube.com/embed/IZxyjW7MPJQ',
+                instructions: [
+                    'Sit in machine, feet shoulder-width',
+                    'Release safety handles',
+                    'Lower platform with control',
+                    'Go until knees at 90 degrees',
+                    'Press back up'
+                ],
+                muscles: ['Quads', 'Glutes', 'Hamstrings'],
+                tips: ['Don\'t lock knees', 'Keep lower back on pad', 'Full range of motion']
+            },
+            'Leg Extensions': {
+                video: 'https://www.youtube.com/embed/YyvSfVjQeL0',
+                instructions: [
+                    'Sit in machine, ankles under pad',
+                    'Grip handles',
+                    'Extend legs until straight',
+                    'Squeeze quads at top',
+                    'Lower with control'
+                ],
+                muscles: ['Quads'],
+                tips: ['Isolates quads', 'Full contraction', 'Control the negative']
+            },
+            'Bulgarian Split Squats': {
+                video: 'https://www.youtube.com/embed/2C-uNgKwPLE',
+                instructions: [
+                    'Place rear foot on bench',
+                    'Step forward into split stance',
+                    'Lower down until front thigh parallel',
+                    'Drive through front heel',
+                    'Keep torso upright'
+                ],
+                muscles: ['Quads', 'Glutes', 'Hamstrings'],
+                tips: ['Great unilateral exercise', 'Front knee over ankle', 'Can hold dumbbells']
+            },
+            'Leg Curls': {
+                video: 'https://www.youtube.com/embed/ELOCsoDSmrg',
+                instructions: [
+                    'Lie face down on machine',
+                    'Ankles under pad',
+                    'Curl heels toward glutes',
+                    'Squeeze hamstrings',
+                    'Lower with control'
+                ],
+                muscles: ['Hamstrings'],
+                tips: ['Isolates hamstrings', 'Full range', 'Don\'t lift hips']
+            },
+            'Nordic Curls': {
+                video: 'https://www.youtube.com/embed/xZljSaTggEo',
+                instructions: [
+                    'Kneel with ankles secured',
+                    'Lean forward slowly',
+                    'Control descent with hamstrings',
+                    'Catch yourself with hands',
+                    'Push back to start'
+                ],
+                muscles: ['Hamstrings', 'Glutes'],
+                tips: ['Very challenging', 'Use band for assistance', 'Eccentric focus']
+            },
+            'Good Mornings': {
+                video: 'https://www.youtube.com/embed/YA-h3n74FBY',
+                instructions: [
+                    'Bar on upper back',
+                    'Feet hip-width apart',
+                    'Hinge at hips, slight knee bend',
+                    'Go until torso near parallel',
+                    'Drive hips forward to stand'
+                ],
+                muscles: ['Hamstrings', 'Lower Back', 'Glutes'],
+                tips: ['Keep back flat', 'Feel hamstring stretch', 'Start light']
+            },
+            'Hip Thrusts': {
+                video: 'https://www.youtube.com/embed/LM8XHLYJoYs',
+                instructions: [
+                    'Upper back on bench',
+                    'Bar across hips',
+                    'Feet flat on floor',
+                    'Drive hips up',
+                    'Squeeze glutes at top'
+                ],
+                muscles: ['Glutes', 'Hamstrings'],
+                tips: ['Best glute exercise', 'Use pad on bar', 'Full hip extension']
+            },
+            'Glute Bridges': {
+                video: 'https://www.youtube.com/embed/wPM8icPu6H8',
+                instructions: [
+                    'Lie on back, knees bent',
+                    'Feet flat on floor',
+                    'Drive through heels',
+                    'Lift hips to straight line',
+                    'Squeeze glutes at top'
+                ],
+                muscles: ['Glutes', 'Hamstrings', 'Core'],
+                tips: ['Can add weight on hips', 'Don\'t hyperextend', 'Hold at top']
+            },
+            'Cable Kickbacks': {
+                video: 'https://www.youtube.com/embed/EwiDdQ0RLZ0',
+                instructions: [
+                    'Attach ankle cuff to cable',
+                    'Face machine, hold frame',
+                    'Kick leg back and up',
+                    'Squeeze glute',
+                    'Return with control'
+                ],
+                muscles: ['Glutes'],
+                tips: ['Isolates glutes', 'Don\'t arch back', 'Squeeze at top']
+            },
+            'Standing Calf Raises': {
+                video: 'https://www.youtube.com/embed/gwLzBJYoWlI',
+                instructions: [
+                    'Stand on edge of platform',
+                    'Balls of feet on edge',
+                    'Lower heels below platform',
+                    'Rise up on toes',
+                    'Full contraction at top'
+                ],
+                muscles: ['Calves (Gastrocnemius)'],
+                tips: ['Full range of motion', 'Pause at top', 'Slow negatives']
+            },
+            'Seated Calf Raises': {
+                video: 'https://www.youtube.com/embed/JbyjNymZOt0',
+                instructions: [
+                    'Sit in machine, balls of feet on platform',
+                    'Knees under pads',
+                    'Lower heels down',
+                    'Raise up on toes',
+                    'Squeeze calves'
+                ],
+                muscles: ['Calves (Soleus)'],
+                tips: ['Targets soleus', 'High reps work well', 'Full stretch']
+            },
+            'Jump Rope': {
+                video: 'https://www.youtube.com/embed/hCglWWonKQI',
+                instructions: [
+                    'Hold rope handles at sides',
+                    'Elbows close to body',
+                    'Jump on balls of feet',
+                    'Small jumps, fast turnover',
+                    'Maintain rhythm'
+                ],
+                muscles: ['Calves', 'Cardio'],
+                tips: ['Great warm-up', 'Stay on toes', 'Wrist rotation']
             }
         };
 
@@ -4208,9 +4751,12 @@
             const today = new Date().toISOString().split('T')[0];
             const nutritionDatePicker = document.getElementById('nutrition-date-picker');
             const workoutDatePicker = document.getElementById('workout-date-picker');
+            const metricsDatePicker = document.getElementById('metrics-date-picker');
             if (nutritionDatePicker) nutritionDatePicker.value = today;
             if (workoutDatePicker) workoutDatePicker.value = today;
+            if (metricsDatePicker) metricsDatePicker.value = today;
             window.selectedWorkoutDate = today;
+            state.metricsDate = today;
 
             renderDashboard();
             renderDiary();
