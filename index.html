@@ -71,7 +71,7 @@
         }
 
         .toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(100px);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
             background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
             font-size: 14px; font-weight: 600; z-index: 1000; opacity: 0;
             transition: all 0.3s ease;
@@ -97,12 +97,6 @@
         }
 
         /* Larger tap areas for navigation */
-        .nav-item {
-            padding: 12px;
-            min-width: 64px;
-            min-height: 64px;
-        }
-
         /* Smoother photo slot interactions */
         .photo-slot {
             min-height: 200px;
@@ -215,11 +209,6 @@
                 padding-top: 0.75rem;
                 padding-bottom: 0.75rem;
             }
-            
-            .nav-item {
-                min-height: 68px !important;
-                padding: 0.875rem !important;
-            }
 
             input, select {
                 min-height: 52px !important;
@@ -269,24 +258,6 @@
             }
         }
 
-        /* Bottom nav responsive */
-        nav {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 100%;
-            padding: 0.75rem 1rem;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            max-width: 100px;
-        }
-
         /* Toast responsive */
         .toast {
             max-width: 90%;
@@ -296,7 +267,7 @@
 
         @media (max-width: 640px) {
             .toast {
-                bottom: 90px;
+                bottom: 20px;
                 font-size: 0.8125rem;
                 padding: 0.625rem 1rem;
             }
@@ -375,7 +346,7 @@
         }
     </style>
 </head>
-<body class="pb-24 sm:pb-28">
+<body>
 
     <div id="toast" class="toast"></div>
 
@@ -1115,25 +1086,6 @@
         </div>
     </div>
 
-    <!-- BOTTOM NAVIGATION -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t px-2 sm:px-6 py-3 sm:py-4 flex justify-between items-center z-50">
-        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex flex-col items-center gap-1.5 text-indigo-600">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center bg-indigo-50"><i data-lucide="layout-grid"></i></div>
-        </button>
-        <button onclick="switchTab('training')" data-tab="training" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="dumbbell"></i></div>
-        </button>
-        <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="apple"></i></div>
-        </button>
-        <button onclick="switchTab('logs')" data-tab="logs" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="calendar"></i></div>
-        </button>
-        <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item flex flex-col items-center gap-1.5 text-slate-300">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center"><i data-lucide="scale"></i></div>
-        </button>
-    </nav>
-
     <!-- FOOD ITEM POPUP -->
     <div id="food-popup" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
@@ -1673,14 +1625,6 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId)?.classList.add('active');
-
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                const isActive = btn.dataset.tab === tabId;
-                btn.classList.toggle('text-indigo-600', isActive);
-                btn.classList.toggle('text-slate-300', !isActive);
-                const bg = btn.querySelector('div');
-                if (bg) bg.classList.toggle('bg-indigo-50', isActive);
-            });
 
             if (tabId === 'logs') renderLogs();
 
