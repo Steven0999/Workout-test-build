@@ -1086,6 +1086,45 @@
         </div>
     </div>
 
+    <!-- EXERCISE DEMONSTRATION MODAL -->
+    <div id="exercise-demo-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="demo-exercise-name" class="text-xl sm:text-2xl font-black">Exercise Demo</h3>
+                <button onclick="closeExerciseDemo()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none hover:bg-slate-200">×</button>
+            </div>
+
+            <!-- Video/GIF Demonstration -->
+            <div class="mb-6">
+                <div id="demo-video-container" class="aspect-video bg-slate-100 rounded-2xl overflow-hidden mb-4 flex items-center justify-center">
+                    <iframe id="demo-video" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mb-6">
+                <h4 class="text-sm font-black uppercase text-slate-400 mb-3">How to perform</h4>
+                <div id="demo-instructions" class="space-y-2 text-sm text-slate-700"></div>
+            </div>
+
+            <!-- Muscles Targeted -->
+            <div class="mb-6">
+                <h4 class="text-sm font-black uppercase text-slate-400 mb-3">Muscles targeted</h4>
+                <div id="demo-muscles" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Tips -->
+            <div class="mb-6">
+                <h4 class="text-sm font-black uppercase text-slate-400 mb-3">Tips</h4>
+                <div id="demo-tips" class="space-y-2 text-sm text-slate-700"></div>
+            </div>
+
+            <button onclick="closeExerciseDemo()" class="w-full bg-indigo-600 text-white py-4 rounded-[24px] font-black hover:bg-indigo-700">
+                Back to Workout
+            </button>
+        </div>
+    </div>
+
     <!-- FOOD ITEM POPUP -->
     <div id="food-popup" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
@@ -1771,17 +1810,34 @@
             const card = document.createElement('div');
             card.className = "bg-white p-4 sm:p-5 rounded-2xl shadow-md border-2 border-indigo-100 mb-3 sm:mb-4 w-full";
             
-            // Exercise name with dropdown
+            // Exercise name with dropdown and info button
             const nameContainer = document.createElement('div');
             nameContainer.className = "relative mb-3 sm:mb-4";
+            
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = "flex gap-2 items-center";
             
             const nameInput = document.createElement('input');
             nameInput.type = "text";
             nameInput.value = name;
             nameInput.placeholder = "Search or type exercise name...";
-            nameInput.className = "w-full p-3 sm:p-3.5 border-2 border-slate-200 rounded-xl font-bold text-base sm:text-lg";
+            nameInput.className = "flex-1 p-3 sm:p-3.5 border-2 border-slate-200 rounded-xl font-bold text-base sm:text-lg";
             nameInput.id = `ex-name-${id}`;
             nameInput.autocomplete = "off";
+            
+            // Info button
+            const infoBtn = document.createElement('button');
+            infoBtn.type = "button";
+            infoBtn.className = "w-10 h-10 sm:w-11 sm:h-11 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center hover:bg-indigo-200 transition-colors flex-shrink-0";
+            infoBtn.innerHTML = '<i data-lucide="info" class="w-5 h-5"></i>';
+            infoBtn.addEventListener('click', () => {
+                const exerciseName = nameInput.value.trim();
+                if (exerciseName) {
+                    showExerciseDemo(exerciseName);
+                } else {
+                    showToast('Enter exercise name first');
+                }
+            });
             
             // Dropdown for exercise search
             const dropdown = document.createElement('div');
@@ -1797,7 +1853,9 @@
                 filterExerciseDropdown(id, e.target.value);
             });
             
-            nameContainer.appendChild(nameInput);
+            inputWrapper.appendChild(nameInput);
+            inputWrapper.appendChild(infoBtn);
+            nameContainer.appendChild(inputWrapper);
             nameContainer.appendChild(dropdown);
             
             // Sets container with header
@@ -3874,6 +3932,262 @@
             'Glutes': ['Hip Thrusts', 'Glute Bridges', 'Cable Kickbacks', 'Bulgarian Split Squats'],
             'Calves': ['Standing Calf Raises', 'Seated Calf Raises', 'Jump Rope']
         };
+
+        // ============================================================================
+        // EXERCISE DEMONSTRATION
+        // ============================================================================
+
+        const EXERCISE_DATABASE = {
+            // Chest
+            'Barbell Bench Press': {
+                video: 'https://www.youtube.com/embed/rT7DgCr-3pg',
+                instructions: [
+                    'Lie flat on bench with feet firmly on floor',
+                    'Grip bar slightly wider than shoulder width',
+                    'Lower bar to mid-chest in controlled motion',
+                    'Press bar up until arms fully extended',
+                    'Keep shoulder blades retracted throughout'
+                ],
+                muscles: ['Chest', 'Triceps', 'Shoulders'],
+                tips: [
+                    'Keep your back slightly arched',
+                    'Don\'t bounce the bar off your chest',
+                    'Breathe in on descent, out on press'
+                ]
+            },
+            'Incline Dumbbell Press': {
+                video: 'https://www.youtube.com/embed/8iPEnn-ltC8',
+                instructions: [
+                    'Set bench to 30-45 degree incline',
+                    'Hold dumbbells at shoulder level',
+                    'Press dumbbells up and slightly together',
+                    'Lower with control to starting position',
+                    'Keep elbows at 45 degrees to torso'
+                ],
+                muscles: ['Upper Chest', 'Shoulders', 'Triceps'],
+                tips: [
+                    'Don\'t go too steep (over 45 degrees)',
+                    'Control the negative portion',
+                    'Touch dumbbells lightly at top'
+                ]
+            },
+            'Push-ups': {
+                video: 'https://www.youtube.com/embed/IODxDxX7oi4',
+                instructions: [
+                    'Start in plank position, hands shoulder-width',
+                    'Keep body in straight line from head to heels',
+                    'Lower chest to floor, elbows at 45 degrees',
+                    'Push back up to starting position',
+                    'Engage core throughout movement'
+                ],
+                muscles: ['Chest', 'Triceps', 'Core', 'Shoulders'],
+                tips: [
+                    'Don\'t let hips sag or pike up',
+                    'Full range of motion for best results',
+                    'Start with knees down if needed'
+                ]
+            },
+            // Back
+            'Pull-ups': {
+                video: 'https://www.youtube.com/embed/eGo4IYlbE5g',
+                instructions: [
+                    'Hang from bar with hands shoulder-width or wider',
+                    'Pull body up until chin clears bar',
+                    'Keep chest up and shoulders back',
+                    'Lower with control to full extension',
+                    'Avoid swinging or kipping'
+                ],
+                muscles: ['Lats', 'Biceps', 'Upper Back'],
+                tips: [
+                    'Lead with chest, not chin',
+                    'Use resistance band for assistance if needed',
+                    'Full dead hang at bottom'
+                ]
+            },
+            'Barbell Rows': {
+                video: 'https://www.youtube.com/embed/FWJR5Ve8bnQ',
+                instructions: [
+                    'Hip hinge with slight knee bend',
+                    'Grip bar slightly wider than shoulder width',
+                    'Pull bar to lower chest/upper abs',
+                    'Keep torso at ~45 degrees',
+                    'Lower bar with control'
+                ],
+                muscles: ['Lats', 'Rhomboids', 'Biceps'],
+                tips: [
+                    'Don\'t stand too upright',
+                    'Pull to belly button, not chest',
+                    'Squeeze shoulder blades at top'
+                ]
+            },
+            'Deadlifts': {
+                video: 'https://www.youtube.com/embed/op9kVnSso6Q',
+                instructions: [
+                    'Feet hip-width, bar over mid-foot',
+                    'Grip bar just outside legs',
+                    'Chest up, back straight, shoulders over bar',
+                    'Drive through heels, extend hips and knees',
+                    'Stand fully upright at top'
+                ],
+                muscles: ['Back', 'Glutes', 'Hamstrings', 'Core'],
+                tips: [
+                    'Keep bar close to body throughout',
+                    'Don\'t round your back',
+                    'Breathe and brace before each rep'
+                ]
+            },
+            // Legs
+            'Squats': {
+                video: 'https://www.youtube.com/embed/ultWZbUMPL8',
+                instructions: [
+                    'Bar on upper back, feet shoulder-width',
+                    'Chest up, core braced',
+                    'Descend by pushing hips back and knees out',
+                    'Go to parallel or slightly below',
+                    'Drive through mid-foot to stand'
+                ],
+                muscles: ['Quads', 'Glutes', 'Hamstrings', 'Core'],
+                tips: [
+                    'Knees should track over toes',
+                    'Keep heels down',
+                    'Don\'t round lower back'
+                ]
+            },
+            'Lunges': {
+                video: 'https://www.youtube.com/embed/QOVaHwm-Q6U',
+                instructions: [
+                    'Step forward with one leg',
+                    'Lower hips until both knees at 90 degrees',
+                    'Front knee over ankle, not past toes',
+                    'Push through front heel to return',
+                    'Alternate legs or complete one side first'
+                ],
+                muscles: ['Quads', 'Glutes', 'Hamstrings'],
+                tips: [
+                    'Keep torso upright',
+                    'Don\'t let front knee cave in',
+                    'Take a longer step for more glute focus'
+                ]
+            },
+            // Shoulders
+            'Overhead Press': {
+                video: 'https://www.youtube.com/embed/QAQ64hK4Xxs',
+                instructions: [
+                    'Bar at shoulder height, grip shoulder-width',
+                    'Brace core and glutes',
+                    'Press bar straight up overhead',
+                    'Move head back slightly as bar passes',
+                    'Lock out arms at top'
+                ],
+                muscles: ['Shoulders', 'Triceps', 'Upper Chest'],
+                tips: [
+                    'Don\'t arch back excessively',
+                    'Press in straight line',
+                    'Squeeze glutes to stay stable'
+                ]
+            },
+            'Lateral Raises': {
+                video: 'https://www.youtube.com/embed/3VcKaXpzqRo',
+                instructions: [
+                    'Stand with dumbbells at sides',
+                    'Raise arms out to sides to shoulder height',
+                    'Lead with elbows, slight bend throughout',
+                    'Lower with control',
+                    'Keep torso still'
+                ],
+                muscles: ['Side Delts'],
+                tips: [
+                    'Don\'t swing or use momentum',
+                    'Thumbs slightly down at top',
+                    'Control the descent'
+                ]
+            },
+            // Arms
+            'Barbell Curls': {
+                video: 'https://www.youtube.com/embed/kwG2ipFRgfo',
+                instructions: [
+                    'Stand with barbell, hands shoulder-width',
+                    'Keep elbows close to torso',
+                    'Curl bar up toward shoulders',
+                    'Squeeze biceps at top',
+                    'Lower with control'
+                ],
+                muscles: ['Biceps', 'Forearms'],
+                tips: [
+                    'Don\'t swing or use back',
+                    'Keep elbows stationary',
+                    'Full extension at bottom'
+                ]
+            },
+            'Tricep Dips': {
+                video: 'https://www.youtube.com/embed/6kALZikXxLc',
+                instructions: [
+                    'Support body on parallel bars',
+                    'Lower body by bending elbows',
+                    'Go until upper arms parallel to floor',
+                    'Press back up to starting position',
+                    'Keep core tight throughout'
+                ],
+                muscles: ['Triceps', 'Chest', 'Shoulders'],
+                tips: [
+                    'Lean forward for more chest',
+                    'Stay upright for more triceps',
+                    'Don\'t go too low if shoulders hurt'
+                ]
+            }
+        };
+
+        function showExerciseDemo(exerciseName) {
+            const exercise = EXERCISE_DATABASE[exerciseName];
+            
+            if (!exercise) {
+                // Generic demo for exercises not in database
+                document.getElementById('demo-exercise-name').textContent = exerciseName;
+                document.getElementById('demo-video').src = `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0`;
+                document.getElementById('demo-instructions').innerHTML = `
+                    <p class="text-slate-600">Demonstration video not available for this exercise.</p>
+                    <p class="text-slate-600 mt-2">Search YouTube for "${exerciseName}" for form tutorials.</p>
+                `;
+                document.getElementById('demo-muscles').innerHTML = '<span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">Various</span>';
+                document.getElementById('demo-tips').innerHTML = '<p class="text-slate-600">Focus on proper form and controlled movements.</p>';
+            } else {
+                document.getElementById('demo-exercise-name').textContent = exerciseName;
+                document.getElementById('demo-video').src = exercise.video + '?autoplay=0';
+                
+                // Instructions
+                const instructionsHtml = exercise.instructions.map((inst, i) => 
+                    `<div class="flex gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold">${i + 1}</span>
+                        <p class="text-slate-700">${inst}</p>
+                    </div>`
+                ).join('');
+                document.getElementById('demo-instructions').innerHTML = instructionsHtml;
+                
+                // Muscles
+                const musclesHtml = exercise.muscles.map(muscle => 
+                    `<span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">${muscle}</span>`
+                ).join('');
+                document.getElementById('demo-muscles').innerHTML = musclesHtml;
+                
+                // Tips
+                const tipsHtml = exercise.tips.map(tip => 
+                    `<div class="flex gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5"></i>
+                        <p class="text-slate-700">${tip}</p>
+                    </div>`
+                ).join('');
+                document.getElementById('demo-tips').innerHTML = tipsHtml;
+            }
+            
+            document.getElementById('exercise-demo-modal').style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function closeExerciseDemo() {
+            document.getElementById('exercise-demo-modal').style.display = 'none';
+            // Stop video
+            document.getElementById('demo-video').src = '';
+        }
 
         // ============================================================================
         // INITIALIZATION
