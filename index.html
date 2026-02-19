@@ -418,7 +418,7 @@
                         <i data-lucide="user" class="w-12 h-12 text-indigo-600"></i>
                     </div>
                     <h2 id="profile-name" class="text-2xl font-black mb-2">User Name</h2>
-                    <p id="profile-email" class="text-sm text-slate-500 mb-6"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3e4b4d5b4c7e5b465f534e525b105d5153">[email&#160;protected]</a></p>
+                    <p id="profile-email" class="text-sm text-slate-500 mb-6">user@example.com</p>
 
                     <div class="space-y-3">
                         <div class="bg-slate-50 p-4 rounded-2xl">
@@ -1352,7 +1352,7 @@
         </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
     // ==========================================================================
     // FIREBASE CONFIGURATION
     // ==========================================================================
@@ -1367,27 +1367,9 @@
     };
 
     // Initialize Firebase
-    let auth, db;
-    try {
-        if (firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
-            console.warn('⚠️ Firebase not configured. Please add your Firebase config.');
-            // Show warning on page
-            setTimeout(() => {
-                const authScreen = document.getElementById('auth-screen');
-                if (authScreen && !authScreen.classList.contains('hidden')) {
-                    const warning = document.createElement('div');
-                    warning.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-amber-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 max-w-md text-center';
-                    warning.innerHTML = '⚠️ Firebase not configured. Add your config from Firebase Console to enable authentication.';
-                    document.body.appendChild(warning);
-                }
-            }, 1000);
-        }
-        firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        db = firebase.firestore();
-    } catch (error) {
-        console.error('Firebase initialization error:', error);
-    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // Current user from Firebase
     let currentUser = null;
@@ -1420,11 +1402,6 @@
     // ==========================================================================
 
     async function registerUser() {
-        if (!auth || !db) {
-            showToast('⚠️ Firebase not configured. Please add your Firebase config from the console.');
-            return;
-        }
-        
         const name = document.getElementById('register-name').value.trim();
         const email = document.getElementById('register-email').value.trim();
         const password = document.getElementById('register-password').value;
@@ -1464,11 +1441,6 @@
     }
 
     async function loginUser() {
-        if (!auth || !db) {
-            showToast('⚠️ Firebase not configured. Please add your Firebase config from the console.');
-            return;
-        }
-        
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
         if (!email || !password) { showToast('Please enter email and password'); return; }
@@ -5155,6 +5127,896 @@
     }
 
     // ==========================================================================
-    // INITIALIZATION
-    // =============================
+    // COMPREHENSIVE WORKOUT PROGRAM LIBRARY
+    // ==========================================================================
 
+    const WORKOUT_PROGRAMS = {
+        beginner_3day: {
+            name: "Beginner Full Body - 3 Days/Week",
+            level: "Beginner",
+            duration: "4-8 weeks",
+            description: "Perfect introduction to strength training with compound movements",
+            schedule: ["Monday", "Wednesday", "Friday"],
+            workouts: {
+                day1: {
+                    name: "Full Body Workout A",
+                    warmup: ["5 min cardio", "Dynamic stretching", "Bodyweight squats 2x10"],
+                    exercises: [
+                        { name: "Goblet Squat", sets: 3, reps: "10-12", rest: 90, notes: "Focus on depth" },
+                        { name: "Push Ups", sets: 3, reps: "8-12", rest: 90, notes: "Knees down if needed" },
+                        { name: "Dumbbell Row", sets: 3, reps: "10-12", rest: 90, notes: "Each arm" },
+                        { name: "Dumbbell Shoulder Press", sets: 3, reps: "8-10", rest: 90, notes: "Seated or standing" },
+                        { name: "Plank", sets: 3, reps: "30-45s", rest: 60, notes: "Keep core tight" },
+                        { name: "Dumbbell Curl", sets: 2, reps: "12-15", rest: 60, notes: "Controlled tempo" }
+                    ],
+                    cooldown: ["5 min walk", "Static stretching"]
+                },
+                day2: {
+                    name: "Full Body Workout B",
+                    warmup: ["5 min cardio", "Dynamic stretching", "Leg swings 2x10"],
+                    exercises: [
+                        { name: "Romanian Deadlift", sets: 3, reps: "10-12", rest: 90, notes: "Hinge at hips" },
+                        { name: "Dumbbell Bench Press", sets: 3, reps: "8-12", rest: 90, notes: "Full range of motion" },
+                        { name: "Lat Pulldown", sets: 3, reps: "10-12", rest: 90, notes: "Pull to upper chest" },
+                        { name: "Lateral Raise", sets: 3, reps: "12-15", rest: 60, notes: "Light weight, controlled" },
+                        { name: "Russian Twists", sets: 3, reps: "15-20", rest: 60, notes: "Each side" },
+                        { name: "Tricep Pushdown", sets: 2, reps: "12-15", rest: 60, notes: "Elbows tucked" }
+                    ],
+                    cooldown: ["5 min walk", "Static stretching"]
+                },
+                day3: {
+                    name: "Full Body Workout C",
+                    warmup: ["5 min cardio", "Arm circles", "Cat-cow stretches"],
+                    exercises: [
+                        { name: "Leg Press", sets: 3, reps: "12-15", rest: 90, notes: "Feet shoulder-width" },
+                        { name: "Incline Dumbbell Press", sets: 3, reps: "8-12", rest: 90, notes: "30-45 degree incline" },
+                        { name: "Cable Row", sets: 3, reps: "10-12", rest: 90, notes: "Squeeze shoulder blades" },
+                        { name: "Face Pulls", sets: 3, reps: "15-20", rest: 60, notes: "High reps for shoulders" },
+                        { name: "Leg Raises", sets: 3, reps: "10-15", rest: 60, notes: "Control the descent" },
+                        { name: "Hammer Curl", sets: 2, reps: "12-15", rest: 60, notes: "Neutral grip" }
+                    ],
+                    cooldown: ["5 min walk", "Full body stretch"]
+                }
+            }
+        },
+        ppl_6day: {
+            name: "Push/Pull/Legs - 6 Days/Week",
+            level: "Intermediate/Advanced",
+            duration: "8-12 weeks",
+            description: "High volume split for maximum muscle growth",
+            schedule: ["Mon-Push", "Tue-Pull", "Wed-Legs", "Thu-Push", "Fri-Pull", "Sat-Legs"],
+            workouts: {
+                push1: {
+                    name: "Push Day 1 - Strength Focus",
+                    exercises: [
+                        { name: "Barbell Bench Press", sets: 5, reps: "5-6", rest: 180, notes: "Heavy weight" },
+                        { name: "Overhead Press", sets: 4, reps: "6-8", rest: 150, notes: "Strict form" },
+                        { name: "Incline Dumbbell Press", sets: 4, reps: "8-10", rest: 120, notes: "Upper chest focus" },
+                        { name: "Dips", sets: 3, reps: "8-12", rest: 90, notes: "Add weight if possible" },
+                        { name: "Lateral Raise", sets: 4, reps: "12-15", rest: 60, notes: "Control the weight" },
+                        { name: "Overhead Tricep Extension", sets: 3, reps: "10-12", rest: 90, notes: "Stretch position" },
+                        { name: "Cable Pushdown", sets: 3, reps: "12-15", rest: 60, notes: "Squeeze at bottom" }
+                    ]
+                },
+                pull1: {
+                    name: "Pull Day 1 - Strength Focus",
+                    exercises: [
+                        { name: "Deadlift", sets: 5, reps: "5-6", rest: 240, notes: "Progressive overload" },
+                        { name: "Pull Ups", sets: 4, reps: "6-10", rest: 150, notes: "Full range" },
+                        { name: "Barbell Row", sets: 4, reps: "6-8", rest: 120, notes: "Torso at 45 degrees" },
+                        { name: "Face Pulls", sets: 4, reps: "15-20", rest: 60, notes: "Rear delt focus" },
+                        { name: "Barbell Curl", sets: 3, reps: "8-12", rest: 90, notes: "No momentum" },
+                        { name: "Hammer Curl", sets: 3, reps: "10-12", rest: 60, notes: "Brachialis focus" },
+                        { name: "Reverse Curl", sets: 2, reps: "12-15", rest: 60, notes: "Forearm development" }
+                    ]
+                },
+                legs1: {
+                    name: "Legs Day 1 - Quad Focus",
+                    exercises: [
+                        { name: "Barbell Squat", sets: 5, reps: "5-6", rest: 240, notes: "Below parallel" },
+                        { name: "Front Squat", sets: 4, reps: "8-10", rest: 180, notes: "Upright torso" },
+                        { name: "Leg Press", sets: 4, reps: "10-12", rest: 120, notes: "Full range" },
+                        { name: "Leg Extension", sets: 3, reps: "12-15", rest: 90, notes: "Squeeze at top" },
+                        { name: "Walking Lunges", sets: 3, reps: "12-15", rest: 90, notes: "Each leg" },
+                        { name: "Standing Calf Raise", sets: 4, reps: "15-20", rest: 60, notes: "Full stretch" },
+                        { name: "Ab Rollout", sets: 3, reps: "10-15", rest: 90, notes: "From knees if needed" }
+                    ]
+                },
+                push2: {
+                    name: "Push Day 2 - Hypertrophy Focus",
+                    exercises: [
+                        { name: "Incline Barbell Press", sets: 4, reps: "8-10", rest: 120, notes: "30 degree angle" },
+                        { name: "Flat Dumbbell Press", sets: 4, reps: "10-12", rest: 90, notes: "Deep stretch" },
+                        { name: "Cable Flyes", sets: 3, reps: "12-15", rest: 60, notes: "Constant tension" },
+                        { name: "Arnold Press", sets: 4, reps: "10-12", rest: 90, notes: "Rotate palms" },
+                        { name: "Cable Lateral Raise", sets: 3, reps: "15-20", rest: 60, notes: "One arm at a time" },
+                        { name: "Close Grip Bench", sets: 4, reps: "8-10", rest: 90, notes: "Tricep focus" },
+                        { name: "Rope Pushdown", sets: 3, reps: "15-20", rest: 60, notes: "Split rope at bottom" }
+                    ]
+                },
+                pull2: {
+                    name: "Pull Day 2 - Hypertrophy Focus",
+                    exercises: [
+                        { name: "Lat Pulldown", sets: 4, reps: "10-12", rest: 90, notes: "Wide grip" },
+                        { name: "Seated Cable Row", sets: 4, reps: "10-12", rest: 90, notes: "Squeeze back" },
+                        { name: "Single Arm Dumbbell Row", sets: 3, reps: "12-15", rest: 90, notes: "Each arm" },
+                        { name: "Straight Arm Pulldown", sets: 3, reps: "12-15", rest: 60, notes: "Lat isolation" },
+                        { name: "Reverse Flyes", sets: 4, reps: "15-20", rest: 60, notes: "Rear delt pump" },
+                        { name: "Preacher Curl", sets: 3, reps: "10-12", rest: 90, notes: "Bicep peak" },
+                        { name: "Cable Curl", sets: 3, reps: "12-15", rest: 60, notes: "Constant tension" }
+                    ]
+                },
+                legs2: {
+                    name: "Legs Day 2 - Posterior Chain Focus",
+                    exercises: [
+                        { name: "Romanian Deadlift", sets: 4, reps: "8-10", rest: 120, notes: "Hamstring stretch" },
+                        { name: "Bulgarian Split Squat", sets: 4, reps: "10-12", rest: 90, notes: "Each leg" },
+                        { name: "Leg Curl", sets: 4, reps: "12-15", rest: 90, notes: "Hamstring focus" },
+                        { name: "Hip Thrust", sets: 4, reps: "10-12", rest: 120, notes: "Glute activation" },
+                        { name: "Goblet Squat", sets: 3, reps: "15-20", rest: 60, notes: "High rep burn" },
+                        { name: "Seated Calf Raise", sets: 4, reps: "15-20", rest: 60, notes: "Soleus focus" },
+                        { name: "Hanging Leg Raise", sets: 3, reps: "12-15", rest: 90, notes: "Lower abs" }
+                    ]
+                }
+            }
+        },
+        upper_lower_4day: {
+            name: "Upper/Lower Split - 4 Days/Week",
+            level: "Intermediate",
+            duration: "6-10 weeks",
+            description: "Balanced frequency and volume for strength and size",
+            schedule: ["Mon-Upper", "Tue-Lower", "Thu-Upper", "Fri-Lower"],
+            workouts: {
+                upper_power: {
+                    name: "Upper Body Power Day",
+                    exercises: [
+                        { name: "Barbell Bench Press", sets: 5, reps: "3-5", rest: 240, notes: "Max strength" },
+                        { name: "Barbell Row", sets: 5, reps: "3-5", rest: 240, notes: "Explosive pull" },
+                        { name: "Overhead Press", sets: 4, reps: "5-6", rest: 180, notes: "Shoulder strength" },
+                        { name: "Pull Ups", sets: 4, reps: "5-8", rest: 150, notes: "Add weight if possible" },
+                        { name: "Barbell Curl", sets: 3, reps: "6-8", rest: 90, notes: "Heavy weight" },
+                        { name: "Skull Crushers", sets: 3, reps: "6-8", rest: 90, notes: "Control eccentric" }
+                    ]
+                },
+                lower_power: {
+                    name: "Lower Body Power Day",
+                    exercises: [
+                        { name: "Barbell Squat", sets: 5, reps: "3-5", rest: 300, notes: "Max strength" },
+                        { name: "Deadlift", sets: 5, reps: "3-5", rest: 300, notes: "Alternate with squat intensity" },
+                        { name: "Leg Press", sets: 4, reps: "6-8", rest: 150, notes: "Heavy load" },
+                        { name: "Leg Curl", sets: 3, reps: "8-10", rest: 120, notes: "Hamstring strength" },
+                        { name: "Standing Calf Raise", sets: 4, reps: "6-8", rest: 90, notes: "Heavy weight" }
+                    ]
+                },
+                upper_hypertrophy: {
+                    name: "Upper Body Hypertrophy Day",
+                    exercises: [
+                        { name: "Incline Dumbbell Press", sets: 4, reps: "8-12", rest: 90, notes: "Muscle building" },
+                        { name: "Cable Row", sets: 4, reps: "8-12", rest: 90, notes: "Squeeze contraction" },
+                        { name: "Dumbbell Shoulder Press", sets: 3, reps: "10-12", rest: 90, notes: "Full ROM" },
+                        { name: "Lat Pulldown", sets: 3, reps: "10-12", rest: 90, notes: "Wide grip" },
+                        { name: "Dumbbell Flyes", sets: 3, reps: "12-15", rest: 60, notes: "Chest stretch" },
+                        { name: "Face Pulls", sets: 3, reps: "15-20", rest: 60, notes: "Rear delts" },
+                        { name: "Hammer Curl", sets: 3, reps: "10-12", rest: 60, notes: "Brachialis" },
+                        { name: "Tricep Pushdown", sets: 3, reps: "12-15", rest: 60, notes: "Pump work" }
+                    ]
+                },
+                lower_hypertrophy: {
+                    name: "Lower Body Hypertrophy Day",
+                    exercises: [
+                        { name: "Front Squat", sets: 4, reps: "8-10", rest: 120, notes: "Quad focus" },
+                        { name: "Romanian Deadlift", sets: 4, reps: "8-10", rest: 120, notes: "Hamstring stretch" },
+                        { name: "Bulgarian Split Squat", sets: 3, reps: "10-12", rest: 90, notes: "Each leg" },
+                        { name: "Leg Extension", sets: 3, reps: "12-15", rest: 60, notes: "Quad isolation" },
+                        { name: "Hip Thrust", sets: 4, reps: "10-12", rest: 90, notes: "Glute focus" },
+                        { name: "Leg Curl", sets: 3, reps: "12-15", rest: 60, notes: "Hamstring pump" },
+                        { name: "Seated Calf Raise", sets: 4, reps: "15-20", rest: 60, notes: "Time under tension" }
+                    ]
+                }
+            }
+        }
+    };
+
+    // ==========================================================================
+    // EXTENSIVE NUTRITION DATABASE
+    // ==========================================================================
+
+    const NUTRITION_DATABASE = {
+        proteins: {
+            meats: [
+                { name: "Chicken Breast (grilled, 100g)", cal: 165, p: 31, c: 0, f: 3.6, fiber: 0, prep: "Grill or bake" },
+                { name: "Turkey Breast (roasted, 100g)", cal: 135, p: 30, c: 0, f: 0.7, fiber: 0, prep: "Roast or grill" },
+                { name: "Lean Ground Beef 90/10 (100g)", cal: 176, p: 20, c: 0, f: 10, fiber: 0, prep: "Pan fry or grill" },
+                { name: "Pork Tenderloin (100g)", cal: 143, p: 26, c: 0, f: 3.5, fiber: 0, prep: "Roast or grill" },
+                { name: "Sirloin Steak (100g)", cal: 271, p: 27, c: 0, f: 18, fiber: 0, prep: "Grill medium-rare" },
+                { name: "Lamb Chop (100g)", cal: 282, p: 25, c: 0, f: 20, fiber: 0, prep: "Grill or pan sear" }
+            ],
+            seafood: [
+                { name: "Salmon (wild, grilled, 100g)", cal: 206, p: 22, c: 0, f: 12, fiber: 0, omega3: "High", prep: "Bake or grill" },
+                { name: "Tuna (canned in water, 100g)", cal: 116, p: 26, c: 0, f: 0.8, fiber: 0, prep: "Ready to eat" },
+                { name: "Cod (baked, 100g)", cal: 105, p: 23, c: 0, f: 0.9, fiber: 0, prep: "Bake with lemon" },
+                { name: "Prawns/Shrimp (100g)", cal: 99, p: 24, c: 0, f: 0.3, fiber: 0, prep: "Boil or grill" },
+                { name: "Tilapia (100g)", cal: 128, p: 26, c: 0, f: 2.7, fiber: 0, prep: "Pan fry or bake" },
+                { name: "Mackerel (100g)", cal: 262, p: 24, c: 0, f: 18, fiber: 0, omega3: "Very High", prep: "Grill" }
+            ],
+            dairy: [
+                { name: "Greek Yogurt 0% (170g)", cal: 100, p: 17, c: 6, f: 0, fiber: 0, calcium: "High", prep: "Ready to eat" },
+                { name: "Cottage Cheese Low-Fat (100g)", cal: 72, p: 12, c: 2.7, f: 1, fiber: 0, prep: "Ready to eat" },
+                { name: "Eggs (2 large)", cal: 140, p: 12, c: 1, f: 10, fiber: 0, cholesterol: "Medium", prep: "Boil or scramble" },
+                { name: "Egg Whites (100g)", cal: 52, p: 11, c: 0.7, f: 0.2, fiber: 0, prep: "Cook or use liquid" },
+                { name: "Milk Whole (250ml)", cal: 150, p: 8, c: 12, f: 8, fiber: 0, calcium: "High", prep: "Drink" },
+                { name: "Whey Protein Isolate (30g scoop)", cal: 110, p: 25, c: 1, f: 0.5, fiber: 0, prep: "Mix with water" }
+            ],
+            plantBased: [
+                { name: "Tofu Firm (100g)", cal: 144, p: 17, c: 3, f: 9, fiber: 2, prep: "Stir fry or bake" },
+                { name: "Tempeh (100g)", cal: 193, p: 20, c: 9, f: 11, fiber: 5, prep: "Steam then fry" },
+                { name: "Lentils Cooked (100g)", cal: 116, p: 9, c: 20, f: 0.4, fiber: 8, iron: "High", prep: "Boil 20-25 min" },
+                { name: "Chickpeas Cooked (100g)", cal: 164, p: 9, c: 27, f: 2.6, fiber: 8, prep: "Boil or roast" },
+                { name: "Black Beans Cooked (100g)", cal: 132, p: 9, c: 24, f: 0.5, fiber: 9, prep: "Boil 60-90 min" },
+                { name: "Edamame (100g)", cal: 122, p: 11, c: 10, f: 5, fiber: 5, prep: "Boil 5 min" }
+            ]
+        },
+        carbs: {
+            grains: [
+                { name: "Brown Rice Cooked (100g)", cal: 112, p: 2.6, c: 24, f: 0.9, fiber: 1.8, gi: "Medium", prep: "Boil 40 min" },
+                { name: "White Rice Cooked (100g)", cal: 130, p: 2.7, c: 28, f: 0.3, fiber: 0.4, gi: "High", prep: "Boil 15-20 min" },
+                { name: "Quinoa Cooked (100g)", cal: 120, p: 4.4, c: 21, f: 1.9, fiber: 2.8, complete_protein: true, prep: "Boil 15 min" },
+                { name: "Oats Dry (40g)", cal: 152, p: 5.3, c: 27, f: 2.8, fiber: 4, gi: "Low", prep: "Cook with milk" },
+                { name: "Whole Wheat Pasta Cooked (100g)", cal: 124, p: 5, c: 26, f: 0.5, fiber: 3.5, prep: "Boil 8-10 min" },
+                { name: "Couscous Cooked (100g)", cal: 112, p: 3.8, c: 23, f: 0.2, fiber: 1.4, prep: "Pour boiling water" }
+            ],
+            tubers: [
+                { name: "Sweet Potato Baked (100g)", cal: 90, p: 2, c: 21, f: 0.2, fiber: 3.3, vitaminA: "Very High", prep: "Bake 45 min" },
+                { name: "White Potato Baked (medium)", cal: 161, p: 4.3, c: 37, f: 0.2, fiber: 3.8, potassium: "High", prep: "Bake 50 min" },
+                { name: "Yam Cooked (100g)", cal: 116, p: 1.5, c: 27.5, f: 0.1, fiber: 3.9, prep: "Boil or bake" }
+            ],
+            fruits: [
+                { name: "Banana Medium", cal: 105, p: 1.3, c: 27, f: 0.4, fiber: 3.1, potassium: "High", prep: "Eat raw" },
+                { name: "Apple Medium", cal: 95, p: 0.5, c: 25, f: 0.3, fiber: 4.4, prep: "Eat raw" },
+                { name: "Blueberries (100g)", cal: 57, p: 0.7, c: 14, f: 0.3, fiber: 2.4, antioxidants: "Very High", prep: "Eat raw" },
+                { name: "Strawberries (100g)", cal: 32, p: 0.7, c: 8, f: 0.3, fiber: 2, vitaminC: "High", prep: "Eat raw" },
+                { name: "Orange Medium", cal: 62, p: 1.2, c: 15, f: 0.2, fiber: 3.1, vitaminC: "Very High", prep: "Peel and eat" },
+                { name: "Mango (100g)", cal: 60, p: 0.8, c: 15, f: 0.4, fiber: 1.6, vitaminA: "High", prep: "Slice and eat" }
+            ],
+            bread: [
+                { name: "Whole Wheat Bread (2 slices)", cal: 160, p: 8, c: 28, f: 2, fiber: 4, prep: "Toast if desired" },
+                { name: "Sourdough (2 slices)", cal: 180, p: 6, c: 36, f: 1, fiber: 2, easier_digest: true, prep: "Toast" },
+                { name: "Rye Bread (2 slices)", cal: 166, p: 6, c: 32, f: 1.2, fiber: 3.8, prep: "Toast" }
+            ]
+        },
+        fats: {
+            nuts: [
+                { name: "Almonds (28g, ~23 nuts)", cal: 164, p: 6, c: 6, f: 14, fiber: 3.5, vitaminE: "High", prep: "Eat raw or roasted" },
+                { name: "Walnuts (28g, ~14 halves)", cal: 185, p: 4.3, c: 4, f: 18, fiber: 1.9, omega3: "High", prep: "Eat raw" },
+                { name: "Cashews (28g, ~18 nuts)", cal: 157, p: 5, c: 9, f: 12, fiber: 0.9, prep: "Eat roasted" },
+                { name: "Peanuts (28g)", cal: 161, p: 7, c: 5, f: 14, fiber: 2.4, prep: "Eat roasted" },
+                { name: "Pistachios (28g, ~49 nuts)", cal: 159, p: 6, c: 8, f: 13, fiber: 3, prep: "Shell and eat" }
+            ],
+            seeds: [
+                { name: "Chia Seeds (28g)", cal: 138, p: 4.7, c: 12, f: 8.7, fiber: 10, omega3: "Very High", prep: "Soak or sprinkle" },
+                { name: "Flaxseeds (28g)", cal: 150, p: 5, c: 8, f: 12, fiber: 8, omega3: "High", prep: "Grind before eating" },
+                { name: "Pumpkin Seeds (28g)", cal: 151, p: 7, c: 5, f: 13, fiber: 1.7, zinc: "High", prep: "Roast" }
+            ],
+            oils: [
+                { name: "Olive Oil Extra Virgin (1 tbsp)", cal: 119, p: 0, c: 0, f: 14, fiber: 0, antioxidants: "High", prep: "Use for cooking" },
+                { name: "Coconut Oil (1 tbsp)", cal: 121, p: 0, c: 0, f: 14, fiber: 0, mct: "Medium", prep: "High heat cooking" },
+                { name: "Avocado Oil (1 tbsp)", cal: 124, p: 0, c: 0, f: 14, fiber: 0, smoke_point: "High", prep: "Cooking or salads" }
+            ],
+            spreads: [
+                { name: "Peanut Butter Natural (2 tbsp)", cal: 188, p: 8, c: 7, f: 16, fiber: 2, prep: "Spread or eat with spoon" },
+                { name: "Almond Butter (2 tbsp)", cal: 196, p: 7, c: 7, f: 18, fiber: 3, prep: "Spread or eat" },
+                { name: "Avocado Half Medium", cal: 120, p: 1.5, c: 6, f: 11, fiber: 5, potassium: "High", prep: "Slice and eat" }
+            ],
+            other: [
+                { name: "Dark Chocolate 70-85% (28g)", cal: 170, p: 2, c: 13, f: 12, fiber: 3, antioxidants: "High", prep: "Eat as is" },
+                { name: "Cheese Cheddar (28g)", cal: 114, p: 7, c: 0.4, f: 9, fiber: 0, calcium: "High", prep: "Slice or grate" }
+            ]
+        },
+        vegetables: {
+            leafy: [
+                { name: "Spinach Raw (100g)", cal: 23, p: 2.9, c: 3.6, f: 0.4, fiber: 2.2, iron: "High", prep: "Salad or cook" },
+                { name: "Kale Raw (100g)", cal: 35, p: 2.9, c: 4.4, f: 1.5, fiber: 4.1, vitaminK: "Very High", prep: "Salad or sauté" },
+                { name: "Lettuce Romaine (100g)", cal: 17, p: 1.2, c: 3.3, f: 0.3, fiber: 2.1, prep: "Salad" },
+                { name: "Arugula (100g)", cal: 25, p: 2.6, c: 3.7, f: 0.7, fiber: 1.6, prep: "Salad" }
+            ],
+            cruciferous: [
+                { name: "Broccoli Cooked (100g)", cal: 35, p: 2.4, c: 7, f: 0.4, fiber: 3.3, vitaminC: "High", prep: "Steam 5 min" },
+                { name: "Cauliflower Cooked (100g)", cal: 23, p: 1.8, c: 4.7, f: 0.5, fiber: 2.3, prep: "Steam or roast" },
+                { name: "Brussels Sprouts (100g)", cal: 43, p: 3.4, c: 9, f: 0.3, fiber: 3.8, prep: "Roast or steam" },
+                { name: "Cabbage Cooked (100g)", cal: 23, p: 1.3, c: 5.5, f: 0.1, fiber: 2.5, prep: "Boil or stir fry" }
+            ],
+            colorful: [
+                { name: "Bell Peppers Raw (100g)", cal: 31, p: 1, c: 6, f: 0.3, fiber: 2.1, vitaminC: "Very High", prep: "Slice raw or cook" },
+                { name: "Carrots Raw (100g)", cal: 41, p: 0.9, c: 10, f: 0.2, fiber: 2.8, vitaminA: "Very High", prep: "Raw or steam" },
+                { name: "Tomatoes Raw (100g)", cal: 18, p: 0.9, c: 3.9, f: 0.2, fiber: 1.2, lycopene: "High", prep: "Slice raw or cook" },
+                { name: "Cucumber (100g)", cal: 16, p: 0.7, c: 3.6, f: 0.1, fiber: 0.5, hydration: "High", prep: "Slice raw" },
+                { name: "Zucchini (100g)", cal: 17, p: 1.2, c: 3.1, f: 0.3, fiber: 1, prep: "Grill or sauté" }
+            ],
+            other: [
+                { name: "Asparagus (100g)", cal: 20, p: 2.2, c: 3.9, f: 0.1, fiber: 2.1, folate: "High", prep: "Steam or grill" },
+                { name: "Green Beans (100g)", cal: 31, p: 1.8, c: 7, f: 0.1, fiber: 3.4, prep: "Steam 5 min" },
+                { name: "Mushrooms (100g)", cal: 22, p: 3.1, c: 3.3, f: 0.3, fiber: 1, vitaminD: "Medium", prep: "Sauté" }
+            ]
+        }
+    };
+
+    // ==========================================================================
+    // RECOVERY & ADAPTATION TRACKING
+    // ==========================================================================
+
+    /**
+     * Calculate training stress score for a workout
+     * @param {object} workout
+     * @returns {number}
+     */
+    function calculateTrainingStress(workout) {
+        let stress = 0;
+        const duration = workout.duration || 60;
+        const intensity = getAverageWorkoutIntensity(1);
+        
+        // Base stress from duration
+        stress += duration * 0.5;
+        
+        // Add stress from volume
+        const volume = calculateWorkoutVolume(workout);
+        stress += volume / 100;
+        
+        // Multiply by intensity factor
+        stress *= (intensity / 100);
+        
+        return Math.round(stress);
+    }
+
+    /**
+     * Get weekly training load
+     * @returns {number}
+     */
+    function getWeeklyTrainingLoad() {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        return (state.workoutHistory || [])
+            .filter(w => new Date(w.date) > weekAgo)
+            .reduce((sum, w) => sum + calculateTrainingStress(w), 0);
+    }
+
+    /**
+     * Recommend training adjustments based on load
+     * @returns {string}
+     */
+    function getTrainingLoadRecommendation() {
+        const load = getWeeklyTrainingLoad();
+        
+        if (load < 100) return "Training load is low. Consider adding volume.";
+        if (load < 250) return "Training load is moderate. Good balance for progression.";
+        if (load < 400) return "Training load is high. Ensure adequate recovery.";
+        return "Training load is very high. Consider a deload or rest day.";
+    }
+
+    // ==========================================================================
+    // MEAL PREP SUGGESTIONS
+    // ==========================================================================
+
+    const MEAL_PREP_IDEAS = {
+        protein_batch: [
+            { name: "Grilled Chicken Breast", portions: 6, prep_time: 40, storage: "5 days fridge" },
+            { name: "Baked Salmon Fillets", portions: 4, prep_time: 25, storage: "3 days fridge" },
+            { name: "Ground Turkey Patties", portions: 8, prep_time: 30, storage: "4 days fridge" },
+            { name: "Hard Boiled Eggs", portions: 12, prep_time: 15, storage: "7 days fridge" }
+        ],
+        carb_batch: [
+            { name: "Brown Rice", portions: 8, prep_time: 45, storage: "5 days fridge" },
+            { name: "Sweet Potato Cubes", portions: 6, prep_time: 35, storage: "5 days fridge" },
+            { name: "Quinoa", portions: 6, prep_time: 20, storage: "5 days fridge" },
+            { name: "Overnight Oats", portions: 5, prep_time: 10, storage: "5 days fridge" }
+        ],
+        veggie_batch: [
+            { name: "Roasted Vegetables Mix", portions: 6, prep_time: 30, storage: "4 days fridge" },
+            { name: "Steamed Broccoli", portions: 5, prep_time: 15, storage: "4 days fridge" },
+            { name: "Mixed Salad Containers", portions: 4, prep_time: 20, storage: "3 days fridge" }
+        ]
+    };
+
+    // ==========================================================================
+    // HYDRATION TRACKING ENHANCEMENTS
+    // ==========================================================================
+
+    /**
+     * Calculate recommended daily water intake
+     * @param {number} weightKg
+     * @param {string} activityLevel
+     * @returns {number} ml per day
+     */
+    function calculateWaterIntake(weightKg, activityLevel = 'moderate') {
+        let base = weightKg * 35; // 35ml per kg baseline
+        
+        const multipliers = {
+            sedentary: 1.0,
+            light: 1.1,
+            moderate: 1.2,
+            active: 1.3,
+            very_active: 1.5
+        };
+        
+        return Math.round(base * (multipliers[activityLevel] || 1.2));
+    }
+
+    /**
+     * Get hydration status based on intake
+     * @param {number} consumed - ml consumed today
+     * @param {number} goal - ml goal
+     * @returns {object}
+     */
+    function getHydrationStatus(consumed, goal) {
+        const percentage = (consumed / goal) * 100;
+        
+        if (percentage < 50) return { status: 'Dehydrated', color: 'red', message: 'Drink more water!' };
+        if (percentage < 75) return { status: 'Under-hydrated', color: 'orange', message: 'Keep drinking' };
+        if (percentage < 100) return { status: 'Good', color: 'yellow', message: 'Almost there!' };
+        return { status: 'Hydrated', color: 'green', message: 'Well done!' };
+    }
+
+    // ==========================================================================
+    // SUPPLEMENT TRACKING & RECOMMENDATIONS
+    // ==========================================================================
+
+    const COMMON_SUPPLEMENTS = {
+        essentials: [
+            { 
+                name: "Whey Protein", 
+                purpose: "Muscle recovery and growth",
+                timing: "Post-workout or between meals",
+                dose: "20-40g per serving",
+                benefits: ["Muscle protein synthesis", "Convenient protein source", "Fast absorption"]
+            },
+            {
+                name: "Creatine Monohydrate",
+                purpose: "Strength and power output",
+                timing: "Daily, any time",
+                dose: "5g per day",
+                benefits: ["Increased strength", "Better work capacity", "Muscle fullness", "Cognitive benefits"]
+            },
+            {
+                name: "Omega-3 Fish Oil",
+                purpose: "Heart health and inflammation",
+                timing: "With meals",
+                dose: "1-3g EPA+DHA per day",
+                benefits: ["Joint health", "Cardiovascular support", "Anti-inflammatory", "Brain function"]
+            },
+            {
+                name: "Vitamin D3",
+                purpose: "Bone health and immunity",
+                timing: "With fat-containing meal",
+                dose: "1000-4000 IU per day",
+                benefits: ["Bone density", "Immune function", "Mood support", "Testosterone health"]
+            },
+            {
+                name: "Multivitamin",
+                purpose: "Micronutrient insurance",
+                timing: "With breakfast",
+                dose: "As directed on label",
+                benefits: ["Fill dietary gaps", "General health support", "Convenience"]
+            }
+        ],
+        performance: [
+            {
+                name: "Caffeine",
+                purpose: "Energy and focus",
+                timing: "30-60 min pre-workout",
+                dose: "200-400mg",
+                benefits: ["Increased alertness", "Better endurance", "Fat oxidation", "Focus"]
+            },
+            {
+                name: "Beta-Alanine",
+                purpose: "Muscular endurance",
+                timing: "Daily, any time",
+                dose: "3-5g per day",
+                benefits: ["Reduced fatigue", "Better high-rep performance", "Muscle buffering"]
+            },
+            {
+                name: "Citrulline Malate",
+                purpose: "Pump and endurance",
+                timing: "30 min pre-workout",
+                dose: "6-8g",
+                benefits: ["Increased nitric oxide", "Better pumps", "Reduced fatigue", "Recovery"]
+            }
+        ],
+        recovery: [
+            {
+                name: "Magnesium",
+                purpose: "Sleep and recovery",
+                timing: "Before bed",
+                dose: "200-400mg",
+                benefits: ["Better sleep quality", "Muscle relaxation", "Recovery support", "Stress reduction"]
+            },
+            {
+                name: "Zinc",
+                purpose: "Immune and hormone health",
+                timing: "Before bed",
+                dose: "15-30mg",
+                benefits: ["Immune function", "Testosterone support", "Recovery", "Protein synthesis"]
+            },
+            {
+                name: "L-Glutamine",
+                purpose: "Gut health and recovery",
+                timing: "Post-workout or before bed",
+                dose: "5-10g",
+                benefits: ["Gut health", "Immune support", "Muscle recovery", "Glycogen synthesis"]
+            }
+        ]
+    };
+
+    /**
+     * Get supplement recommendations based on goals
+     * @param {string} goal - 'muscle_gain', 'fat_loss', 'performance', 'general_health'
+     * @returns {Array}
+     */
+    function getSupplementRecommendations(goal) {
+        const base = COMMON_SUPPLEMENTS.essentials.slice(0, 3); // Protein, Creatine, Omega-3
+        
+        const recommendations = {
+            muscle_gain: [...base, 
+                COMMON_SUPPLEMENTS.essentials.find(s => s.name === "Vitamin D3"),
+                COMMON_SUPPLEMENTS.recovery.find(s => s.name === "Zinc")
+            ],
+            fat_loss: [
+                COMMON_SUPPLEMENTS.essentials.find(s => s.name === "Whey Protein"),
+                COMMON_SUPPLEMENTS.essentials.find(s => s.name === "Omega-3 Fish Oil"),
+                COMMON_SUPPLEMENTS.performance.find(s => s.name === "Caffeine"),
+                COMMON_SUPPLEMENTS.essentials.find(s => s.name === "Multivitamin")
+            ],
+            performance: [...base,
+                ...COMMON_SUPPLEMENTS.performance
+            ],
+            general_health: COMMON_SUPPLEMENTS.essentials
+        };
+        
+        return recommendations[goal] || COMMON_SUPPLEMENTS.essentials;
+    }
+
+    // ==========================================================================
+    // WORKOUT PERIODIZATION HELPERS
+    // ==========================================================================
+
+    /**
+     * Generate a periodized training plan
+     * @param {number} weeks - total weeks
+     * @param {string} goal - 'strength', 'hypertrophy', 'endurance'
+     * @returns {Array}
+     */
+    function generatePeriodization(weeks, goal = 'hypertrophy') {
+        const phases = [];
+        
+        if (goal === 'strength') {
+            // Strength periodization: Hypertrophy -> Strength -> Peaking
+            const hypWeeks = Math.floor(weeks * 0.4);
+            const strWeeks = Math.floor(weeks * 0.4);
+            const peakWeeks = weeks - hypWeeks - strWeeks;
+            
+            phases.push({
+                name: "Hypertrophy Phase",
+                weeks: hypWeeks,
+                sets: "3-4",
+                reps: "8-12",
+                intensity: "65-75% 1RM",
+                rest: "60-90s",
+                focus: "Building muscle mass foundation"
+            });
+            
+            phases.push({
+                name: "Strength Phase",
+                weeks: strWeeks,
+                sets: "4-5",
+                reps: "4-6",
+                intensity: "80-90% 1RM",
+                rest: "3-5 min",
+                focus: "Increasing maximal strength"
+            });
+            
+            if (peakWeeks > 0) {
+                phases.push({
+                    name: "Peaking Phase",
+                    weeks: peakWeeks,
+                    sets: "3-5",
+                    reps: "1-3",
+                    intensity: "90-100% 1RM",
+                    rest: "5+ min",
+                    focus: "Testing and achieving new PRs"
+                });
+            }
+        } else if (goal === 'hypertrophy') {
+            // Hypertrophy periodization: Volume accumulation -> Intensification
+            const volWeeks = Math.ceil(weeks * 0.7);
+            const intWeeks = weeks - volWeeks;
+            
+            phases.push({
+                name: "Volume Accumulation",
+                weeks: volWeeks,
+                sets: "4-5",
+                reps: "10-15",
+                intensity: "60-70% 1RM",
+                rest: "60-90s",
+                focus: "Maximizing training volume"
+            });
+            
+            phases.push({
+                name: "Intensification",
+                weeks: intWeeks,
+                sets: "3-4",
+                reps: "6-10",
+                intensity: "75-85% 1RM",
+                rest: "90-120s",
+                focus: "Higher intensity, lower volume"
+            });
+        }
+        
+        return phases;
+    }
+
+    /**
+     * Determine which phase user is in based on workout history
+     * @returns {string}
+     */
+    function getCurrentTrainingPhase() {
+        const last4Workouts = (state.workoutHistory || []).slice(-4);
+        if (last4Workouts.length < 3) return "Building Base";
+        
+        let avgReps = 0;
+        let setCount = 0;
+        
+        last4Workouts.forEach(workout => {
+            (workout.exercises || []).forEach(ex => {
+                (ex.sets || []).forEach(set => {
+                    avgReps += parseFloat(set.reps) || 0;
+                    setCount++;
+                });
+            });
+        });
+        
+        avgReps = setCount > 0 ? avgReps / setCount : 0;
+        
+        if (avgReps >= 12) return "Hypertrophy/Endurance Phase";
+        if (avgReps >= 6) return "Hypertrophy Phase";
+        if (avgReps >= 4) return "Strength Phase";
+        return "Power/Peaking Phase";
+    }
+
+    // ==========================================================================
+    // INJURY PREVENTION & MOBILITY
+    // ==========================================================================
+
+    const MOBILITY_ROUTINES = {
+        upper_body: [
+            { name: "Cat-Cow Stretch", duration: "60s", muscles: ["Spine", "Core"] },
+            { name: "Thread the Needle", duration: "30s each", muscles: ["Thoracic Spine", "Shoulders"] },
+            { name: "Shoulder Dislocations", duration: "10 reps", muscles: ["Shoulders", "Chest"] },
+            { name: "Wall Slides", duration: "15 reps", muscles: ["Shoulders", "Upper Back"] },
+            { name: "Doorway Pec Stretch", duration: "30s each", muscles: ["Chest", "Shoulders"] }
+        ],
+        lower_body: [
+            { name: "90/90 Hip Stretch", duration: "60s each", muscles: ["Hips", "Glutes"] },
+            { name: "Couch Stretch", duration: "60s each", muscles: ["Hip Flexors", "Quads"] },
+            { name: "Pigeon Pose", duration: "60s each", muscles: ["Glutes", "Hips"] },
+            { name: "Standing Hamstring Stretch", duration: "30s each", muscles: ["Hamstrings"] },
+            { name: "Calf Stretch", duration: "30s each", muscles: ["Calves", "Achilles"] }
+        ],
+        full_body: [
+            { name: "World's Greatest Stretch", duration: "5 reps each", muscles: ["Full Body"] },
+            { name: "Deep Squat Hold", duration: "60s", muscles: ["Ankles", "Hips", "Lower Back"] },
+            { name: "Spinal Twist", duration: "30s each", muscles: ["Spine", "Core"] },
+            { name: "Child's Pose", duration: "60s", muscles: ["Back", "Shoulders"] },
+            { name: "Down Dog to Cobra", duration: "10 reps", muscles: ["Spine", "Hips", "Shoulders"] }
+        ]
+    };
+
+    /**
+     * Recommend mobility work based on workout focus
+     * @param {string} workoutFocus
+     * @returns {Array}
+     */
+    function getMobilityRecommendation(workoutFocus) {
+        const lower = workoutFocus.toLowerCase();
+        
+        if (lower.includes('chest') || lower.includes('push') || lower.includes('shoulder')) {
+            return MOBILITY_ROUTINES.upper_body;
+        }
+        if (lower.includes('leg') || lower.includes('squat') || lower.includes('deadlift')) {
+            return MOBILITY_ROUTINES.lower_body;
+        }
+        return MOBILITY_ROUTINES.full_body;
+    }
+
+    // ==========================================================================
+    // CARDIO & CONDITIONING TEMPLATES
+    // ==========================================================================
+
+    const CARDIO_WORKOUTS = {
+        hiit: [
+            {
+                name: "Sprint Intervals",
+                duration: "20 min",
+                protocol: "30s sprint / 90s walk x 10 rounds",
+                intensity: "Very High",
+                calories: "~250-350"
+            },
+            {
+                name: "Bike Tabata",
+                duration: "20 min",
+                protocol: "20s max effort / 10s rest x 8 rounds, 4 sets",
+                intensity: "Maximum",
+                calories: "~200-300"
+            },
+            {
+                name: "Rowing Intervals",
+                duration: "25 min",
+                protocol: "2 min hard / 1 min easy x 8 rounds",
+                intensity: "High",
+                calories: "~300-400"
+            }
+        ],
+        liss: [
+            {
+                name: "Steady State Treadmill",
+                duration: "45 min",
+                protocol: "Maintain 60-70% max HR",
+                intensity: "Low-Moderate",
+                calories: "~350-450"
+            },
+            {
+                name: "Incline Walk",
+                duration: "30 min",
+                protocol: "3-4% incline, conversational pace",
+                intensity: "Low",
+                calories: "~250-350"
+            },
+            {
+                name: "Easy Cycling",
+                duration: "60 min",
+                protocol: "Comfortable pace, minimal resistance",
+                intensity: "Low",
+                calories: "~400-550"
+            }
+        ],
+        conditioning: [
+            {
+                name: "Battle Ropes Circuit",
+                duration: "15 min",
+                protocol: "30s work / 30s rest, various patterns",
+                intensity: "High",
+                calories: "~200-280"
+            },
+            {
+                name: "Sled Push/Pull",
+                duration: "20 min",
+                protocol: "40m push, 40m pull, 2 min rest x 6",
+                intensity: "Very High",
+                calories: "~250-350"
+            },
+            {
+                name: "Farmers Walks",
+                duration: "15 min",
+                protocol: "40m walk, 90s rest x 8",
+                intensity: "Moderate-High",
+                calories: "~180-250"
+            }
+        ]
+    };
+
+    /**
+     * Recommend cardio based on training goals
+     * @param {string} goal
+     * @returns {object}
+     */
+    function getCardioRecommendation(goal) {
+        if (goal === 'fat_loss') {
+            return {
+                primary: CARDIO_WORKOUTS.liss[1], // Incline walk
+                secondary: CARDIO_WORKOUTS.hiit[0], // Sprint intervals
+                frequency: "4-5x per week",
+                notes: "LISS for steady fat burn, HIIT 1-2x for metabolic boost"
+            };
+        }
+        if (goal === 'muscle_gain') {
+            return {
+                primary: CARDIO_WORKOUTS.liss[2], // Easy cycling
+                secondary: null,
+                frequency: "2-3x per week",
+                notes: "Keep cardio minimal and low-intensity to preserve recovery"
+            };
+        }
+        if (goal === 'endurance') {
+            return {
+                primary: CARDIO_WORKOUTS.liss[0], // Steady state
+                secondary: CARDIO_WORKOUTS.hiit[2], // Rowing intervals
+                frequency: "5-6x per week",
+                notes: "Mix of LISS and HIIT for cardiovascular adaptation"
+            };
+        }
+        return {
+            primary: CARDIO_WORKOUTS.liss[1],
+            frequency: "3-4x per week",
+            notes: "General cardiovascular health maintenance"
+        };
+    }
+
+    // ==========================================================================
+    // SLEEP & RECOVERY TRACKING
+    // ==========================================================================
+
+    /**
+     * Calculate sleep quality score
+     * @param {number} hours - hours slept
+     * @param {number} interruptions - number of wake-ups
+     * @param {string} feeling - 'refreshed', 'okay', 'tired'
+     * @returns {object}
+     */
+    function calculateSleepQuality(hours, interruptions, feeling) {
+        let score = 50;
+        
+        // Hours component (0-40 points)
+        if (hours >= 7 && hours <= 9) score += 40;
+        else if (hours >= 6) score += 25;
+        else if (hours >= 5) score += 10;
+        
+        // Interruptions component (0-30 points)
+        if (interruptions === 0) score += 30;
+        else if (interruptions === 1) score += 20;
+        else if (interruptions === 2) score += 10;
+        
+        // Feeling component (0-30 points)
+        const feelingScores = { refreshed: 30, okay: 15, tired: 0 };
+        score += feelingScores[feeling] || 0;
+        
+        let grade = 'Poor';
+        if (score >= 90) grade = 'Excellent';
+        else if (score >= 75) grade = 'Good';
+        else if (score >= 60) grade = 'Fair';
+        
+        return { score, grade, hours, interruptions, feeling };
+    }
+
+    /**
+     * Get recovery recommendations
+     * @param {object} sleepData
+     * @param {number} trainingLoad
+     * @returns {Array}
+     */
+    function getRecoveryRecommendations(sleepData, trainingLoad) {
+        const recommendations = [];
+        
+        if (sleepData && sleepData.hours < 7) {
+            recommendations.push("Prioritize 7-9 hours of sleep for optimal recovery");
+        }
+        
+        if (trainingLoad > 350) {
+            recommendations.push("High training load detected - consider active recovery or rest day");
+        }
+        
+        if (sleepData && sleepData.interruptions > 2) {
+            recommendations.push("Poor sleep quality - focus on sleep hygiene and bedtime routine");
+        }
+        
+        const deload = shouldDeload();
+        if (deload.should) {
+            recommendations.push(deload.reason);
+        }
+        
+        if (recommendations.length === 0) {
+            recommendations.push("Recovery status looks good! Keep up the great work.");
+        }
+        
+        return recommendations;
+    }
+
+    // ==========================================================================
+    // INITIALIZATION
+    // ==========================================================================
+
+    window.addEventListener('DOMContentLoaded', () => {
+        // Initial Lucide icons render for auth screen
+        lucide.createIcons();
+    });
+
+    </script>
+</body>
+</html>
