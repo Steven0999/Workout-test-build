@@ -3,520 +3,1223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitTrack Pro V8</title>
+    <meta name="description" content="VFit App Pro - Complete fitness tracking app with cloud sync">
+    <meta name="theme-color" content="#4f46e5">
+    <title>VFit App Pro - Your Complete Fitness Companion</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+    
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="pb-28">
-
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-5 sticky top-0 z-40 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">
-                Vaughan<span class="text-slate-600">Fitness</span>
-            </h1>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="switchTab('education')" class="w-10 h-10 flex items-center justify-center bg-indigo-50 rounded-2xl hover:bg-indigo-100 transition-colors">
-                <i data-lucide="book-open" class="w-5 h-5 text-indigo-600"></i>
-            </button>
-            <button onclick="openTutorial()" class="px-4 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-2xl hover:bg-amber-100 transition-colors font-bold text-xs uppercase tracking-wider">
-                Tutorial
-            </button>
-            <button onclick="switchTab('settings')" class="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
-                <i data-lucide="settings" class="w-5 h-5 text-slate-600"></i>
-            </button>
-        </div>
-    </header>
-
-    <main class="max-w-xl mx-auto p-4 space-y-6">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
-        <section id="dashboard" class="tab-content active space-y-6">
-            <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
-                <div class="relative w-48 h-48 flex items-center justify-center">
-                    <svg class="w-full h-full">
-                        <circle class="text-slate-100" stroke-width="12" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
-                        <circle id="calorie-progress" class="text-indigo-600 progress-ring-circle" stroke-width="12" stroke-dasharray="534" stroke-dashoffset="534" stroke-linecap="round" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
-                    </svg>
-                    <div class="absolute text-center">
-                        <div id="dash-calories" class="text-4xl font-black text-slate-900">0</div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kcal Eaten</div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-3 w-full gap-4 mt-8 border-t border-slate-100 pt-6">
-                    <div class="text-center">
-                        <div id="dash-protein" class="font-bold text-slate-900">0g</div>
-                        <div class="text-[9px] font-black uppercase text-slate-400">Protein</div>
-                    </div>
-                    <div class="text-center border-x border-slate-100">
-                        <div id="dash-carbs" class="font-bold text-slate-900">0g</div>
-                        <div class="text-[9px] font-black uppercase text-slate-400">Carbs</div>
-                    </div>
-                    <div class="text-center">
-                        <div id="dash-fat" class="font-bold text-slate-900">0g</div>
-                        <div class="text-[9px] font-black uppercase text-slate-400">Fats</div>
-                    </div>
-                </div>
-            </div>
+        :root {
+            --brand-primary: #4f46e5;
+            --brand-secondary: #f43f5e;
+            --bg-main: #f8fafc;
+        }
 
-            <div class="glass-card rounded-[2.5rem] p-6 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="droplet" class="text-cyan-500"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800">Hydration</h4>
-                        <p id="water-count" class="text-xs text-slate-500">0 / 2.5 Liters</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="updateWater(-250)" class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 font-bold hover:bg-slate-100">-</button>
-                    <button onclick="updateWater(250)" class="w-10 h-10 rounded-xl bg-cyan-500 text-white font-bold hover:bg-cyan-600 shadow-lg shadow-cyan-200">+</button>
-                </div>
-            </div>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            background-color: var(--bg-main);
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
 
-            <div class="bg-slate-900 rounded-[2.5rem] p-6 text-white relative overflow-hidden shadow-xl">
-                <div class="relative z-10">
-                    <h3 class="text-lg font-bold mb-1">Weekly Muscle Volume</h3>
-                    <p id="dash-sessions" class="text-slate-400 text-xs mb-4 uppercase font-black tracking-widest">Mon - Sun Tracker</p>
-                    <div id="muscle-volume-stats" class="grid grid-cols-2 gap-y-3 gap-x-6 mb-6"></div>
-                    <button onclick="switchTab('training')" class="bg-indigo-600 px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-500 transition">Log Workout</button>
-                </div>
-                <i data-lucide="bar-chart-3" class="absolute -right-6 -bottom-6 text-white/5 w-40 h-40"></i>
-            </div>
-        </section>
+        .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        <section id="training" class="tab-content space-y-6">
-            <div id="workout-setup" class="space-y-4">
-                <div class="glass-card p-6 rounded-[2.5rem] text-center">
-                    <div class="flex bg-slate-100 p-1 rounded-2xl mb-6 mx-auto w-fit">
-                        <button onclick="setWorkoutEnv('gym')" id="env-tab-gym" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Gym</button>
-                        <button onclick="setWorkoutEnv('home')" id="env-tab-home" class="px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Home</button>
-                    </div>
-                    
-                    <div class="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="dumbbell" class="text-indigo-600 w-8 h-8"></i>
-                    </div>
-                    
-                    <h3 class="text-xl font-bold mb-2">Plan your Session</h3>
-                    <p class="text-xs text-slate-500 mb-4">Equipment: <span id="current-env-label" class="text-indigo-600 font-bold uppercase">Gym</span></p>
-                    
-                    <div class="mb-4 text-left">
-                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Date</label>
-                        <input type="date" id="workout-date-input" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none text-center text-slate-700">
-                    </div>
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
 
-                    <div class="mb-4 text-left">
-                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1 block">Focus</label>
-                        <select id="workout-focus" onchange="toggleSpecificMuscleGrid()" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold appearance-none text-center text-slate-700 outline-none">
-                            <option>Full Body</option>
-                            <option>Upper Body</option>
-                            <option>Lower Body/Legs</option>
-                            <option>Push</option>
-                            <option>Pull</option>
-                            <option>Squat</option>
-                            <option>Hinge</option>
-                            <option>Specific Muscle</option>
-                        </select>
-                    </div>
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+        }
 
-                    <div id="muscle-selection-container" class="mb-4 text-left hidden">
-                        <label class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-2 block">Select Muscles</label>
-                        <div id="muscle-selection-grid" class="grid grid-cols-3 gap-2"></div>
-                    </div>
+        .modal-overlay.hidden {
+            display: none;
+        }
 
-                    <div class="bg-slate-50 p-4 rounded-2xl mb-6 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-black uppercase text-slate-500">Add Cardio</span>
-                            <input type="checkbox" id="add-cardio-check" onchange="toggleCardioOptions()" class="w-5 h-5 accent-indigo-600">
-                        </div>
-                        <div id="cardio-options" class="hidden space-y-2 pt-2 border-t border-slate-200">
-                            <select id="cardio-type" class="w-full p-2 bg-white rounded-lg text-xs font-bold outline-none">
-                                <option>Steady State</option>
-                                <option>HIIT Training</option>
-                            </select>
-                            <select id="cardio-exercise" class="w-full p-2 bg-white rounded-lg text-xs font-bold outline-none">
-                                <option>Treadmill</option>
-                                <option>Rowing</option>
-                                <option>Bike</option>
-                                <option>Assult Bike</option>
-                                <option>Ski-Erg</option>
-                            </select>
-                        </div>
-                        <div class="flex items-center justify-between pt-2">
-                            <span class="text-[10px] font-black uppercase text-slate-500">Add Core</span>
-                            <input type="checkbox" id="add-core-check" class="w-5 h-5 accent-indigo-600">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="startManualWorkout()" class="p-4 bg-slate-900 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2 hover:bg-slate-800 transition"><i data-lucide="plus-circle"></i> Manual</button>
-                        <button onclick="generateAIWorkout()" class="p-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-sm flex flex-col items-center gap-2 hover:bg-indigo-500 transition"><i data-lucide="sparkles"></i> AI Suggest</button>
-                    </div>
-                </div>
-            </div>
+        .modal-content {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
 
-            <div id="workout-active" class="hidden glass-card rounded-[2.5rem] p-6">
-                <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                    <div>
-                        <h3 id="active-workout-title" class="text-xl font-black text-slate-900">Workout</h3>
-                        <p id="workout-timer" class="text-mono text-indigo-600 font-bold tracking-wider mt-1">00:00:00</p>
-                    </div>
-                    <div class="flex gap-2">
-                         <button onclick="cancelWorkout()" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100"><i data-lucide="x"></i></button>
-                    </div>
-                </div>
-                
-                <div id="exercise-list" class="space-y-6 mb-6"></div>
-                
-                <div id="extra-active-section" class="space-y-6 mb-6"></div>
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 90%;
+        }
+        
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-                <button onclick="addExerciseField()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest mb-4 hover:border-indigo-200 hover:text-indigo-400 transition">+ Add Exercise</button>
-                <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-slate-800 transition">Finish & Log Session</button>
-            </div>
-        </section>
+        button { 
+            transition: all 0.2s ease;
+            min-height: 44px;
+        }
+        
+        button:active { transform: scale(0.97); }
 
-        <section id="nutrition" class="tab-content space-y-6">
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setNutritionTab('log')" id="nut-tab-log" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Diary</button>
-                <button onclick="setNutritionTab('database')" id="nut-tab-db" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Inventory</button>
-            </div>
+        input, select {
+            min-height: 48px;
+            font-size: 16px;
+        }
 
-            <div id="nut-view-log" class="space-y-6">
-                <button onclick="openMealModal()" class="w-full bg-white border-2 border-dashed border-indigo-200 p-4 rounded-2xl flex items-center justify-center gap-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:bg-indigo-50 transition-colors">
-                    <i data-lucide="utensils" class="w-4 h-4"></i> Make a Meal
-                </button>
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
 
-                <div class="flex items-center gap-3">
-                    <div class="relative flex-1">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input id="food-search" placeholder="Search inventory..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-100 shadow-sm focus:ring-2 ring-indigo-100 outline-none" oninput="handleFoodSearch(this.value)">
-                        <div id="food-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-50 shadow-2xl max-h-64 overflow-y-auto"></div>
-                    </div>
-                </div>
-                <div id="daily-log-list" class="space-y-3"></div>
-                
-                <div id="daily-totals-card" class="glass-card p-6 rounded-[2rem] bg-indigo-50/30 border-indigo-100 hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <h4 class="text-[10px] font-black uppercase text-indigo-600">Daily Totals</h4>
-                    </div>
-                    <div class="flex gap-4 text-sm font-bold">
-                        <div id="total-day-cals">0 Kcal</div>
-                        <div id="total-day-prot" class="text-slate-400">0g Protein</div>
-                    </div>
-                </div>
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .translate-x-0 { transform: translateX(0); }
+        .-translate-x-full { transform: translateX(-100%); }
 
-                <button onclick="archiveDailyNutrition()" class="w-full bg-emerald-600 text-white p-5 rounded-[1.5rem] font-bold shadow-lg hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-                    <i data-lucide="save"></i> Save Daily Log
-                </button>
-            </div>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
 
-            <div id="nut-view-db" class="hidden space-y-6">
-                <div id="scanner-container" class="hidden space-y-4">
-                    <div class="aspect-video bg-black rounded-3xl overflow-hidden relative border-4 border-white shadow-xl">
-                        <div id="scanner-mount"></div>
-                        <div id="scan-overlay" class="absolute inset-0 border-2 border-white/30 pointer-events-none flex items-center justify-center">
-                            <div class="w-64 h-40 border-2 border-indigo-500 rounded-xl"></div>
-                        </div>
-                    </div>
-                    <button onclick="stopScanner()" class="w-full bg-slate-100 text-slate-600 p-4 rounded-2xl font-bold">Stop Scanner</button>
-                </div>
+        #auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
 
-                <div class="glass-card p-6 rounded-[2.5rem]">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-black text-[10px] uppercase text-slate-400 tracking-wider">Product Catalog</h4>
-                        <div class="flex gap-2">
-                            <button onclick="startScanner('db')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-1"><i data-lucide="scan-barcode" class="w-3 h-3"></i> Barcode</button>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <input id="form-name" placeholder="Item Name (e.g., Banana)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold focus:bg-white border-none outline-none transition-colors">
-                        <div class="grid grid-cols-2 gap-3">
-                            <input id="form-cals" type="number" placeholder="Kcal" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
-                            <input id="form-prot" type="number" placeholder="Protein (g)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
-                        </div>
-                        <button onclick="saveToDatabase()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest mt-2 hover:bg-indigo-500 transition">Add to Inventory</button>
-                    </div>
+        #app-screen {
+            display: none;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .input-group input {
+            padding-left: 3rem;
+        }
+
+        .meal-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .meal-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .history-item {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 640px) {
+            main { padding: 0.75rem !important; }
+            .glass-card { padding: 1rem !important; }
+            .toast { font-size: 0.8125rem; padding: 0.625rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Save Nutrition Modal -->
+    <div id="save-nutrition-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 text-center">Save Today's Nutrition</h2>
+            <p class="text-sm text-slate-600 mb-6 text-center">Select which date to record this nutrition log under</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Select Date</label>
+                    <input type="date" id="save-date-input" class="w-full p-4 bg-slate-50 rounded-xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div class="p-5 bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-wider">Your Items</div>
-                    <div id="custom-db-list" class="divide-y divide-slate-50 max-h-80 overflow-y-auto"></div>
-                </div>
-            </div>
-        </section>
-
-        <div id="meal-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
-            <div class="bg-white w-full max-w-md rounded-[2.5rem] flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xl font-black text-slate-900">Make a Meal</h3>
-                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Combine Ingredients</p>
-                    </div>
-                    <button onclick="closeMealModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">×</button>
-                </div>
-                
-                <div class="p-6 flex-1 overflow-y-auto space-y-6">
-                    <div class="space-y-4">
-                        <input id="meal-builder-name" placeholder="Meal Name (e.g., High Protein Lunch)" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold outline-none focus:ring-2 ring-indigo-100">
-                        
-                        <div class="relative search-results-container">
-                            <i data-lucide="plus-circle" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                            <input id="meal-item-search" placeholder="Search ingredients..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border border-slate-200 font-bold outline-none" oninput="handleMealSearch(this.value)">
-                            <button onclick="startScanner('meal')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"><i data-lucide="scan-barcode" class="w-5 h-5"></i></button>
-                            <div id="meal-search-results" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl overflow-hidden z-[70] shadow-2xl max-h-48 overflow-y-auto"></div>
-                        </div>
-
-                        <div id="meal-builder-list" class="space-y-2">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-6 bg-slate-50 border-t border-slate-100">
-                    <div id="meal-totals" class="flex justify-between items-center text-[10px] font-black uppercase text-indigo-700 mb-4 hidden">
-                        <span>Total Macros:</span>
-                        <span id="meal-builder-stats">0 Kcal • 0g Protein</span>
-                    </div>
-                    <button onclick="saveMealToInventory()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-100">Save Meal to Inventory</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="portion-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[250] hidden items-center justify-center p-6 transition-opacity">
-            <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
-                <div class="text-center">
-                    <h3 id="portion-item-name" class="text-xl font-black text-slate-900 mb-1">Food Item</h3>
-                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Adjust Quantity</p>
-                </div>
-
-                <div class="flex bg-slate-100 p-1 rounded-2xl">
-                    <button onclick="setPortionMode('packet')" id="p-mode-packet" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Packet / Unit</button>
-                    <button onclick="setPortionMode('custom')" id="p-mode-custom" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Grams (g)</button>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="bg-slate-50 p-6 rounded-3xl text-center">
-                        <span id="qty-label" class="text-[10px] font-black uppercase text-slate-400 block mb-2">Quantity</span>
-                        <div class="flex items-center justify-center gap-6">
-                            <button onclick="adjustPortionQty(-1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center hover:bg-slate-50">-</button>
-                            <input id="portion-qty-input" type="number" value="1" step="0.1" class="w-24 bg-transparent text-center text-3xl font-black text-indigo-600 outline-none">
-                            <button onclick="adjustPortionQty(1)" class="w-12 h-12 bg-white rounded-2xl shadow-sm text-slate-600 font-bold text-xl flex items-center justify-center hover:bg-slate-50">+</button>
-                        </div>
+                <div class="bg-indigo-50 p-4 rounded-xl">
+                    <p class="text-xs font-bold text-indigo-600 uppercase mb-2">Today's Summary</p>
+                    <div class="space-y-1">
+                        <p class="text-sm"><span class="font-bold">Calories:</span> <span id="save-calories-preview">0</span> kcal</p>
+                        <p class="text-sm"><span class="font-bold">Protein:</span> <span id="save-protein-preview">0</span>g</p>
+                        <p class="text-sm"><span class="font-bold">Meals:</span> <span id="save-meals-count">0</span></p>
                     </div>
                 </div>
 
                 <div class="flex gap-3">
-                    <button onclick="closePortionModal()" class="flex-1 p-4 bg-slate-100 text-slate-500 rounded-2xl font-bold hover:bg-slate-200">Cancel</button>
-                    <button onclick="confirmLogPortion()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-200">Log It</button>
+                    <button onclick="closeSaveModal()" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold hover:bg-slate-300">
+                        Cancel
+                    </button>
+                    <button onclick="confirmSaveNutrition()" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">
+                        Save Log
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <section id="metrics" class="tab-content space-y-6">
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setMetricsTab('checkin')" id="metrics-tab-checkin" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Check-in</button>
-                <button onclick="setMetricsTab('logs')" id="metrics-tab-logs" class="flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all text-slate-400">Logs</button>
-            </div>
-
-            <div id="metrics-view-checkin" class="glass-card p-8 rounded-[3rem] space-y-8">
-                <div class="bg-slate-50 p-6 rounded-3xl text-center border border-slate-100">
-                    <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">Current Weight (kg)</span>
-                    <input id="body-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-transparent text-center text-5xl font-black outline-none text-slate-800">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Waist (cm)</label>
-                        <input id="m-waist" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Chest (cm)</label>
-                        <input id="m-chest" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Arms (cm)</label>
-                        <input id="m-arms" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Thighs (cm)</label>
-                        <input id="m-thighs" type="number" class="w-full bg-transparent font-bold text-lg text-slate-700 outline-none">
-                    </div>
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="w-full max-w-md px-4">
+            <div class="bg-white rounded-[3rem] p-8 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div class="text-6xl mb-4">💪</div>
+                    <h1 class="text-3xl font-black text-indigo-600 mb-2">VFit<span class="text-slate-600">Pro</span></h1>
+                    <p class="text-slate-500 text-sm">Your complete fitness companion</p>
                 </div>
 
-                <div class="space-y-4">
-                    <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Current Check-in Photos</h4>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="photo-slot" onclick="triggerPhoto('front')">
-                            <img id="img-front" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
-                        </div>
-                        <div class="photo-slot" onclick="triggerPhoto('side')">
-                            <img id="img-side" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
-                        </div>
-                        <div class="photo-slot" onclick="triggerPhoto('back')">
-                            <img id="img-back" class="hidden">
-                            <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                            <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
-                        </div>
-                    </div>
-                    <input type="file" id="photo-input" class="hidden" accept="image/*">
-                </div>
-
-                <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-200 hover:bg-rose-600 transition">Log Check-in</button>
-            </div>
-
-            <div id="metrics-view-logs" class="hidden space-y-6">
-                <div id="progress-card-container" class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl overflow-hidden relative hidden">
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="trending-up" class="w-4 h-4 text-indigo-400"></i>
-                                <h4 class="text-[10px] font-black uppercase tracking-widest">Personal Progress vs Start</h4>
-                            </div>
+                <!-- Login Form -->
+                <div id="login-form">
+                    <h2 class="text-2xl font-bold mb-6 text-center">Welcome Back</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="input-group">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                            <input type="email" id="login-email" placeholder="Email" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
                         </div>
                         
-                        <div class="space-y-6">
-                            <div>
-                                <div class="flex justify-between text-[10px] font-bold uppercase mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <span>Weight Change</span>
-                                        <span id="diff-weight" class="diff-indicator">--</span>
-                                    </div>
-                                    <span id="start-weight-label" class="opacity-40">Start: --kg</span>
-                                </div>
-                                <div class="metric-bar-bg bg-white/10">
-                                    <div id="prog-weight-bar" class="metric-bar-fill bg-indigo-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <div class="flex justify-between text-[10px] font-bold uppercase mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <span>Waist Change</span>
-                                        <span id="diff-waist" class="diff-indicator">--</span>
-                                    </div>
-                                    <span id="start-waist-label" class="opacity-40">Start: --cm</span>
-                                </div>
-                                <div class="metric-bar-bg bg-white/10">
-                                    <div id="prog-waist-bar" class="metric-bar-fill bg-emerald-500" style="width: 0%"></div>
-                                </div>
-                            </div>
+                        <div class="input-group">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                            <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
 
-                            <div>
-                                <div class="flex justify-between text-[10px] font-bold uppercase mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <span>Arm Growth</span>
-                                        <span id="diff-arms" class="diff-indicator">--</span>
-                                    </div>
-                                    <span id="start-arms-label" class="opacity-40">Start: --cm</span>
-                                </div>
-                                <div class="metric-bar-bg bg-white/10">
-                                    <div id="prog-arms-bar" class="metric-bar-fill bg-rose-500" style="width: 0%"></div>
-                                </div>
-                            </div>
+                        <button onclick="loginUser()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all">
+                            Sign In
+                        </button>
+
+                        <button onclick="showForgotPassword()" class="w-full text-sm text-indigo-600 font-medium hover:text-indigo-700">
+                            Forgot Password?
+                        </button>
+
+                        <div class="text-center pt-4 border-t border-slate-100">
+                            <p class="text-sm text-slate-500 mb-3">Don't have an account?</p>
+                            <button onclick="showRegister()" class="text-indigo-600 font-bold hover:text-indigo-700">
+                                Create Account
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div id="metrics-history-list" class="space-y-4"></div>
-            </div>
-        </section>
+                <!-- Register Form -->
+                <div id="register-form" class="hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="input-group">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <input type="text" id="register-name" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
 
-        <section id="history" class="tab-content space-y-6">
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button onclick="setHistoryTab('training')" id="hist-tab-train" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all bg-white text-indigo-600 shadow-sm">Training</button>
-                <button onclick="setHistoryTab('nutrition')" id="hist-tab-nut" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl transition-all text-slate-400">Food</button>
-            </div>
-            <div id="history-list" class="space-y-4"></div>
-        </section>
+                        <div class="input-group">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                            <input type="email" id="register-email" placeholder="Email" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
+                        
+                        <div class="input-group">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                            <input type="password" id="register-password" placeholder="Password (min 6 characters)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
 
-        <section id="education" class="tab-content space-y-6">
-            <div class="glass-card rounded-[2.5rem] p-6">
-                <h3 class="text-xl font-bold mb-2">Training Science</h3>
-                <p class="text-sm text-slate-500 leading-relaxed">Consistency is key. Focus on progressive overload, adequate protein intake (1.6g-2.2g per kg of bodyweight), and 7-9 hours of sleep for optimal recovery.</p>
-            </div>
-        </section>
+                        <div class="input-group">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                            <input type="password" id="register-confirm" placeholder="Confirm Password" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
 
-        <section id="settings" class="tab-content space-y-6">
-            <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Goal Configuration</h3>
-                    <div class="bg-slate-50 p-4 rounded-2xl">
-                        <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Daily Calorie Goal</label>
-                        <input id="set-cal-goal" type="number" class="w-full bg-transparent font-bold outline-none text-lg" onchange="state.goals.calories = this.value; saveState(); renderDashboard();">
+                        <button onclick="registerUser()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all">
+                            Create Account
+                        </button>
+
+                        <div class="text-center pt-4 border-t border-slate-100">
+                            <p class="text-sm text-slate-500 mb-3">Already have an account?</p>
+                            <button onclick="showLogin()" class="text-indigo-600 font-bold hover:text-indigo-700">
+                                Sign In
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Gym Equipment Available</h3>
-                    <div id="gym-equip-list" class="grid grid-cols-2 gap-2"></div>
+
+                <!-- Forgot Password Form -->
+                <div id="forgot-password-form" class="hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-center">Reset Password</h2>
+                    
+                    <div class="space-y-4">
+                        <p class="text-sm text-slate-600 text-center mb-4">Enter your email and we'll send you a reset link</p>
+
+                        <div class="input-group">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                            <input type="email" id="forgot-email" placeholder="Email" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                        </div>
+
+                        <button onclick="resetPassword()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all">
+                            Send Reset Link
+                        </button>
+
+                        <button onclick="showLogin()" class="w-full text-sm text-indigo-600 font-medium hover:text-indigo-700">
+                            Back to Login
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="font-black text-[11px] uppercase text-slate-400 mb-4 tracking-wider">Home Equipment Available</h3>
-                    <div id="home-equip-list" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <p class="text-center text-white text-xs mt-6 opacity-75">
+                By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-screen">
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 sm:px-6 py-4 sm:py-5 sticky top-0 z-40 flex justify-between items-center">
+            <button onclick="toggleSidebar()" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors">
+                <i data-lucide="menu" class="w-6 h-6 text-slate-700"></i>
+            </button>
+            <div class="text-center">
+                <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">VFit<span class="text-slate-600">Pro</span></h1>
+                <p id="user-email" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
+            </div>
+            <button onclick="switchTab('profile')" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors">
+                <i data-lucide="user" class="w-6 h-6 text-slate-700"></i>
+            </button>
+        </header>
+
+        <main class="max-w-xl mx-auto p-4 sm:p-6 space-y-6 pb-24">
+            
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="tab-content active space-y-6">
+                <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center">
+                    <div class="relative w-48 h-48 flex items-center justify-center">
+                        <svg class="w-full h-full" viewBox="0 0 192 192">
+                            <circle class="text-slate-100" stroke-width="12" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
+                            <circle id="calorie-progress" class="text-indigo-600 progress-ring-circle" stroke-width="12" stroke-dasharray="534" stroke-dashoffset="534" stroke-linecap="round" stroke="currentColor" fill="transparent" r="85" cx="96" cy="96" />
+                        </svg>
+                        <div class="absolute text-center">
+                            <div id="dash-calories" class="text-4xl font-black text-slate-900">0</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kcal Today</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 w-full gap-4 mt-8 border-t border-slate-100 pt-6">
+                        <div class="text-center">
+                            <div id="dash-protein" class="font-bold">0g</div>
+                            <div class="text-[9px] uppercase text-slate-400">Protein</div>
+                        </div>
+                        <div class="text-center border-x">
+                            <div id="dash-carbs" class="font-bold">0g</div>
+                            <div class="text-[9px] uppercase text-slate-400">Carbs</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="dash-fat" class="font-bold">0g</div>
+                            <div class="text-[9px] uppercase text-slate-400">Fats</div>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="resetData()" class="w-full p-5 text-red-500 font-bold bg-red-50 rounded-2xl uppercase text-[10px] tracking-widest hover:bg-red-100 transition">Purge All Data</button>
-            </div>
-        </section>
-    </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 py-4 flex justify-between items-center z-50">
-        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item text-indigo-600 flex flex-col items-center gap-1.5 transition-colors">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg bg-indigo-50 transition-colors"><i data-lucide="layout-grid"></i></div>
-        </button>
-        <button onclick="switchTab('training')" data-tab="training" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="dumbbell"></i></div>
-        </button>
-        <button onclick="switchTab('nutrition')" data-tab="nutrition" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="apple"></i></div>
-        </button>
-        <button onclick="switchTab('history')" data-tab="history" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="calendar"></i></div>
-        </button>
-        <button onclick="switchTab('metrics')" data-tab="metrics" class="nav-item text-slate-300 flex flex-col items-center gap-1.5 transition-colors">
-            <div class="w-12 h-8 rounded-full flex items-center justify-center nav-bg transition-colors"><i data-lucide="scale"></i></div>
-        </button>
-    </nav>
+                <div id="hydration-tracker" class="glass-card rounded-[2.5rem] p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-cyan-50 rounded-2xl flex items-center justify-center">
+                                <i data-lucide="droplet" class="text-cyan-500"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold">Hydration Goal</h4>
+                                <p id="water-count" class="text-xs text-slate-500">0 / 2.5L</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleHydrationGoal()" id="hydration-check" class="w-16 h-16 rounded-2xl border-4 border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
+                            <i data-lucide="check" class="w-8 h-8 text-transparent"></i>
+                        </button>
+                    </div>
+                    <div class="text-xs text-slate-400 text-center">Click ✓ when you reach your daily goal</div>
+                </div>
 
-    <div id="tutorial-modal" class="modal-overlay">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
-            <div class="flex justify-between items-center border-b pb-4">
-                <h3 class="text-xl font-black text-slate-900">App Guide</h3>
-                <button onclick="closeTutorial()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">×</button>
+                <div class="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-xl">
+                    <h3 class="text-lg font-bold mb-1">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <button onclick="switchTab('training')" class="bg-indigo-600 px-4 py-3 rounded-2xl font-bold text-xs">Log Workout</button>
+                        <button onclick="switchTab('nutrition')" class="bg-emerald-600 px-4 py-3 rounded-2xl font-bold text-xs">Add Food</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROFILE -->
+            <section id="profile" class="tab-content space-y-6">
+                <div class="glass-card p-8 rounded-[3rem] text-center">
+                    <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="user" class="w-12 h-12 text-indigo-600"></i>
+                    </div>
+                    <h2 id="profile-name" class="text-2xl font-black mb-2">User Name</h2>
+                    <p id="profile-email" class="text-sm text-slate-500 mb-6">user@example.com</p>
+
+                    <div class="space-y-3">
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <p class="text-xs text-slate-400 uppercase mb-1">Member Since</p>
+                            <p id="profile-created" class="font-bold">Loading...</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <p class="text-xs text-slate-400 uppercase mb-1">Total Workouts</p>
+                            <p id="profile-workouts" class="font-bold">0</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <p class="text-xs text-slate-400 uppercase mb-1">Nutrition Logs</p>
+                            <p id="profile-nutrition-logs" class="font-bold">0</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-2xl">
+                            <p class="text-xs text-slate-400 uppercase mb-1">Account Status</p>
+                            <p class="font-bold text-emerald-600">✓ Active</p>
+                        </div>
+                    </div>
+
+                    <button onclick="logoutUser()" class="w-full mt-6 bg-red-500 text-white p-4 rounded-2xl font-bold hover:bg-red-600">
+                        Sign Out
+                    </button>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="font-bold mb-4">App Settings</h3>
+                    <button onclick="switchTab('settings')" class="w-full bg-slate-100 p-4 rounded-xl font-medium text-left flex items-center justify-between">
+                        <span>Preferences & Goals</span>
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TRAINING -->
+            <section id="training" class="tab-content space-y-6">
+                <div class="glass-card p-6 rounded-2xl text-center">
+                    <h2 class="text-xl font-bold mb-4">Training Log</h2>
+                    <p class="text-slate-500 mb-4">Track your workouts and see your progress</p>
+                    <button onclick="logWorkout()" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold">
+                        Log Workout
+                    </button>
+                </div>
+                
+                <div id="workouts-list" class="space-y-3"></div>
+            </section>
+
+            <!-- NUTRITION -->
+            <section id="nutrition" class="tab-content space-y-6">
+                <div class="glass-card p-6 rounded-2xl text-center">
+                    <h2 class="text-xl font-bold mb-4">Nutrition Tracker</h2>
+                    <p class="text-slate-500 mb-4">Log your meals and track macros</p>
+                    <button onclick="logMeal()" class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold">
+                        Add Food
+                    </button>
+                </div>
+                
+                <div id="meals-list" class="space-y-3"></div>
+
+                <!-- Today's Meals Summary -->
+                <div id="today-meals-section" class="glass-card p-6 rounded-2xl" style="display: none;">
+                    <h3 class="font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="utensils" class="w-5 h-5"></i>
+                        Today's Meals
+                    </h3>
+                    <div id="today-meals-list" class="space-y-2 mb-4"></div>
+                </div>
+
+                <!-- Save Button -->
+                <button onclick="openSaveModal()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    Save Today's Nutrition
+                </button>
+
+                <!-- Nutrition History -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5"></i>
+                        Nutrition History
+                    </h3>
+                    <div id="nutrition-history-list" class="space-y-3"></div>
+                </div>
+            </section>
+
+            <!-- SETTINGS -->
+            <section id="settings" class="tab-content space-y-6">
+                <div class="glass-card p-6 rounded-[2.5rem] space-y-6">
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Daily Calorie Goal</label>
+                        <input id="calorie-goal-input" type="number" value="2500" class="w-full bg-slate-50 p-4 rounded-2xl font-bold outline-none" onchange="updateCalorieGoal(this.value)">
+                    </div>
+
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Protein Goal (g)</label>
+                        <input id="protein-goal-input" type="number" value="150" class="w-full bg-slate-50 p-4 rounded-2xl font-bold outline-none">
+                    </div>
+
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Water Goal (L)</label>
+                        <input id="water-goal-input" type="number" step="0.1" value="2.5" class="w-full bg-slate-50 p-4 rounded-2xl font-bold outline-none">
+                    </div>
+
+                    <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">
+                        Save Settings
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- SIDEBAR -->
+        <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" onclick="toggleSidebar()"></div>
+        <div id="sidebar" class="fixed left-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-[101] transform -translate-x-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-black text-indigo-600">Menu</h2>
+                    <button onclick="toggleSidebar()" class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                
+                <nav class="space-y-2">
+                    <button onclick="switchTab('dashboard'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                            <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <span class="font-bold text-slate-700">Dashboard</span>
+                    </button>
+                    
+                    <button onclick="switchTab('training'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                            <i data-lucide="dumbbell" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <span class="font-bold text-slate-700">Training</span>
+                    </button>
+                    
+                    <button onclick="switchTab('nutrition'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                            <i data-lucide="apple" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <span class="font-bold text-slate-700">Nutrition</span>
+                    </button>
+                    
+                    <button onclick="switchTab('profile'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                            <i data-lucide="user" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <span class="font-bold text-slate-700">Profile</span>
+                    </button>
+                    
+                    <button onclick="switchTab('settings'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
+                            <i data-lucide="settings" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <span class="font-bold text-slate-700">Settings</span>
+                    </button>
+                </nav>
             </div>
-            <div id="tutorial-list" class="space-y-2 tutorial-content pr-2"></div>
         </div>
     </div>
 
-    <div id="edit-modal" class="modal-overlay">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 space-y-6">
-            <h3 id="edit-modal-title" class="text-xl font-black text-slate-900">Edit Entry</h3>
-            <div id="edit-modal-fields" class="space-y-4"></div>
-            <div class="flex gap-3">
-                <button onclick="closeEditModal()" class="flex-1 p-4 bg-slate-100 text-slate-500 rounded-2xl font-bold">Cancel</button>
-                <button id="edit-modal-save" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold">Save</button>
-            </div>
-        </div>
-    </div>
+    <script>
+        // FIREBASE CONFIGURATION - YOUR ACTUAL CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9H9hmvfrQmc2wIwnS2jCPLgdmXBquQXM",
+            authDomain: "vfit-app-pro.firebaseapp.com",
+            projectId: "vfit-app-pro",
+            storageBucket: "vfit-app-pro.firebasestorage.app",
+            messagingSenderId: "815730068689",
+            appId: "1:815730068689:web:0c6587d7dbe62b0f3c09f0",
+            measurementId: "G-74L12X0NE8"
+        };
 
-    <div id="view-metric-modal" class="modal-overlay" style="display: none;">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-6 space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="text-xl font-black">Metric Details</h3>
-                <button onclick="closeViewMetricModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">×</button>
-            </div>
-            <div id="view-metric-content" class="space-y-2"></div>
-        </div>
-    </div>
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    <script src="script.js"></script>
+        let currentUser = null;
+        let userData = {};
+        let lastCheckDate = null;
+        let midnightCheckInterval = null;
+
+        // ========================================
+        // MIDNIGHT AUTO-SAVE SYSTEM
+        // ========================================
+        
+        function checkMidnightReset() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // If date has changed since last check
+            if (lastCheckDate && lastCheckDate !== today) {
+                console.log('🌙 Midnight detected! Auto-saving yesterday\'s nutrition...');
+                autoSaveYesterdayNutrition(lastCheckDate);
+            }
+            
+            lastCheckDate = today;
+        }
+
+        async function autoSaveYesterdayNutrition(yesterdayDate) {
+            if (!currentUser || !userData.meals) return;
+
+            const yesterdayMeals = userData.meals.filter(m => m.date === yesterdayDate);
+            
+            if (yesterdayMeals.length === 0) {
+                console.log('No meals from yesterday to save');
+                return;
+            }
+
+            const totalCals = yesterdayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const totalProtein = yesterdayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+            // Create nutrition log entry
+            const nutritionLog = {
+                id: Date.now(),
+                date: yesterdayDate,
+                savedAt: new Date().toISOString(),
+                totalCalories: totalCals,
+                totalProtein: totalProtein,
+                meals: yesterdayMeals,
+                autoSaved: true
+            };
+
+            // Add to nutrition history
+            if (!userData.nutritionHistory) userData.nutritionHistory = [];
+            userData.nutritionHistory.push(nutritionLog);
+
+            // Remove yesterday's meals from current meals
+            userData.meals = userData.meals.filter(m => m.date !== yesterdayDate);
+
+            // Save to database
+            await saveUserData();
+
+            showToast(`📊 Yesterday's nutrition auto-saved (${Math.round(totalCals)} kcal)`);
+            renderNutritionTab();
+        }
+
+        function startMidnightChecker() {
+            // Check every minute
+            midnightCheckInterval = setInterval(checkMidnightReset, 60000);
+            // Initial check
+            checkMidnightReset();
+        }
+
+        function stopMidnightChecker() {
+            if (midnightCheckInterval) {
+                clearInterval(midnightCheckInterval);
+                midnightCheckInterval = null;
+            }
+        }
+
+        // ========================================
+        // SAVE NUTRITION MODAL
+        // ========================================
+
+        function openSaveModal() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeals = (userData.meals || []).filter(m => m.date === today);
+            
+            if (todayMeals.length === 0) {
+                showToast('No meals logged today to save');
+                return;
+            }
+
+            const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+            document.getElementById('save-date-input').value = today;
+            document.getElementById('save-calories-preview').textContent = Math.round(totalCals);
+            document.getElementById('save-protein-preview').textContent = Math.round(totalProtein);
+            document.getElementById('save-meals-count').textContent = todayMeals.length;
+
+            document.getElementById('save-nutrition-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSaveModal() {
+            document.getElementById('save-nutrition-modal').classList.add('hidden');
+        }
+
+        async function confirmSaveNutrition() {
+            const selectedDate = document.getElementById('save-date-input').value;
+            
+            if (!selectedDate) {
+                showToast('Please select a date');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeals = (userData.meals || []).filter(m => m.date === today);
+
+            if (todayMeals.length === 0) {
+                showToast('No meals to save');
+                closeSaveModal();
+                return;
+            }
+
+            const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+            // Create nutrition log
+            const nutritionLog = {
+                id: Date.now(),
+                date: selectedDate,
+                savedAt: new Date().toISOString(),
+                totalCalories: totalCals,
+                totalProtein: totalProtein,
+                meals: todayMeals,
+                autoSaved: false
+            };
+
+            // Add to history
+            if (!userData.nutritionHistory) userData.nutritionHistory = [];
+            userData.nutritionHistory.push(nutritionLog);
+
+            // Clear today's meals
+            userData.meals = userData.meals.filter(m => m.date !== today);
+
+            await saveUserData();
+
+            closeSaveModal();
+            showToast(`✓ Nutrition saved for ${selectedDate}`);
+            renderDashboard();
+            renderNutritionTab();
+            renderProfile();
+        }
+
+        // ========================================
+        // AUTH FUNCTIONS
+        // ========================================
+
+        function showLogin() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('forgot-password-form').classList.add('hidden');
+        }
+
+        function showRegister() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('forgot-password-form').classList.add('hidden');
+        }
+
+        function showForgotPassword() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('forgot-password-form').classList.remove('hidden');
+        }
+
+        async function registerUser() {
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+
+            if (!name) {
+                showToast('Please enter your name');
+                return;
+            }
+
+            if (!email || !password) {
+                showToast('Please fill all fields');
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters');
+                return;
+            }
+
+            if (password !== confirm) {
+                showToast('Passwords do not match');
+                return;
+            }
+
+            try {
+                showToast('Creating account...');
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                await user.updateProfile({ displayName: name });
+
+                await db.collection('users').doc(user.uid).set({
+                    name: name,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    calorieGoal: 2500,
+                    proteinGoal: 150,
+                    waterGoal: 2.5,
+                    workouts: [],
+                    meals: [],
+                    metrics: [],
+                    hydrationComplete: {},
+                    nutritionHistory: []
+                });
+
+                showToast('Account created successfully! 🎉');
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                if (error.code === 'auth/email-already-in-use') {
+                    showToast('Email already in use');
+                } else if (error.code === 'auth/invalid-email') {
+                    showToast('Invalid email address');
+                } else {
+                    showToast('Registration failed: ' + error.message);
+                }
+            }
+        }
+
+        async function loginUser() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                showToast('Please enter email and password');
+                return;
+            }
+
+            try {
+                showToast('Signing in...');
+                await auth.signInWithEmailAndPassword(email, password);
+                showToast('Welcome back! 💪');
+            } catch (error) {
+                console.error('Login error:', error);
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    showToast('Invalid email or password');
+                } else {
+                    showToast('Login failed: ' + error.message);
+                }
+            }
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('forgot-email').value.trim();
+
+            if (!email) {
+                showToast('Please enter your email');
+                return;
+            }
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showToast('Password reset email sent! Check your inbox.');
+                showLogin();
+            } catch (error) {
+                console.error('Reset error:', error);
+                showToast('Failed to send reset email');
+            }
+        }
+
+        async function logoutUser() {
+            if (confirm('Are you sure you want to sign out?')) {
+                try {
+                    stopMidnightChecker();
+                    await auth.signOut();
+                    showToast('Signed out successfully');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    showToast('Logout failed');
+                }
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                
+                await loadUserData();
+                
+                document.getElementById('user-email').textContent = user.email;
+                renderProfile();
+                renderDashboard();
+                renderNutritionTab();
+
+                // Start midnight checker
+                startMidnightChecker();
+                
+            } else {
+                currentUser = null;
+                stopMidnightChecker();
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
+            }
+            
+            lucide.createIcons();
+        });
+
+        async function loadUserData() {
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists) {
+                    userData = doc.data();
+                    // Ensure nutritionHistory exists
+                    if (!userData.nutritionHistory) {
+                        userData.nutritionHistory = [];
+                    }
+                } else {
+                    userData = {
+                        name: currentUser.displayName || 'User',
+                        email: currentUser.email,
+                        calorieGoal: 2500,
+                        proteinGoal: 150,
+                        waterGoal: 2.5,
+                        workouts: [],
+                        meals: [],
+                        metrics: [],
+                        hydrationComplete: {},
+                        nutritionHistory: []
+                    };
+                    await db.collection('users').doc(currentUser.uid).set(userData);
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showToast('Failed to load user data');
+            }
+        }
+
+        async function saveUserData() {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).update(userData);
+                console.log('Data saved to cloud');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showToast('Failed to save data');
+            }
+        }
+
+        // ========================================
+        // UI FUNCTIONS
+        // ========================================
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId)?.classList.add('active');
+            
+            if (tabId === 'nutrition') {
+                renderNutritionTab();
+            }
+            
+            lucide.createIcons();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            
+            if (isOpen) {
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            } else {
+                sidebar.classList.add('translate-x-0');
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        function renderProfile() {
+            if (!currentUser || !userData) return;
+            
+            document.getElementById('profile-name').textContent = userData.name || 'User';
+            document.getElementById('profile-email').textContent = currentUser.email;
+            
+            if (userData.createdAt) {
+                const date = userData.createdAt.toDate();
+                document.getElementById('profile-created').textContent = date.toLocaleDateString();
+            } else {
+                document.getElementById('profile-created').textContent = 'Just now';
+            }
+            
+            document.getElementById('profile-workouts').textContent = (userData.workouts || []).length;
+            document.getElementById('profile-nutrition-logs').textContent = (userData.nutritionHistory || []).length;
+        }
+
+        function renderDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeals = (userData.meals || []).filter(m => m.date === today);
+            
+            const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+            
+            document.getElementById('dash-calories').textContent = Math.round(totalCals);
+            document.getElementById('dash-protein').textContent = Math.round(totalProtein) + 'g';
+            document.getElementById('dash-carbs').textContent = Math.round(totalCals * 0.4 / 4) + 'g';
+            document.getElementById('dash-fat').textContent = Math.round(totalCals * 0.3 / 9) + 'g';
+            
+            const calorieGoal = userData.calorieGoal || 2500;
+            const progress = Math.min((totalCals / calorieGoal) * 534, 534);
+            document.getElementById('calorie-progress').style.strokeDashoffset = 534 - progress;
+
+            const hydrationGoal = userData.waterGoal || 2.5;
+            document.getElementById('water-count').textContent = `0 / ${hydrationGoal}L`;
+            
+            const isComplete = userData.hydrationComplete && userData.hydrationComplete[today];
+            const checkBtn = document.getElementById('hydration-check');
+            if (isComplete) {
+                checkBtn.classList.add('bg-cyan-500', 'border-cyan-500');
+                checkBtn.classList.remove('border-slate-200');
+                checkBtn.querySelector('i').classList.remove('text-transparent');
+                checkBtn.querySelector('i').classList.add('text-white');
+            } else {
+                checkBtn.classList.remove('bg-cyan-500', 'border-cyan-500');
+                checkBtn.classList.add('border-slate-200');
+                checkBtn.querySelector('i').classList.add('text-transparent');
+                checkBtn.querySelector('i').classList.remove('text-white');
+            }
+        }
+
+        function renderNutritionTab() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMeals = (userData.meals || []).filter(m => m.date === today);
+
+            // Render today's meals
+            const todaySection = document.getElementById('today-meals-section');
+            const todayList = document.getElementById('today-meals-list');
+            
+            if (todayMeals.length > 0) {
+                todaySection.style.display = 'block';
+                todayList.innerHTML = todayMeals.map(meal => `
+                    <div class="meal-item flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-sm">${meal.name}</p>
+                            <p class="text-xs text-slate-500">${meal.calories} kcal • ${meal.protein}g protein</p>
+                        </div>
+                        <button onclick="deleteMeal(${meal.id})" class="text-red-500 hover:text-red-700">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                todaySection.style.display = 'none';
+            }
+
+            // Render nutrition history
+            const historyList = document.getElementById('nutrition-history-list');
+            const history = userData.nutritionHistory || [];
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No saved nutrition logs yet</p>';
+            } else {
+                // Sort by date descending
+                const sortedHistory = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                historyList.innerHTML = sortedHistory.map(log => {
+                    const date = new Date(log.date);
+                    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    
+                    return `
+                        <div class="history-item" onclick="viewNutritionLog(${log.id})">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="font-bold">${formattedDate}</p>
+                                    <p class="text-xs text-slate-500">${log.autoSaved ? '🌙 Auto-saved' : '💾 Manually saved'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-indigo-600">${Math.round(log.totalCalories)} kcal</p>
+                                    <p class="text-xs text-slate-500">${Math.round(log.totalProtein)}g protein</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400">${log.meals.length} meals logged</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        function viewNutritionLog(logId) {
+            const log = userData.nutritionHistory.find(l => l.id === logId);
+            if (!log) return;
+
+            const date = new Date(log.date);
+            const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+            let message = `📊 ${formattedDate}\n\n`;
+            message += `Total: ${Math.round(log.totalCalories)} kcal\n`;
+            message += `Protein: ${Math.round(log.totalProtein)}g\n\n`;
+            message += `Meals (${log.meals.length}):\n`;
+            log.meals.forEach((meal, i) => {
+                message += `${i + 1}. ${meal.name} - ${meal.calories} kcal\n`;
+            });
+
+            alert(message);
+        }
+
+        function deleteMeal(mealId) {
+            if (!confirm('Delete this meal?')) return;
+            
+            userData.meals = userData.meals.filter(m => m.id !== mealId);
+            saveUserData();
+            renderDashboard();
+            renderNutritionTab();
+            showToast('Meal deleted');
+        }
+
+        function toggleHydrationGoal() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!userData.hydrationComplete) userData.hydrationComplete = {};
+            userData.hydrationComplete[today] = !userData.hydrationComplete[today];
+            saveUserData();
+            renderDashboard();
+            showToast(userData.hydrationComplete[today] ? 'Hydration goal completed! 💧' : 'Hydration goal unmarked');
+            lucide.createIcons();
+        }
+
+        async function updateCalorieGoal(value) {
+            if (!currentUser) return;
+            
+            userData.calorieGoal = Number(value);
+            await saveUserData();
+            renderDashboard();
+            showToast('Calorie goal updated');
+        }
+
+        async function saveSettings() {
+            const calorieGoal = document.getElementById('calorie-goal-input').value;
+            const proteinGoal = document.getElementById('protein-goal-input').value;
+            const waterGoal = document.getElementById('water-goal-input').value;
+            
+            userData.calorieGoal = Number(calorieGoal);
+            userData.proteinGoal = Number(proteinGoal);
+            userData.waterGoal = Number(waterGoal);
+            
+            await saveUserData();
+            renderDashboard();
+            showToast('Settings saved successfully! ✓');
+        }
+
+        function logWorkout() {
+            const workoutName = prompt('Enter workout name:');
+            if (!workoutName) return;
+            
+            const workout = {
+                id: Date.now(),
+                name: workoutName,
+                date: new Date().toISOString().split('T')[0],
+                timestamp: new Date().toISOString()
+            };
+            
+            if (!userData.workouts) userData.workouts = [];
+            userData.workouts.push(workout);
+            saveUserData();
+            renderProfile();
+            showToast('Workout logged! 💪');
+        }
+
+        function logMeal() {
+            const mealName = prompt('Enter meal name:');
+            if (!mealName) return;
+            
+            const calories = Number(prompt('Calories:') || 0);
+            const protein = Number(prompt('Protein (g):') || 0);
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            const meal = {
+                id: Date.now(),
+                name: mealName,
+                calories: calories,
+                protein: protein,
+                date: today,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (!userData.meals) userData.meals = [];
+            userData.meals.push(meal);
+            saveUserData();
+            renderDashboard();
+            renderNutritionTab();
+            showToast('Meal logged! 🍽️');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+        // Check for midnight every time user focuses on the app
+        window.addEventListener('focus', checkMidnightReset);
+    </script>
 </body>
 </html>
