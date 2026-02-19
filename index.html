@@ -6013,7 +6013,12 @@
     // ==========================================================================
 
     window.addEventListener('DOMContentLoaded', () => {
-        // Initial Lucide icons render for auth screen
+        // Init date pickers to today
+        const today = new Date().toISOString().split('T')[0];
+        ['workout-date-picker','nutrition-date-picker','metrics-date-picker'].forEach(id=>{
+            const el = document.getElementById(id);
+            if (el) el.value = today;
+        });
         lucide.createIcons();
     });
 
