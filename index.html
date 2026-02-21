@@ -418,7 +418,7 @@
                         <i data-lucide="user" class="w-12 h-12 text-indigo-600"></i>
                     </div>
                     <h2 id="profile-name" class="text-2xl font-black mb-2">User Name</h2>
-                    <p id="profile-email" class="text-sm text-slate-500 mb-6">user@example.com</p>
+                    <p id="profile-email" class="text-sm text-slate-500 mb-6"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cbbeb8aeb98baeb3aaa6bba7aee5a8a4a6">[email&#160;protected]</a></p>
 
                     <div class="space-y-3">
                         <div class="bg-slate-50 p-4 rounded-2xl">
@@ -1352,25 +1352,26 @@
         </div>
     </div>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ==========================================================================
     // FIREBASE CONFIGURATION
     // ==========================================================================
     // 🔥 REPLACE WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
-        apiKey: "AIzaSyA9H9hmvfrQmc2wIwnS2jCPLgdmXBquQXM",
-        authDomain: "vfit-app-pro.firebaseapp.com",
-        projectId: "vfit-app-pro",
-        storageBucket: "vfit-app-pro.firebasestorage.app",
-        messagingSenderId: "815730068689",
-        appId: "1:815730068689:web:0c6587d7dbe62b0f3c09f0",
-        measurementId: "G-74L12X0NE8"
+        apiKey: "YOUR_API_KEY_HERE",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
 
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Current user from Firebase
     let currentUser = null;
     let firebaseUserData = {};
 
@@ -1689,20 +1690,53 @@
     }
 
     function saveDailyNutrition() {
-        const today = state.viewDate;
-        const todayMeals = state.dailyMeals.filter(m => m.date === today);
-        if (todayMeals.length > 0) {
-            const totalCals = todayMeals.reduce((sum, m) => sum + m.calories, 0);
-            const totalProtein = todayMeals.reduce((sum, m) => sum + m.protein, 0);
-            const existing = state.nutritionHistory.findIndex(h => h.date === today);
-            const entry = { date: today, calories: totalCals, protein: totalProtein, meals: todayMeals };
-            if (existing >= 0) {
-                state.nutritionHistory[existing] = entry;
-            } else {
-                state.nutritionHistory.unshift(entry);
-            }
+        // Save nutrition for the current viewDate (works for any date, not just today)
+        const dateToSave = state.viewDate;
+        const mealsForDate = state.dailyMeals.filter(m => m.date === dateToSave);
+        
+        if (mealsForDate.length > 0) {
+            const totalCals = mealsForDate.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const totalProtein = mealsForDate.reduce((sum, m) => sum + (m.protein || 0), 0);
+            const totalCarbs = mealsForDate.reduce((sum, m) => sum + (m.carbs || 0), 0);
+            const totalFat = mealsForDate.reduce((sum, m) => sum + (m.fat || 0), 0);
+            const totalFiber = mealsForDate.reduce((sum, m) => sum + (m.fiber || 0), 0);
+            
+            // Remove any existing entry for this date
+            state.nutritionHistory = state.nutritionHistory.filter(h => h.date !== dateToSave);
+            
+            // Add new entry
+            const entry = { 
+                date: dateToSave, 
+                calories: totalCals, 
+                protein: totalProtein,
+                carbs: totalCarbs,
+                fat: totalFat,
+                fiber: totalFiber,
+                meals: mealsForDate,
+                savedAt: new Date().toISOString()
+            };
+            state.nutritionHistory.unshift(entry);
+            
+            // Keep only last 365 days of history
+            state.nutritionHistory = state.nutritionHistory.slice(0, 365);
+            
             saveState();
-            showToast('Daily nutrition auto-saved');
+        } else {
+            // If no meals for this date, remove from history
+            state.nutritionHistory = state.nutritionHistory.filter(h => h.date !== dateToSave);
+            saveState();
+        }
+    }
+
+    /**
+     * Auto-save nutrition whenever a meal is added or removed
+     * This ensures the nutrition history is always up-to-date
+     */
+    function autoSaveNutrition() {
+        saveDailyNutrition();
+        // Also sync to Firebase if user is logged in
+        if (currentUser && db) {
+            syncToFirebase();
         }
     }
 
@@ -2456,6 +2490,7 @@
     function removeMeal(id) {
         state.dailyMeals = state.dailyMeals.filter(m => m.id !== id);
         saveState();
+        autoSaveNutrition(); // Auto-save to nutrition history
         renderDiary();
         renderDashboard();
         showToast('Item removed');
@@ -2473,6 +2508,15 @@
     }
 
     function selectNutritionDate(dateStr) {
+        // Auto-save current date before switching
+        const oldDate = state.viewDate;
+        if (oldDate && oldDate !== dateStr) {
+            const oldDateMeals = state.dailyMeals.filter(m => m.date === oldDate);
+            if (oldDateMeals.length > 0) {
+                saveDailyNutrition();
+            }
+        }
+        
         state.viewDate = dateStr;
         const picker = document.getElementById('nutrition-date-picker');
         if (picker) picker.value = dateStr;
@@ -3050,6 +3094,7 @@
         });
 
         saveState();
+        autoSaveNutrition(); // Auto-save to nutrition history
         closeFoodPopup();
         setNutritionTab('diary');
         renderDashboard();
@@ -3157,9 +3202,11 @@
         state.dailyMeals.push({
             id: Date.now(), date: state.viewDate, name: meal.name,
             image: 'https://via.placeholder.com/100', amount: '1 meal',
-            calories: meal.calories, protein: meal.protein, mealType: 'dinner'
+            calories: meal.calories, protein: meal.protein, carbs: meal.carbs || 0,
+            fat: meal.fat || 0, fiber: meal.fiber || 0, mealType: 'dinner'
         });
         saveState();
+        autoSaveNutrition(); // Auto-save to nutrition history
         setNutritionTab('diary');
         renderDashboard();
         showToast('Meal added! 🍽️');
@@ -4849,6 +4896,7 @@
         });
 
         saveState();
+        autoSaveNutrition(); // Auto-save to nutrition history
         renderDiary();
         renderDashboard();
         showToast(`${plan.name} applied! 🍽️`);
@@ -6009,18 +6057,4 @@
 
     // ==========================================================================
     // INITIALIZATION
-    // ==========================================================================
-
-    window.addEventListener('DOMContentLoaded', () => {
-        // Init date pickers to today
-        const today = new Date().toISOString().split('T')[0];
-        ['workout-date-picker','nutrition-date-picker','metrics-date-picker'].forEach(id=>{
-            const el = document.getElementById(id);
-            if (el) el.value = today;
-        });
-        lucide.createIcons();
-    });
-
-    </script>
-</body>
-</html>
+    // =============================
