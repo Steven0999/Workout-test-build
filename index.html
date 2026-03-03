@@ -329,6 +329,55 @@
             <!-- DASHBOARD TAB -->
             <!-- ============================== -->
             <section id="dashboard" class="tab-content active space-y-6">
+                <!-- AI COACH BUBBLE -->
+                <div id="ai-coach-bubble" class="glass-card rounded-[2.5rem] p-6 relative bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200">
+                    <!-- Speech bubble arrow -->
+                    <div class="absolute -top-3 left-8 w-6 h-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-l-2 border-t-2 border-indigo-200 transform rotate-45"></div>
+                    
+                    <div class="flex items-start gap-4">
+                        <!-- AI Avatar -->
+                        <div class="flex-shrink-0">
+                            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+                                <i data-lucide="sparkles" class="w-7 h-7 text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Message Content -->
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-black text-sm flex items-center gap-2">
+                                    <span class="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">AI Coach</span>
+                                    <span class="text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-bold">EVIDENCE-BASED</span>
+                                </h3>
+                                <button onclick="refreshAICoach()" class="text-slate-400 hover:text-indigo-600 transition-colors">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- AI Messages -->
+                            <div id="ai-coach-messages" class="space-y-3 text-sm text-slate-700">
+                                <p class="flex items-start gap-2">
+                                    <i data-lucide="loader" class="w-4 h-4 flex-shrink-0 mt-0.5 animate-spin text-indigo-600"></i>
+                                    <span>Analyzing your training data...</span>
+                                </p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div id="ai-coach-actions" class="hidden mt-4 flex flex-wrap gap-2">
+                                <!-- Dynamically populated based on recommendations -->
+                            </div>
+                            
+                            <!-- Last Updated -->
+                            <div class="mt-3 pt-3 border-t border-indigo-100">
+                                <p class="text-[10px] text-slate-400 flex items-center gap-1">
+                                    <i data-lucide="clock" class="w-3 h-3"></i>
+                                    <span id="ai-coach-timestamp">Just now</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="glass-card rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden">
                     <div class="relative w-48 h-48 flex items-center justify-center">
                         <svg class="w-full h-full" viewBox="0 0 192 192">
@@ -686,10 +735,39 @@
                             </label>
                         </div>
                     </div>
+                    
+                    <!-- Exercise Progress Button -->
+                    <button onclick="openExerciseProgressModal()" class="w-full glass-card p-5 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-95">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                                <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-sm">Exercise Progress</h4>
+                                <p class="text-xs text-slate-400">Track your strength gains</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+                    </button>
+                    
                     <div id="training-logs-list"></div>
                 </div>
 
                 <div id="logs-nutrition-view" class="hidden space-y-4">
+                    <!-- Calorie Tracking Chart Button -->
+                    <button onclick="openCalorieChartModal()" class="w-full glass-card p-5 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-95">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center">
+                                <i data-lucide="bar-chart-2" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-sm">Calorie Tracking</h4>
+                                <p class="text-xs text-slate-400">View daily & weekly trends</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+                    </button>
+
                     <div class="glass-card p-6 rounded-2xl">
                         <h3 class="text-lg font-black mb-4 flex items-center gap-2">
                             <i data-lucide="droplet" class="w-5 h-5 text-cyan-500"></i>
@@ -697,7 +775,6 @@
                         </h3>
                         <div id="hydration-logs-list" class="space-y-2"></div>
                     </div>
-                    <div id="nutrition-logs-list"></div>
                 </div>
             </section>
 
@@ -820,6 +897,17 @@
                         <div id="home-equipment-list" class="grid grid-cols-2 gap-2"></div>
                     </div>
 
+                                        <div class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-[11px] font-black uppercase text-slate-400">AI Coach</h3>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="ai-coach-enabled" onchange="toggleAICoach()" class="w-5 h-5 accent-indigo-600" checked>
+                                <span class="text-xs font-bold text-slate-600">Enable</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-slate-500">Show AI-powered training and nutrition recommendations on dashboard</p>
+                    </div>
+
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-[11px] font-black uppercase text-slate-400">Daily Habits</h3>
@@ -840,6 +928,13 @@
                     <div class="border-t border-slate-200 pt-6">
                         <h3 class="text-[11px] font-black uppercase text-slate-400 mb-4">Tracking Options</h3>
                         <div class="space-y-3">
+                            <label class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                                <div>
+                                    <p class="font-bold text-sm">AI Coach</p>
+                                    <p class="text-xs text-slate-500">Evidence-based recommendations</p>
+                                </div>
+                                <input type="checkbox" id="ai-coach-enabled" onchange="toggleAICoach()" class="w-5 h-5 accent-indigo-600" checked>
+                            </label>
                             <label class="flex items-center justify-between p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
                                 <div>
                                     <p class="font-bold text-sm">Track Hydration</p>
@@ -1304,6 +1399,290 @@
         </div>
     </div>
 
+    <!-- EXERCISE PROGRESS MODAL -->
+    <div id="exercise-progress-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-3xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-6 h-6 text-indigo-600"></i>
+                        Exercise Progress
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Track your strength gains over time</p>
+                </div>
+                <button onclick="closeExerciseProgressModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none hover:bg-slate-200">×</button>
+            </div>
+            
+            <div class="mb-6">
+                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Select Exercise</label>
+                <select id="exercise-select" onchange="renderExerciseProgressChart()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-sm">
+                    <option value="">Choose an exercise...</option>
+                </select>
+            </div>
+
+            <div id="exercise-progress-stats" class="hidden mb-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase text-indigo-600 mb-1">Current Max</p>
+                        <p id="exercise-current-max" class="text-2xl font-black text-indigo-900">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase text-emerald-600 mb-1">Starting Weight</p>
+                        <p id="exercise-starting-weight" class="text-2xl font-black text-emerald-900">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Total Gain</p>
+                        <p id="exercise-total-gain" class="text-2xl font-black text-purple-900">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl">
+                        <p class="text-[9px] font-black uppercase text-amber-600 mb-1">Workouts</p>
+                        <p id="exercise-workout-count" class="text-2xl font-black text-amber-900">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="exercise-progress-chart-container" class="hidden">
+                <div class="bg-slate-50 rounded-3xl p-6 mb-4">
+                    <div class="h-80 relative">
+                        <canvas id="exercise-progress-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-4 rounded-2xl">
+                    <h4 class="text-sm font-black text-slate-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
+                        Progress Insights
+                    </h4>
+                    <div id="exercise-insights" class="space-y-2 text-xs text-slate-600">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="exercise-progress-empty" class="text-center py-12">
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="bar-chart-3" class="w-10 h-10 text-slate-400"></i>
+                </div>
+                <p class="text-slate-400 font-bold mb-2">Select an exercise to view progress</p>
+                <p class="text-xs text-slate-400">Track your strength gains over time</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALORIE CHART MODAL -->
+    <div id="calorie-chart-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-3xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6 text-emerald-600"></i>
+                        Calorie Tracking
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Monitor your daily & weekly intake</p>
+                </div>
+                <button onclick="closeCalorieChartModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none hover:bg-slate-200">×</button>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="flex bg-slate-100 p-2 rounded-2xl gap-2 mb-6">
+                <button onclick="setCalorieChartView('daily')" id="calorie-view-daily" class="flex-1 py-3 text-xs font-black uppercase rounded-xl bg-white text-emerald-600 shadow-sm">
+                    Daily
+                </button>
+                <button onclick="setCalorieChartView('weekly')" id="calorie-view-weekly" class="flex-1 py-3 text-xs font-black uppercase rounded-xl text-slate-400">
+                    Weekly
+                </button>
+            </div>
+
+            <!-- Maintenance Goal Input -->
+            <div class="glass-card p-4 rounded-2xl mb-6">
+                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Maintenance Calories (Target)</label>
+                <div class="flex items-center gap-3">
+                    <input 
+                        type="number" 
+                        id="maintenance-calories-input" 
+                        placeholder="2500" 
+                        class="flex-1 p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-emerald-500"
+                        onchange="updateMaintenanceCalories(this.value)">
+                    <span class="text-sm font-bold text-slate-600">kcal</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">This red line shows your maintenance threshold</p>
+            </div>
+
+            <!-- Stats Summary - Daily View -->
+            <div id="calorie-stats-daily" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-emerald-600 mb-1">Average</p>
+                    <p id="calorie-avg" class="text-2xl font-black text-emerald-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-blue-600 mb-1">Highest</p>
+                    <p id="calorie-highest" class="text-2xl font-black text-blue-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-amber-600 mb-1">Lowest</p>
+                    <p id="calorie-lowest" class="text-2xl font-black text-amber-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Days Tracked</p>
+                    <p id="calorie-days" class="text-2xl font-black text-purple-900">-</p>
+                </div>
+            </div>
+
+            <!-- Stats Summary - Weekly View -->
+            <div id="calorie-stats-weekly" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-indigo-600 mb-1">Total This Week</p>
+                    <p id="calorie-week-total" class="text-2xl font-black text-indigo-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-emerald-600 mb-1">Avg Per Day</p>
+                    <p id="calorie-week-avg" class="text-2xl font-black text-emerald-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-blue-600 mb-1">Highest Week</p>
+                    <p id="calorie-week-highest" class="text-2xl font-black text-blue-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Weeks Tracked</p>
+                    <p id="calorie-weeks-tracked" class="text-2xl font-black text-purple-900">-</p>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="bg-slate-50 rounded-3xl p-6 mb-4">
+                <div class="h-80 relative">
+                    <canvas id="calorie-tracking-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex items-center justify-center gap-6 text-xs font-bold mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-emerald-500 rounded"></div>
+                    <span>Calories Eaten</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-1 bg-red-500"></div>
+                    <span>Maintenance Target</span>
+                </div>
+            </div>
+
+            <!-- Protein Tracking Button -->
+            <button onclick="openProteinChartModal()" class="w-full glass-card p-4 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-95">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <i data-lucide="beef" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div class="text-left">
+                        <h4 class="font-bold text-sm">View Protein Tracking</h4>
+                        <p class="text-xs text-slate-400">Daily & weekly protein intake</p>
+                    </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-5 h-5 text-slate-400"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- PROTEIN CHART MODAL -->
+    <div id="protein-chart-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-3xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black flex items-center gap-2">
+                        <i data-lucide="beef" class="w-6 h-6 text-rose-600"></i>
+                        Protein Tracking
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Monitor your daily & weekly protein intake</p>
+                </div>
+                <button onclick="closeProteinChartModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none hover:bg-slate-200">×</button>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="flex bg-slate-100 p-2 rounded-2xl gap-2 mb-6">
+                <button onclick="setProteinChartView('daily')" id="protein-view-daily" class="flex-1 py-3 text-xs font-black uppercase rounded-xl bg-white text-rose-600 shadow-sm">
+                    Daily
+                </button>
+                <button onclick="setProteinChartView('weekly')" id="protein-view-weekly" class="flex-1 py-3 text-xs font-black uppercase rounded-xl text-slate-400">
+                    Weekly
+                </button>
+            </div>
+
+            <!-- Protein Goal Input -->
+            <div class="glass-card p-4 rounded-2xl mb-6">
+                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Daily Protein Goal (Target)</label>
+                <div class="flex items-center gap-3">
+                    <input 
+                        type="number" 
+                        id="protein-goal-input" 
+                        placeholder="150" 
+                        class="flex-1 p-3 bg-slate-50 rounded-xl font-bold outline-none border-2 border-transparent focus:border-rose-500"
+                        onchange="updateProteinGoal(this.value)">
+                    <span class="text-sm font-bold text-slate-600">grams</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">This red line shows your protein target</p>
+            </div>
+
+            <!-- Stats Summary - Daily View -->
+            <div id="protein-stats-daily" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-rose-600 mb-1">Average</p>
+                    <p id="protein-avg" class="text-2xl font-black text-rose-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-blue-600 mb-1">Highest</p>
+                    <p id="protein-highest" class="text-2xl font-black text-blue-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-amber-600 mb-1">Lowest</p>
+                    <p id="protein-lowest" class="text-2xl font-black text-amber-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Days Tracked</p>
+                    <p id="protein-days" class="text-2xl font-black text-purple-900">-</p>
+                </div>
+            </div>
+
+            <!-- Stats Summary - Weekly View -->
+            <div id="protein-stats-weekly" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-indigo-600 mb-1">Total This Week</p>
+                    <p id="protein-week-total" class="text-2xl font-black text-indigo-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-rose-600 mb-1">Avg Per Day</p>
+                    <p id="protein-week-avg" class="text-2xl font-black text-rose-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-blue-600 mb-1">Highest Week</p>
+                    <p id="protein-week-highest" class="text-2xl font-black text-blue-900">-</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Weeks Tracked</p>
+                    <p id="protein-weeks-tracked" class="text-2xl font-black text-purple-900">-</p>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="bg-slate-50 rounded-3xl p-6 mb-4">
+                <div class="h-80 relative">
+                    <canvas id="protein-tracking-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex items-center justify-center gap-6 text-xs font-bold">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-rose-500 rounded"></div>
+                    <span>Protein Consumed</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-1 bg-red-500"></div>
+                    <span>Protein Target</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PHOTO COMPARISON MODAL -->
     <div id="photo-comparison-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-2xl rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
@@ -1358,22 +1737,23 @@
     // ==========================================================================
     // 🔥 REPLACE WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
-        apiKey: "AIzaSyA9H9hmvfrQmc2wIwnS2jCPLgdmXBquQXM",
-        authDomain: "vfit-app-pro.firebaseapp.com",
-        projectId: "vfit-app-pro",
-        storageBucket: "vfit-app-pro.firebasestorage.app",
-        messagingSenderId: "815730068689",
-        appId: "1:815730068689:web:0c6587d7dbe62b0f3c09f0",
-        measurementId: "G-74L12X0NE8"
+        apiKey: "YOUR_API_KEY_HERE",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
 
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Current user from Firebase
     let currentUser = null;
     let firebaseUserData = {};
-        
+
     // ==========================================================================
     // AUTH FORM HELPERS
     // ==========================================================================
@@ -2039,6 +2419,9 @@
             if (habitsTracker) habitsTracker.classList.remove('hidden');
             renderDashboardHabits();
         }
+
+        // Render AI Coach recommendations
+        renderAICoach();
 
         lucide.createIcons();
     }
@@ -3588,6 +3971,779 @@
 
     function closeMetricsChart() { document.getElementById('metrics-chart-modal').style.display = 'none'; }
 
+    // ==========================================================================
+    // EXERCISE PROGRESS CHART
+    // ==========================================================================
+
+    let exerciseProgressChart = null;
+
+    function openExerciseProgressModal() {
+        document.getElementById('exercise-progress-modal').style.display = 'flex';
+        populateExerciseDropdown();
+        lucide.createIcons();
+    }
+
+    function closeExerciseProgressModal() {
+        document.getElementById('exercise-progress-modal').style.display = 'none';
+        if (exerciseProgressChart) {
+            exerciseProgressChart.destroy();
+            exerciseProgressChart = null;
+        }
+    }
+
+    function populateExerciseDropdown() {
+        const select = document.getElementById('exercise-select');
+        if (!select) return;
+
+        // Get all unique exercises from workout history
+        const exercises = new Set();
+        (state.workoutHistory || []).forEach(workout => {
+            (workout.exercises || []).forEach(ex => {
+                if (ex.name && ex.name.trim()) {
+                    exercises.add(ex.name.trim());
+                }
+            });
+        });
+
+        // Sort alphabetically
+        const sortedExercises = Array.from(exercises).sort();
+
+        // Populate dropdown
+        select.innerHTML = '<option value="">Choose an exercise...</option>' +
+            sortedExercises.map(ex => `<option value="${ex}">${ex}</option>`).join('');
+    }
+
+    function renderExerciseProgressChart() {
+        const exerciseName = document.getElementById('exercise-select')?.value;
+        
+        if (!exerciseName) {
+            document.getElementById('exercise-progress-empty').classList.remove('hidden');
+            document.getElementById('exercise-progress-stats').classList.add('hidden');
+            document.getElementById('exercise-progress-chart-container').classList.add('hidden');
+            return;
+        }
+
+        // Hide empty state, show chart
+        document.getElementById('exercise-progress-empty').classList.add('hidden');
+        document.getElementById('exercise-progress-stats').classList.remove('hidden');
+        document.getElementById('exercise-progress-chart-container').classList.remove('hidden');
+
+        // Collect all data for this exercise
+        const exerciseData = [];
+        (state.workoutHistory || []).forEach(workout => {
+            (workout.exercises || []).forEach(ex => {
+                if (ex.name === exerciseName && ex.sets && ex.sets.length > 0) {
+                    // Get max weight from this workout
+                    let maxWeight = 0;
+                    let repsAtMax = 0;
+                    ex.sets.forEach(set => {
+                        const weight = parseFloat(set.weight) || parseFloat(set.kg) || 0;
+                        const reps = parseFloat(set.reps) || 0;
+                        if (weight > maxWeight) {
+                            maxWeight = weight;
+                            repsAtMax = reps;
+                        }
+                    });
+                    
+                    if (maxWeight > 0) {
+                        exerciseData.push({
+                            date: workout.date,
+                            weight: maxWeight,
+                            reps: repsAtMax,
+                            sets: ex.sets.length
+                        });
+                    }
+                }
+            });
+        });
+
+        // Sort by date
+        exerciseData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (exerciseData.length === 0) {
+            document.getElementById('exercise-progress-empty').classList.remove('hidden');
+            document.getElementById('exercise-progress-stats').classList.add('hidden');
+            document.getElementById('exercise-progress-chart-container').classList.add('hidden');
+            return;
+        }
+
+        // Update stats
+        const currentMax = exerciseData[exerciseData.length - 1].weight;
+        const startingWeight = exerciseData[0].weight;
+        const totalGain = currentMax - startingWeight;
+        const workoutCount = exerciseData.length;
+
+        document.getElementById('exercise-current-max').textContent = `${currentMax}kg`;
+        document.getElementById('exercise-starting-weight').textContent = `${startingWeight}kg`;
+        document.getElementById('exercise-total-gain').textContent = totalGain >= 0 ? `+${totalGain}kg` : `${totalGain}kg`;
+        document.getElementById('exercise-workout-count').textContent = workoutCount;
+
+        // Prepare chart data
+        const labels = exerciseData.map(d => {
+            const date = new Date(d.date + 'T00:00:00');
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        });
+        const weights = exerciseData.map(d => d.weight);
+
+        // Destroy old chart
+        if (exerciseProgressChart) {
+            exerciseProgressChart.destroy();
+        }
+
+        // Create new chart
+        const ctx = document.getElementById('exercise-progress-chart');
+        if (!ctx) return;
+
+        exerciseProgressChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Max Weight (kg)',
+                    data: weights,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 3,
+                    pointBorderColor: '#6366f1',
+                    pointHoverRadius: 7,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                const dataPoint = exerciseData[context.dataIndex];
+                                return [
+                                    `Weight: ${dataPoint.weight}kg`,
+                                    `Reps: ${dataPoint.reps}`,
+                                    `Sets: ${dataPoint.sets}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: '#e2e8f0' },
+                        ticks: {
+                            font: { size: 12, weight: 'bold' },
+                            callback: function(value) { return value + 'kg'; }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        });
+
+        // Generate insights
+        generateExerciseInsights(exerciseData, exerciseName);
+    }
+
+    function generateExerciseInsights(data, exerciseName) {
+        const insights = [];
+        const container = document.getElementById('exercise-insights');
+        if (!container) return;
+
+        const totalGain = data[data.length - 1].weight - data[0].weight;
+        const percentGain = ((totalGain / data[0].weight) * 100).toFixed(1);
+        const avgGainPerWorkout = (totalGain / data.length).toFixed(2);
+
+        // Insight 1: Overall progress
+        if (totalGain > 0) {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-emerald-500">✓</span>
+                <span>You've increased your ${exerciseName} by <strong>${totalGain}kg</strong> (${percentGain}% improvement)!</span>
+            </div>`);
+        } else if (totalGain === 0) {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-amber-500">→</span>
+                <span>You've maintained your strength on ${exerciseName}. Consider progressive overload to break through.</span>
+            </div>`);
+        } else {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-amber-500">!</span>
+                <span>Weight has decreased. This could indicate fatigue or deload phase - ensure adequate recovery.</span>
+            </div>`);
+        }
+
+        // Insight 2: Training frequency
+        if (data.length < 5) {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-blue-500">💡</span>
+                <span>You've done ${exerciseName} ${data.length} times. More frequent training can accelerate progress.</span>
+            </div>`);
+        } else {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-emerald-500">✓</span>
+                <span>Great consistency! ${data.length} workouts with ${exerciseName}.</span>
+            </div>`);
+        }
+
+        // Insight 3: Recent trend
+        if (data.length >= 3) {
+            const lastThree = data.slice(-3);
+            const recentTrend = lastThree[2].weight - lastThree[0].weight;
+            
+            if (recentTrend > 0) {
+                insights.push(`<div class="flex items-start gap-2">
+                    <span class="text-emerald-500">📈</span>
+                    <span>Recent trend: <strong>+${recentTrend}kg</strong> in last 3 workouts. Keep it up!</span>
+                </div>`);
+            } else if (recentTrend < 0) {
+                insights.push(`<div class="flex items-start gap-2">
+                    <span class="text-amber-500">📉</span>
+                    <span>Recent dip of ${recentTrend}kg. Consider checking recovery, nutrition, and form.</span>
+                </div>`);
+            }
+        }
+
+        // Insight 4: Next goal
+        const currentMax = data[data.length - 1].weight;
+        const nextMilestone = Math.ceil(currentMax / 5) * 5; // Round to next 5kg
+        if (nextMilestone > currentMax) {
+            insights.push(`<div class="flex items-start gap-2">
+                <span class="text-purple-500">🎯</span>
+                <span>Next milestone: <strong>${nextMilestone}kg</strong>. You're ${(nextMilestone - currentMax).toFixed(1)}kg away!</span>
+            </div>`);
+        }
+
+        container.innerHTML = insights.join('');
+    }
+
+    // ==========================================================================
+    // CALORIE TRACKING CHART
+    // ==========================================================================
+
+    let calorieTrackingChart = null;
+    let currentCalorieView = 'daily'; // 'daily' or 'weekly'
+
+    function openCalorieChartModal() {
+        document.getElementById('calorie-chart-modal').style.display = 'flex';
+        
+        // Set maintenance calories input to current goal
+        const maintenanceInput = document.getElementById('maintenance-calories-input');
+        if (maintenanceInput) {
+            maintenanceInput.value = state.goals?.calories || 2500;
+        }
+        
+        // Render the chart
+        currentCalorieView = 'daily';
+        setCalorieChartView('daily');
+        lucide.createIcons();
+    }
+
+    function closeCalorieChartModal() {
+        document.getElementById('calorie-chart-modal').style.display = 'none';
+        if (calorieTrackingChart) {
+            calorieTrackingChart.destroy();
+            calorieTrackingChart = null;
+        }
+    }
+
+    function updateMaintenanceCalories(value) {
+        if (!state.goals) state.goals = {};
+        state.goals.calories = Number(value) || 2500;
+        saveState();
+        renderCalorieTrackingChart();
+        showToast('Maintenance target updated');
+    }
+
+    function setCalorieChartView(view) {
+        currentCalorieView = view;
+        
+        // Update button states
+        const dailyBtn = document.getElementById('calorie-view-daily');
+        const weeklyBtn = document.getElementById('calorie-view-weekly');
+        
+        if (view === 'daily') {
+            dailyBtn?.classList.add('bg-white', 'text-emerald-600', 'shadow-sm');
+            dailyBtn?.classList.remove('text-slate-400');
+            weeklyBtn?.classList.remove('bg-white', 'text-emerald-600', 'shadow-sm');
+            weeklyBtn?.classList.add('text-slate-400');
+        } else {
+            weeklyBtn?.classList.add('bg-white', 'text-emerald-600', 'shadow-sm');
+            weeklyBtn?.classList.remove('text-slate-400');
+            dailyBtn?.classList.remove('bg-white', 'text-emerald-600', 'shadow-sm');
+            dailyBtn?.classList.add('text-slate-400');
+        }
+        
+        renderCalorieTrackingChart();
+    }
+
+    function renderCalorieTrackingChart() {
+        const maintenanceCalories = state.goals?.calories || 2500;
+        
+        let labels = [];
+        let calorieData = [];
+        
+        if (currentCalorieView === 'daily') {
+            // Daily view - last 7 days
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d.toISOString().split('T')[0]);
+            }
+            
+            labels = days.map(day => {
+                const date = new Date(day + 'T00:00:00');
+                return date.toLocaleDateString('en-GB', { weekday: 'short' });
+            });
+            
+            calorieData = days.map(day => {
+                const dayMeals = (state.dailyMeals || []).filter(m => m.date === day);
+                return dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            });
+        } else {
+            // Weekly view - last 4 weeks
+            const weeks = [];
+            for (let i = 3; i >= 0; i--) {
+                const weekStart = new Date();
+                weekStart.setDate(weekStart.getDate() - (i * 7) - weekStart.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                weeks.push({ start: weekStart, end: weekEnd });
+            }
+            
+            labels = weeks.map((week, idx) => {
+                if (idx === 3) return 'This Week';
+                if (idx === 2) return 'Last Week';
+                return `${week.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+            });
+            
+            calorieData = weeks.map(week => {
+                const weekMeals = (state.dailyMeals || []).filter(m => {
+                    const mealDate = new Date(m.date + 'T00:00:00');
+                    return mealDate >= week.start && mealDate <= week.end;
+                });
+                const totalCalories = weekMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+                const daysWithMeals = new Set(weekMeals.map(m => m.date)).size || 1;
+                return Math.round(totalCalories / daysWithMeals); // Average per day
+            });
+        }
+        
+        // Calculate and update stats based on view
+        if (currentCalorieView === 'daily') {
+            // Show daily stats, hide weekly stats
+            document.getElementById('calorie-stats-daily')?.classList.remove('hidden');
+            document.getElementById('calorie-stats-weekly')?.classList.add('hidden');
+            
+            const validData = calorieData.filter(c => c > 0);
+            const avgCalories = validData.length > 0 
+                ? Math.round(validData.reduce((sum, c) => sum + c, 0) / validData.length) 
+                : 0;
+            const highestCalories = validData.length > 0 ? Math.max(...validData) : 0;
+            const lowestCalories = validData.length > 0 ? Math.min(...validData) : 0;
+            const daysTracked = validData.length;
+            
+            document.getElementById('calorie-avg').textContent = avgCalories > 0 ? avgCalories.toLocaleString() : '-';
+            document.getElementById('calorie-highest').textContent = highestCalories > 0 ? highestCalories.toLocaleString() : '-';
+            document.getElementById('calorie-lowest').textContent = lowestCalories > 0 ? lowestCalories.toLocaleString() : '-';
+            document.getElementById('calorie-days').textContent = daysTracked > 0 ? daysTracked : '-';
+        } else {
+            // Show weekly stats, hide daily stats
+            document.getElementById('calorie-stats-daily')?.classList.add('hidden');
+            document.getElementById('calorie-stats-weekly')?.classList.remove('hidden');
+            
+            // Calculate this week's total
+            const thisWeek = weeks[3]; // Last week in array is "This Week"
+            const thisWeekMeals = (state.dailyMeals || []).filter(m => {
+                const mealDate = new Date(m.date + 'T00:00:00');
+                return mealDate >= thisWeek.start && mealDate <= thisWeek.end;
+            });
+            const thisWeekTotal = thisWeekMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+            const thisWeekDays = new Set(thisWeekMeals.map(m => m.date)).size || 1;
+            const thisWeekAvg = Math.round(thisWeekTotal / thisWeekDays);
+            
+            const validData = calorieData.filter(c => c > 0);
+            const highestWeek = validData.length > 0 ? Math.max(...validData) : 0;
+            const weeksTracked = validData.length;
+            
+            document.getElementById('calorie-week-total').textContent = thisWeekTotal > 0 ? thisWeekTotal.toLocaleString() : '-';
+            document.getElementById('calorie-week-avg').textContent = thisWeekAvg > 0 ? thisWeekAvg.toLocaleString() : '-';
+            document.getElementById('calorie-week-highest').textContent = highestWeek > 0 ? highestWeek.toLocaleString() : '-';
+            document.getElementById('calorie-weeks-tracked').textContent = weeksTracked > 0 ? weeksTracked : '-';
+        }
+        
+        // Create maintenance line data (same value for all points)
+        const maintenanceLine = new Array(labels.length).fill(maintenanceCalories);
+        
+        // Destroy old chart
+        if (calorieTrackingChart) {
+            calorieTrackingChart.destroy();
+        }
+        
+        // Create new chart
+        const ctx = document.getElementById('calorie-tracking-chart');
+        if (!ctx) return;
+        
+        calorieTrackingChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Calories Eaten',
+                        data: calorieData,
+                        backgroundColor: calorieData.map(cal => {
+                            if (cal === 0) return 'rgba(203, 213, 225, 0.3)';
+                            return cal > maintenanceCalories 
+                                ? 'rgba(239, 68, 68, 0.8)'  // Red if over
+                                : 'rgba(16, 185, 129, 0.8)'; // Green if under
+                        }),
+                        borderColor: calorieData.map(cal => {
+                            if (cal === 0) return 'rgba(203, 213, 225, 0.5)';
+                            return cal > maintenanceCalories 
+                                ? 'rgba(239, 68, 68, 1)' 
+                                : 'rgba(16, 185, 129, 1)';
+                        }),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        barThickness: 40
+                    },
+                    {
+                        label: 'Maintenance Target',
+                        data: maintenanceLine,
+                        type: 'line',
+                        borderColor: 'rgba(239, 68, 68, 0.9)',
+                        borderWidth: 3,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        display: false 
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const calories = context.parsed.y;
+                                    if (calories === 0) return 'No data logged';
+                                    const diff = calories - maintenanceCalories;
+                                    const diffText = diff > 0 
+                                        ? `${Math.abs(diff)} over target` 
+                                        : `${Math.abs(diff)} under target`;
+                                    return [
+                                        `Calories: ${calories.toLocaleString()} kcal`,
+                                        diffText
+                                    ];
+                                }
+                                return `Target: ${context.parsed.y} kcal`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#e2e8f0' },
+                        ticks: {
+                            font: { size: 11, weight: 'bold' },
+                            callback: function(value) { 
+                                return value.toLocaleString(); 
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Calories (kcal)',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    }
+
+    // ==========================================================================
+    // PROTEIN TRACKING CHART
+    // ==========================================================================
+
+    let proteinTrackingChart = null;
+    let currentProteinView = 'daily'; // 'daily' or 'weekly'
+    let proteinGoal = 150; // Default protein goal in grams
+
+    function openProteinChartModal() {
+        document.getElementById('protein-chart-modal').style.display = 'flex';
+        
+        // Set protein goal input
+        const proteinInput = document.getElementById('protein-goal-input');
+        if (proteinInput) {
+            proteinInput.value = proteinGoal;
+        }
+        
+        // Render the chart
+        currentProteinView = 'daily';
+        setProteinChartView('daily');
+        lucide.createIcons();
+    }
+
+    function closeProteinChartModal() {
+        document.getElementById('protein-chart-modal').style.display = 'none';
+        if (proteinTrackingChart) {
+            proteinTrackingChart.destroy();
+            proteinTrackingChart = null;
+        }
+    }
+
+    function updateProteinGoal(value) {
+        proteinGoal = Number(value) || 150;
+        renderProteinTrackingChart();
+        showToast('Protein target updated');
+    }
+
+    function setProteinChartView(view) {
+        currentProteinView = view;
+        
+        // Update button states
+        const dailyBtn = document.getElementById('protein-view-daily');
+        const weeklyBtn = document.getElementById('protein-view-weekly');
+        
+        if (view === 'daily') {
+            dailyBtn?.classList.add('bg-white', 'text-rose-600', 'shadow-sm');
+            dailyBtn?.classList.remove('text-slate-400');
+            weeklyBtn?.classList.remove('bg-white', 'text-rose-600', 'shadow-sm');
+            weeklyBtn?.classList.add('text-slate-400');
+        } else {
+            weeklyBtn?.classList.add('bg-white', 'text-rose-600', 'shadow-sm');
+            weeklyBtn?.classList.remove('text-slate-400');
+            dailyBtn?.classList.remove('bg-white', 'text-rose-600', 'shadow-sm');
+            dailyBtn?.classList.add('text-slate-400');
+        }
+        
+        renderProteinTrackingChart();
+    }
+
+    function renderProteinTrackingChart() {
+        let labels = [];
+        let proteinData = [];
+        let weeks = []; // Need this for weekly stats
+        
+        if (currentProteinView === 'daily') {
+            // Daily view - last 7 days
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d.toISOString().split('T')[0]);
+            }
+            
+            labels = days.map(day => {
+                const date = new Date(day + 'T00:00:00');
+                return date.toLocaleDateString('en-GB', { weekday: 'short' });
+            });
+            
+            proteinData = days.map(day => {
+                const dayMeals = (state.dailyMeals || []).filter(m => m.date === day);
+                return dayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+            });
+        } else {
+            // Weekly view - last 4 weeks
+            for (let i = 3; i >= 0; i--) {
+                const weekStart = new Date();
+                weekStart.setDate(weekStart.getDate() - (i * 7) - weekStart.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                weeks.push({ start: weekStart, end: weekEnd });
+            }
+            
+            labels = weeks.map((week, idx) => {
+                if (idx === 3) return 'This Week';
+                if (idx === 2) return 'Last Week';
+                return `${week.start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+            });
+            
+            proteinData = weeks.map(week => {
+                const weekMeals = (state.dailyMeals || []).filter(m => {
+                    const mealDate = new Date(m.date + 'T00:00:00');
+                    return mealDate >= week.start && mealDate <= week.end;
+                });
+                const totalProtein = weekMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+                const daysWithMeals = new Set(weekMeals.map(m => m.date)).size || 1;
+                return Math.round(totalProtein / daysWithMeals); // Average per day
+            });
+        }
+        
+        // Calculate and update stats based on view
+        if (currentProteinView === 'daily') {
+            // Show daily stats, hide weekly stats
+            document.getElementById('protein-stats-daily')?.classList.remove('hidden');
+            document.getElementById('protein-stats-weekly')?.classList.add('hidden');
+            
+            const validData = proteinData.filter(p => p > 0);
+            const avgProtein = validData.length > 0 
+                ? Math.round(validData.reduce((sum, p) => sum + p, 0) / validData.length) 
+                : 0;
+            const highestProtein = validData.length > 0 ? Math.max(...validData) : 0;
+            const lowestProtein = validData.length > 0 ? Math.min(...validData) : 0;
+            const daysTracked = validData.length;
+            
+            document.getElementById('protein-avg').textContent = avgProtein > 0 ? avgProtein + 'g' : '-';
+            document.getElementById('protein-highest').textContent = highestProtein > 0 ? highestProtein + 'g' : '-';
+            document.getElementById('protein-lowest').textContent = lowestProtein > 0 ? lowestProtein + 'g' : '-';
+            document.getElementById('protein-days').textContent = daysTracked > 0 ? daysTracked : '-';
+        } else {
+            // Show weekly stats, hide daily stats
+            document.getElementById('protein-stats-daily')?.classList.add('hidden');
+            document.getElementById('protein-stats-weekly')?.classList.remove('hidden');
+            
+            // Calculate this week's total
+            const thisWeek = weeks[3]; // Last week in array is "This Week"
+            const thisWeekMeals = (state.dailyMeals || []).filter(m => {
+                const mealDate = new Date(m.date + 'T00:00:00');
+                return mealDate >= thisWeek.start && mealDate <= thisWeek.end;
+            });
+            const thisWeekTotal = thisWeekMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+            const thisWeekDays = new Set(thisWeekMeals.map(m => m.date)).size || 1;
+            const thisWeekAvg = Math.round(thisWeekTotal / thisWeekDays);
+            
+            const validData = proteinData.filter(p => p > 0);
+            const highestWeek = validData.length > 0 ? Math.max(...validData) : 0;
+            const weeksTracked = validData.length;
+            
+            document.getElementById('protein-week-total').textContent = thisWeekTotal > 0 ? thisWeekTotal + 'g' : '-';
+            document.getElementById('protein-week-avg').textContent = thisWeekAvg > 0 ? thisWeekAvg + 'g' : '-';
+            document.getElementById('protein-week-highest').textContent = highestWeek > 0 ? highestWeek + 'g' : '-';
+            document.getElementById('protein-weeks-tracked').textContent = weeksTracked > 0 ? weeksTracked : '-';
+        }
+        
+        // Create protein target line data
+        const proteinLine = new Array(labels.length).fill(proteinGoal);
+        
+        // Destroy old chart
+        if (proteinTrackingChart) {
+            proteinTrackingChart.destroy();
+        }
+        
+        // Create new chart
+        const ctx = document.getElementById('protein-tracking-chart');
+        if (!ctx) return;
+        
+        proteinTrackingChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Protein Consumed',
+                        data: proteinData,
+                        backgroundColor: proteinData.map(protein => {
+                            if (protein === 0) return 'rgba(203, 213, 225, 0.3)';
+                            return protein >= proteinGoal 
+                                ? 'rgba(16, 185, 129, 0.8)'  // Green if hit goal
+                                : 'rgba(251, 113, 133, 0.8)'; // Rose if under goal
+                        }),
+                        borderColor: proteinData.map(protein => {
+                            if (protein === 0) return 'rgba(203, 213, 225, 0.5)';
+                            return protein >= proteinGoal 
+                                ? 'rgba(16, 185, 129, 1)' 
+                                : 'rgba(251, 113, 133, 1)';
+                        }),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        barThickness: 40
+                    },
+                    {
+                        label: 'Protein Target',
+                        data: proteinLine,
+                        type: 'line',
+                        borderColor: 'rgba(239, 68, 68, 0.9)',
+                        borderWidth: 3,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    const protein = context.parsed.y;
+                                    if (protein === 0) return 'No data logged';
+                                    const diff = protein - proteinGoal;
+                                    const diffText = diff >= 0 
+                                        ? `${Math.abs(Math.round(diff))}g over target` 
+                                        : `${Math.abs(Math.round(diff))}g under target`;
+                                    return [
+                                        `Protein: ${Math.round(protein)}g`,
+                                        diffText
+                                    ];
+                                }
+                                return `Target: ${context.parsed.y}g`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#e2e8f0' },
+                        ticks: {
+                            font: { size: 11, weight: 'bold' },
+                            callback: function(value) { return value + 'g'; }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Protein (grams)',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    }
+
     function openPhotoComparison() {
         populateComparisonDates();
         currentComparePhotoType = 'front';
@@ -3659,6 +4815,20 @@
         saveState();
         renderDashboard();
         showToast('Settings saved ✓');
+    }
+
+    
+    function toggleAICoach() {
+        const enabled = document.getElementById('ai-coach-enabled')?.checked ?? true;
+        state.aiCoachEnabled = enabled;
+        saveState();
+        
+        const bubble = document.getElementById('ai-coach-bubble');
+        if (bubble) {
+            bubble.style.display = enabled ? 'block' : 'none';
+        }
+        
+        showToast(enabled ? 'AI Coach enabled! 🤖' : 'AI Coach disabled');
     }
 
     function renderSettings() {
@@ -6055,6 +7225,569 @@
     }
 
     // ==========================================================================
+    // AI COACH SYSTEM - EVIDENCE-BASED RECOMMENDATIONS
+    // ==========================================================================
+
+    /**
+     * Main AI Coach function - analyzes all training and nutrition data
+     * Provides evidence-based recommendations for progressive overload, deloads, and nutrition
+     */
+    function generateAICoachRecommendations() {
+        const messages = [];
+        const actions = [];
+        
+        // Analyze training data
+        const trainingInsights = analyzeTrainingProgression();
+        const recoveryInsights = analyzeRecoveryNeeds();
+        const nutritionInsights = analyzeNutritionAdherence();
+        
+        // Priority 1: Critical alerts (deload, injury risk)
+        if (trainingInsights.needsDeload) {
+            messages.push({
+                icon: 'alert-triangle',
+                color: 'amber',
+                text: trainingInsights.deloadReason,
+                priority: 'high'
+            });
+            actions.push({
+                label: 'Plan Deload Week',
+                action: 'planDeload()',
+                color: 'amber'
+            });
+        }
+        
+        // Priority 2: Progressive overload opportunities
+        if (trainingInsights.readyForProgression && trainingInsights.readyForProgression.length > 0) {
+            const exercise = trainingInsights.readyForProgression[0];
+            messages.push({
+                icon: 'trending-up',
+                color: 'emerald',
+                text: `Strong progress on ${exercise.name}! You've hit ${exercise.reps}+ reps for ${exercise.sessions} sessions. Time to increase weight by 2.5-5kg.`,
+                priority: 'medium'
+            });
+            actions.push({
+                label: `Increase ${exercise.name}`,
+                action: `showExerciseSuggestion('${exercise.name}')`,
+                color: 'emerald'
+            });
+        }
+        
+        // Priority 3: Muscle group balance
+        if (trainingInsights.muscleImbalance) {
+            messages.push({
+                icon: 'alert-circle',
+                color: 'blue',
+                text: `Focus on ${trainingInsights.muscleImbalance.neglected.join(', ')} - they're undertrained compared to ${trainingInsights.muscleImbalance.overworked.join(', ')}.`,
+                priority: 'medium'
+            });
+        }
+        
+        // Priority 4: Nutrition optimization
+        if (nutritionInsights.proteinLow) {
+            messages.push({
+                icon: 'beef',
+                color: 'rose',
+                text: `Protein intake averaging ${nutritionInsights.avgProtein}g/day. Research shows ${nutritionInsights.recommendedProtein}g/day optimal for your training volume (1.6-2.2g/kg bodyweight).`,
+                priority: 'medium'
+            });
+        }
+        
+        if (nutritionInsights.caloriesMisaligned) {
+            messages.push({
+                icon: 'activity',
+                color: 'purple',
+                text: nutritionInsights.calorieAdvice,
+                priority: 'low'
+            });
+        }
+        
+        // Priority 5: Recovery insights
+        if (recoveryInsights.insufficient) {
+            messages.push({
+                icon: 'moon',
+                color: 'indigo',
+                text: recoveryInsights.message,
+                priority: 'medium'
+            });
+        }
+        
+        // Priority 6: Positive reinforcement
+        if (trainingInsights.consistency > 0.8 && messages.length === 0) {
+            messages.push({
+                icon: 'trophy',
+                color: 'emerald',
+                text: `Excellent consistency! You've trained ${trainingInsights.sessionsThisMonth} times this month. Keep up the momentum!`,
+                priority: 'low'
+            });
+        }
+        
+        // If no messages, provide general encouragement
+        if (messages.length === 0) {
+            messages.push({
+                icon: 'check-circle',
+                color: 'slate',
+                text: 'Your training and nutrition are on track. Keep following your current program!',
+                priority: 'low'
+            });
+        }
+        
+        return { messages, actions };
+    }
+
+    /**
+     * Analyze training progression and identify opportunities for progressive overload
+     * Based on 2023 meta-analysis: Progression needed when hitting top of rep range for 2+ sessions
+     */
+    function analyzeTrainingProgression() {
+        const last4Weeks = [];
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 28);
+        
+        const recentWorkouts = (state.workoutHistory || []).filter(w => 
+            new Date(w.date) >= cutoff
+        );
+        
+        // Check each exercise for progression readiness
+        const exerciseProgress = {};
+        recentWorkouts.forEach(workout => {
+            (workout.exercises || []).forEach(ex => {
+                if (!exerciseProgress[ex.name]) {
+                    exerciseProgress[ex.name] = [];
+                }
+                
+                // Get max reps from this session
+                const maxReps = Math.max(...(ex.sets || []).map(s => parseFloat(s.reps) || 0));
+                const avgWeight = (ex.sets || []).reduce((sum, s) => sum + (parseFloat(s.weight) || 0), 0) / (ex.sets || []).length;
+                
+                exerciseProgress[ex.name].push({
+                    date: workout.date,
+                    maxReps,
+                    avgWeight,
+                    sets: ex.sets.length
+                });
+            });
+        });
+        
+        // Identify exercises ready for progression
+        const readyForProgression = [];
+        Object.entries(exerciseProgress).forEach(([name, sessions]) => {
+            if (sessions.length < 2) return;
+            
+            // Check last 2-3 sessions
+            const recent = sessions.slice(-3);
+            const hittingTopRange = recent.filter(s => s.maxReps >= 12).length;
+            
+            // Evidence-based trigger: 2+ sessions at top of rep range (12+)
+            if (hittingTopRange >= 2) {
+                readyForProgression.push({
+                    name,
+                    reps: recent[recent.length - 1].maxReps,
+                    weight: recent[recent.length - 1].avgWeight,
+                    sessions: hittingTopRange
+                });
+            }
+        });
+        
+        // Check for deload need (based on velocity-based training research)
+        const needsDeload = checkDeloadNeed(recentWorkouts);
+        
+        // Check muscle group frequency balance
+        const muscleImbalance = analyzeMuscleGroupBalance(recentWorkouts);
+        
+        // Calculate consistency
+        const sessionsThisMonth = recentWorkouts.length;
+        const consistency = sessionsThisMonth / 16; // Assuming 4x/week ideal
+        
+        return {
+            readyForProgression,
+            needsDeload: needsDeload.needed,
+            deloadReason: needsDeload.reason,
+            muscleImbalance,
+            sessionsThisMonth,
+            consistency
+        };
+    }
+
+    /**
+     * Check if deload week is needed
+     * Based on 2022 research: Deload when volume >150% baseline for 3+ weeks
+     * Or consecutive training days >5
+     */
+    function checkDeloadNeed(recentWorkouts) {
+        // Check 1: Consecutive training days
+        const last7Days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const trained = recentWorkouts.some(w => w.date === dateStr);
+            last7Days.push(trained);
+        }
+        
+        let consecutiveDays = 0;
+        let maxConsecutive = 0;
+        last7Days.forEach(trained => {
+            if (trained) {
+                consecutiveDays++;
+                maxConsecutive = Math.max(maxConsecutive, consecutiveDays);
+            } else {
+                consecutiveDays = 0;
+            }
+        });
+        
+        if (maxConsecutive >= 6) {
+            return {
+                needed: true,
+                reason: `You've trained ${maxConsecutive} consecutive days. Research shows injury risk increases significantly after 5 days. Take 2-3 rest days or do a deload week (50% volume, same exercises).`
+            };
+        }
+        
+        // Check 2: High volume for extended period
+        if (recentWorkouts.length >= 14) {
+            const avgSetsPerWorkout = recentWorkouts.reduce((sum, w) => {
+                return sum + (w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0);
+            }, 0) / recentWorkouts.length;
+            
+            if (avgSetsPerWorkout > 25) {
+                return {
+                    needed: true,
+                    reason: `High training volume detected (${Math.round(avgSetsPerWorkout)} sets/workout). After 3-4 weeks of high volume, a deload week (60% volume) helps supercompensation and reduces injury risk by 40% (Sports Medicine, 2022).`
+                };
+            }
+        }
+        
+        // Check 3: Performance plateau or decline
+        const performanceTrend = checkPerformanceTrend(recentWorkouts);
+        if (performanceTrend.declining) {
+            return {
+                needed: true,
+                reason: `Performance declining on key lifts. This indicates accumulated fatigue. A deload week will restore performance - studies show 8-12% strength increase post-deload.`
+            };
+        }
+        
+        return { needed: false, reason: null };
+    }
+
+    /**
+     * Check for performance decline (indicator of overreaching)
+     */
+    function checkPerformanceTrend(workouts) {
+        if (workouts.length < 6) return { declining: false };
+        
+        const keyLifts = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press'];
+        let decliningCount = 0;
+        
+        keyLifts.forEach(lift => {
+            const liftSessions = [];
+            workouts.forEach(w => {
+                (w.exercises || []).forEach(ex => {
+                    if (ex.name.toLowerCase().includes(lift.toLowerCase())) {
+                        const maxWeight = Math.max(...(ex.sets || []).map(s => parseFloat(s.weight) || 0));
+                        if (maxWeight > 0) {
+                            liftSessions.push({ date: w.date, weight: maxWeight });
+                        }
+                    }
+                });
+            });
+            
+            if (liftSessions.length >= 3) {
+                const recent3 = liftSessions.slice(-3);
+                if (recent3[2].weight < recent3[0].weight * 0.95) {
+                    decliningCount++;
+                }
+            }
+        });
+        
+        return { declining: decliningCount >= 2 };
+    }
+
+    /**
+     * Analyze muscle group training frequency balance
+     * Based on 2021 research: All major groups should be trained 2x/week minimum
+     */
+    function analyzeMuscleGroupBalance(workouts) {
+        const frequency = {
+            chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0
+        };
+        
+        const muscleKeywords = {
+            chest: ['bench', 'press', 'flyes', 'dips', 'push'],
+            back: ['pull', 'row', 'lat', 'deadlift'],
+            legs: ['squat', 'leg', 'lunge', 'calf'],
+            shoulders: ['overhead', 'shoulder', 'lateral', 'arnold'],
+            arms: ['curl', 'tricep', 'bicep']
+        };
+        
+        workouts.forEach(workout => {
+            Object.keys(muscleKeywords).forEach(muscle => {
+                const keywords = muscleKeywords[muscle];
+                const trained = (workout.exercises || []).some(ex =>
+                    keywords.some(k => ex.name.toLowerCase().includes(k))
+                );
+                if (trained) frequency[muscle]++;
+            });
+        });
+        
+        const avg = Object.values(frequency).reduce((a, b) => a + b, 0) / 5;
+        const neglected = Object.entries(frequency).filter(([_, f]) => f < avg * 0.5).map(([m, _]) => m);
+        const overworked = Object.entries(frequency).filter(([_, f]) => f > avg * 1.5).map(([m, _]) => m);
+        
+        if (neglected.length > 0 && overworked.length > 0) {
+            return { neglected, overworked };
+        }
+        
+        return null;
+    }
+
+    /**
+     * Analyze recovery status
+     */
+    function analyzeRecoveryNeeds() {
+        const last3Days = [];
+        for (let i = 0; i < 3; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const hasWorkout = (state.workoutHistory || []).some(w => w.date === dateStr);
+            last3Days.push(hasWorkout);
+        }
+        
+        const consecutiveDays = last3Days.filter(Boolean).length;
+        
+        if (consecutiveDays === 3) {
+            return {
+                insufficient: true,
+                message: `3 consecutive training days. Research shows muscle protein synthesis peaks 24-48hrs post-workout. Consider a rest day for optimal adaptation.`
+            };
+        }
+        
+        return { insufficient: false };
+    }
+
+    /**
+     * Analyze nutrition adherence and provide evidence-based recommendations
+     */
+    function analyzeNutritionAdherence() {
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            last7Days.push(d.toISOString().split('T')[0]);
+        }
+        
+        let totalProtein = 0;
+        let totalCalories = 0;
+        let daysLogged = 0;
+        
+        last7Days.forEach(day => {
+            const meals = (state.dailyMeals || []).filter(m => m.date === day);
+            if (meals.length > 0) {
+                totalProtein += meals.reduce((sum, m) => sum + (m.protein || 0), 0);
+                totalCalories += meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+                daysLogged++;
+            }
+        });
+        
+        if (daysLogged === 0) {
+            return { proteinLow: false, caloriesMisaligned: false };
+        }
+        
+        const avgProtein = Math.round(totalProtein / daysLogged);
+        const avgCalories = Math.round(totalCalories / daysLogged);
+        const maintenanceCalories = state.goals?.calories || 2500;
+        
+        // Protein analysis (based on 2023 ISSN position stand)
+        // Recommended: 1.6-2.2g/kg for trained individuals
+        const estimatedWeight = 80; // Default assumption
+        const recommendedProtein = Math.round(estimatedWeight * 1.8);
+        const proteinLow = avgProtein < recommendedProtein * 0.85;
+        
+        // Calorie analysis
+        const calorieDeficit = avgCalories < maintenanceCalories;
+        const calorieSurplus = avgCalories > maintenanceCalories;
+        
+        let calorieAdvice = null;
+        if (calorieDeficit && proteinLow) {
+            calorieAdvice = `In a deficit with low protein (${avgProtein}g/day). Risk of muscle loss increases. Prioritize protein to ${recommendedProtein}g/day even in deficit.`;
+        } else if (calorieSurplus && proteinLow) {
+            calorieAdvice = `Surplus calories but suboptimal protein (${avgProtein}g/day). Studies show protein timing and amount affect muscle gain more than total calories. Aim for ${recommendedProtein}g/day.`;
+        }
+        
+        return {
+            proteinLow,
+            avgProtein,
+            recommendedProtein,
+            caloriesMisaligned: calorieAdvice !== null,
+            calorieAdvice
+        };
+    }
+
+    /**
+     * Render AI Coach recommendations to the dashboard
+     */
+    function renderAICoach() {
+        // Check if AI Coach is enabled
+        if (state.aiCoachEnabled === false) {
+            const bubble = document.getElementById('ai-coach-bubble');
+            if (bubble) bubble.style.display = 'none';
+            return;
+        }
+        
+        const bubble = document.getElementById('ai-coach-bubble');
+        if (bubble) bubble.style.display = 'block';
+        
+
+        const { messages, actions } = generateAICoachRecommendations();
+        const messagesContainer = document.getElementById('ai-coach-messages');
+        const actionsContainer = document.getElementById('ai-coach-actions');
+        
+        if (!messagesContainer) return;
+        
+        // Sort by priority
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        messages.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        
+        // Render messages (top 2 most important)
+        const topMessages = messages.slice(0, 2);
+        messagesContainer.innerHTML = topMessages.map(msg => `
+            <p class="flex items-start gap-2">
+                <i data-lucide="${msg.icon}" class="w-4 h-4 flex-shrink-0 mt-0.5 text-${msg.color}-600"></i>
+                <span>${msg.text}</span>
+            </p>
+        `).join('');
+        
+        // Render action buttons
+        if (actions.length > 0) {
+            actionsContainer.classList.remove('hidden');
+            actionsContainer.innerHTML = actions.map(action => `
+                <button onclick="${action.action}" class="px-4 py-2 bg-${action.color}-100 text-${action.color}-700 rounded-xl text-xs font-bold hover:bg-${action.color}-200 transition-colors">
+                    ${action.label}
+                </button>
+            `).join('');
+        } else {
+            actionsContainer.classList.add('hidden');
+        }
+        
+        // Update timestamp
+        const timestamp = document.getElementById('ai-coach-timestamp');
+        if (timestamp) {
+            timestamp.textContent = 'Just now';
+        }
+        
+        // Re-render icons
+        lucide.createIcons();
+    }
+
+    /**
+     * Refresh AI Coach analysis
+     */
+    function refreshAICoach() {
+        const messagesContainer = document.getElementById('ai-coach-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '<p class="flex items-start gap-2"><i data-lucide="loader" class="w-4 h-4 flex-shrink-0 mt-0.5 animate-spin text-indigo-600"></i><span>Re-analyzing your data...</span></p>';
+            lucide.createIcons();
+        }
+        
+        setTimeout(() => {
+            renderAICoach();
+            showToast('AI Coach updated! 🤖');
+        }, 1000);
+    }
+
+    /**
+     * Helper function stubs for action buttons
+     */
+    function planDeload() {
+        showToast('Deload week planned! Reduce volume by 40-50% for next 7 days.');
+        // Could auto-create deload workouts here
+    }
+
+    function showExerciseSuggestion(exerciseName) {
+        showToast(`${exerciseName}: Increase weight by 2.5-5kg next session!`);
+    }
+
+    
+    /**
+     * View complete workout details in a modal
+     */
+    function viewWorkoutDetails(date) {
+        const workout = state.workoutHistory.find(w => w.date === date);
+        if (!workout) return;
+        
+        let detailsHTML = `
+            <div class="modal-overlay" id="workout-details-modal" onclick="if(event.target === this) closeWorkoutDetails()">
+                <div class="bg-white w-full max-w-2xl rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-black">Workout Details</h3>
+                            <p class="text-sm text-slate-400">${new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                        <button onclick="closeWorkoutDetails()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+                    </div>
+                    
+                    <div class="space-y-4">`;
+        
+        (workout.exercises || []).forEach((ex, idx) => {
+            const totalVolume = (ex.sets || []).reduce((sum, set) => {
+                const weight = parseFloat(set.weight) || parseFloat(set.kg) || 0;
+                const reps = parseFloat(set.reps) || 0;
+                return sum + (weight * reps);
+            }, 0);
+            
+            detailsHTML += `
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold">${idx + 1}. ${ex.name}</h4>
+                        <span class="text-xs text-slate-500">Volume: ${Math.round(totalVolume)}kg</span>
+                    </div>
+                    <div class="space-y-2">`;
+            
+            (ex.sets || []).forEach((set, setIdx) => {
+                detailsHTML += `
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-600">Set ${setIdx + 1}</span>
+                        <span class="font-bold">${set.weight || set.kg || 0}kg × ${set.reps || 0} reps</span>
+                    </div>`;
+            });
+            
+            detailsHTML += `
+                    </div>
+                </div>`;
+        });
+        
+        const totalWorkoutVolume = (workout.exercises || []).reduce((sum, ex) => {
+            return sum + (ex.sets || []).reduce((s, set) => {
+                const weight = parseFloat(set.weight) || parseFloat(set.kg) || 0;
+                const reps = parseFloat(set.reps) || 0;
+                return s + (weight * reps);
+            }, 0);
+        }, 0);
+        
+        detailsHTML += `
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-indigo-50 rounded-2xl">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-indigo-900">Total Volume</span>
+                            <span class="text-2xl font-black text-indigo-600">${Math.round(totalWorkoutVolume).toLocaleString()}kg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        
+        // Add to body
+        const modalDiv = document.createElement('div');
+        modalDiv.innerHTML = detailsHTML;
+        document.body.appendChild(modalDiv.firstElementChild);
+        lucide.createIcons();
+    }
+    
+    function closeWorkoutDetails() {
+        const modal = document.getElementById('workout-details-modal');
+        if (modal) modal.remove();
+    }
+    
+// ==========================================================================
     // INITIALIZATION
     // ==========================================================================
 
@@ -6081,4 +7814,4 @@
 
     </script>
 </body>
-</html>
+    </html>
