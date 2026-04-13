@@ -646,6 +646,21 @@
 
                     <div id="meal-sections"></div>
 
+                    <!-- Save Today's Nutrition Button -->
+                    <button onclick="openSaveNutritionModal()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 mt-6">
+                        <i data-lucide="save" class="w-5 h-5"></i>
+                        Save Today's Nutrition
+                    </button>
+
+                    <!-- Nutrition History Display -->
+                    <div class="glass-card p-6 rounded-2xl mt-6">
+                        <h3 class="font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="history" class="w-5 h-5"></i>
+                            Nutrition History
+                        </h3>
+                        <div id="nutrition-history-display" class="space-y-3"></div>
+                    </div>
+                    
                     <div class="text-center py-4 px-6 bg-indigo-50 rounded-2xl border border-indigo-100 mt-6">
                         <div class="flex items-center justify-center gap-2 mb-1">
                             <i data-lucide="clock" class="w-4 h-4 text-indigo-600"></i>
@@ -684,6 +699,11 @@
                         </button>
                     </div>
 
+                    <button onclick="openCopyPreviousDay()" class="w-full bg-purple-600 text-white p-4 rounded-2xl font-bold hover:bg-purple-700 flex items-center justify-center gap-2 mb-4">
+                        <i data-lucide="copy" class="w-5 h-5"></i>
+                        Copy from Previous Day
+                    </button>
+                    
                     <button onclick="openCreateMeal()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700">
                         Create Meal
                     </button>
@@ -1347,6 +1367,117 @@
             </div>
         </div>
     </div>
+   
+    <!-- SAVE NUTRITION MODAL -->
+    <div id="save-nutrition-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8">
+            <h2 class="text-2xl font-bold mb-4 text-center">Save Today's Nutrition</h2>
+            <p class="text-sm text-slate-600 mb-6 text-center">Select which date to record this nutrition log under</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Select Date</label>
+                    <input type="date" id="save-nutrition-date" class="w-full p-4 bg-slate-50 rounded-xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                </div>
+
+                <div class="bg-indigo-50 p-4 rounded-xl">
+                    <p class="text-xs font-bold text-indigo-600 uppercase mb-2">Today's Summary</p>
+                    <div class="space-y-1">
+                        <p class="text-sm"><span class="font-bold">Calories:</span> <span id="save-cal-preview">0</span> kcal</p>
+                        <p class="text-sm"><span class="font-bold">Protein:</span> <span id="save-protein-preview">0</span>g</p>
+                        <p class="text-sm"><span class="font-bold">Meals:</span> <span id="save-meals-preview">0</span></p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closeSaveNutritionModal()" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold hover:bg-slate-300">Cancel</button>
+                    <button onclick="confirmSaveNutrition()" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">Save Log</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COPY FROM PREVIOUS DAY MODAL -->
+    <div id="copy-previous-day-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Copy from Previous Day</h3>
+                <button onclick="closeCopyPreviousDay()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Select Date</label>
+                <select id="copy-date-select" onchange="loadPreviousDayMeals()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                    <option value="">Choose a date...</option>
+                </select>
+            </div>
+
+            <div id="previous-meals-list" class="space-y-3 mb-6"></div>
+
+            <div class="flex gap-3">
+                <button onclick="closeCopyPreviousDay()" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold">Cancel</button>
+                <button onclick="copySelectedMeals()" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold">Copy to Today</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT COPIED MEAL MODAL -->
+    <div id="edit-copied-meal-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Edit Portion</h3>
+                <button onclick="closeEditCopiedMeal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <div class="mb-6 text-center">
+                <img id="edit-meal-image" src="" class="w-24 h-24 object-contain mx-auto mb-4 rounded-xl bg-slate-50 p-2" onerror="this.src='https://via.placeholder.com/100'">
+                <h4 id="edit-meal-name" class="text-lg font-bold"></h4>
+                <p id="edit-meal-original" class="text-sm text-slate-500"></p>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Amount Type</label>
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-4">
+                    <button onclick="setEditAmountType('portion')" id="edit-amount-type-portion" class="flex-1 py-3 rounded-xl text-xs font-black uppercase bg-white shadow text-emerald-600">Portion</button>
+                    <button onclick="setEditAmountType('grams')" id="edit-amount-type-grams" class="flex-1 py-3 rounded-xl text-xs font-black uppercase text-slate-400">Grams</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Amount</label>
+                <input id="edit-meal-amount" type="number" value="1" min="0.1" step="0.1" class="w-full bg-slate-50 border-4 border-slate-200 rounded-[24px] py-5 text-4xl font-black text-center outline-none focus:border-emerald-500" oninput="updateEditPreview()">
+            </div>
+
+            <div class="bg-slate-900 text-white p-5 rounded-3xl mb-6">
+                <p class="text-[10px] font-black uppercase text-slate-400 text-center mb-3">Updated Totals</p>
+                <div class="flex justify-around items-center">
+                    <div class="text-center">
+                        <p id="edit-total-cals" class="font-black text-3xl mb-1">0</p>
+                        <p class="text-xs text-slate-400 uppercase">Calories</p>
+                    </div>
+                    <div class="w-px h-12 bg-slate-700"></div>
+                    <div class="text-center">
+                        <p id="edit-total-protein" class="font-black text-3xl text-emerald-400 mb-1">0g</p>
+                        <p class="text-xs text-slate-400 uppercase">Protein</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Meal Type</label>
+                <select id="edit-meal-type" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                    <option value="breakfast">Breakfast</option>
+                    <option value="lunch">Lunch</option>
+                    <option value="dinner">Dinner</option>
+                    <option value="snack">Snack</option>
+                </select>
+            </div>
+
+            <button onclick="saveEditedMeal()" class="w-full bg-emerald-600 text-white py-5 rounded-[24px] font-black hover:bg-emerald-700">
+                Add to Today
+            </button>
+        </div>
+    </div>
 
     <!-- CREATE MEAL MODAL -->
     <div id="create-meal-modal" class="modal-overlay">
@@ -1917,6 +2048,12 @@
             loadState();
             await loadFirebaseUserData();
 
+            // Initialize midnight check
+            setupMidnightCheck();
+            
+            // Render nutrition history
+            renderNutritionHistory();
+
             // Update UI
             const emailEl = document.getElementById('status-date');
             if (emailEl) emailEl.innerText = new Date().toLocaleDateString('en-US', {
@@ -2016,6 +2153,11 @@
     let workoutTimer = null;
     let workoutStartTime = null;
     let currentFoodItem = null;
+    let lastCheckDate = null;
+    let midnightCheckInterval = null;
+    let selectedPreviousMeals = [];
+    let currentEditingMeal = null;
+    let editAmountType = 'portion';
     let currentAmountType = 'portion';
     let searchResults = [];
     let mealIngredients = [];
@@ -2832,6 +2974,7 @@
 
         if (tab === 'diary') renderDiary();
         if (tab === 'search') renderCreatedMeals();
+        if (tab === 'diary') renderNutritionHistory();
     }
 
     function renderDiary() {
@@ -3737,6 +3880,446 @@
         closeCreateMeal();
         renderCreatedMeals();
     }
+        // ═══════════════════════════════════════════════════════════════
+    // MIDNIGHT AUTO-SAVE SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+
+    function setupMidnightCheck() {
+        midnightCheckInterval = setInterval(checkForMidnight, 60000); // Check every minute
+        checkForMidnight(); // Initial check
+    }
+
+    function checkForMidnight() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (lastCheckDate && lastCheckDate !== today) {
+            console.log('🌙 Midnight detected! Auto-saving yesterday\'s nutrition...');
+            autoSaveYesterdayNutrition(lastCheckDate);
+        }
+        
+        lastCheckDate = today;
+    }
+
+    async function autoSaveYesterdayNutrition(yesterdayDate) {
+        const yesterdayMeals = (state.dailyMeals || []).filter(m => m.date === yesterdayDate);
+        
+        if (yesterdayMeals.length === 0) {
+            console.log('No meals from yesterday to save');
+            return;
+        }
+
+        const totalCals = yesterdayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = yesterdayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        if (!state.nutritionHistory) state.nutritionHistory = [];
+        
+        state.nutritionHistory.unshift({
+            id: Date.now(),
+            date: yesterdayDate,
+            savedAt: new Date().toISOString(),
+            calories: totalCals,
+            protein: totalProtein,
+            meals: yesterdayMeals,
+            autoSaved: true
+        });
+
+        // Remove yesterday's meals from current meals
+        state.dailyMeals = state.dailyMeals.filter(m => m.date !== yesterdayDate);
+
+        saveState();
+        showToast(`📊 Yesterday's nutrition auto-saved (${Math.round(totalCals)} kcal)`);
+        renderNutritionHistory();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MANUAL SAVE NUTRITION
+    // ═══════════════════════════════════════════════════════════════
+
+    function openSaveNutritionModal() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = (state.dailyMeals || []).filter(m => m.date === today);
+        
+        if (todayMeals.length === 0) {
+            showToast('No meals logged today to save');
+            return;
+        }
+
+        const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        document.getElementById('save-nutrition-date').value = today;
+        document.getElementById('save-cal-preview').textContent = Math.round(totalCals);
+        document.getElementById('save-protein-preview').textContent = Math.round(totalProtein);
+        document.getElementById('save-meals-preview').textContent = todayMeals.length;
+
+        document.getElementById('save-nutrition-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeSaveNutritionModal() {
+        document.getElementById('save-nutrition-modal').style.display = 'none';
+    }
+
+    function confirmSaveNutrition() {
+        const selectedDate = document.getElementById('save-nutrition-date').value;
+        
+        if (!selectedDate) {
+            showToast('Please select a date');
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = (state.dailyMeals || []).filter(m => m.date === today);
+
+        if (todayMeals.length === 0) {
+            showToast('No meals to save');
+            closeSaveNutritionModal();
+            return;
+        }
+
+        const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        if (!state.nutritionHistory) state.nutritionHistory = [];
+        
+        // Remove any existing entry for this date
+        state.nutritionHistory = state.nutritionHistory.filter(h => h.date !== selectedDate);
+        
+        // Add new entry
+        state.nutritionHistory.unshift({
+            id: Date.now(),
+            date: selectedDate,
+            savedAt: new Date().toISOString(),
+            calories: totalCals,
+            protein: totalProtein,
+            meals: todayMeals,
+            autoSaved: false
+        });
+
+        // Clear today's meals
+        state.dailyMeals = state.dailyMeals.filter(m => m.date !== today);
+
+        saveState();
+        closeSaveNutritionModal();
+        showToast(`✓ Nutrition saved for ${selectedDate}`);
+        renderDiary();
+        renderDashboard();
+        renderNutritionHistory();
+    }
+
+    function renderNutritionHistory() {
+        const historyEl = document.getElementById('nutrition-history-display');
+        if (!historyEl) return;
+        
+        const history = state.nutritionHistory || [];
+        
+        if (history.length === 0) {
+            historyEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No saved nutrition logs yet</p>';
+            return;
+        }
+
+        const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const html = sorted.map(log => {
+            const date = new Date(log.date + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+            
+            return `
+                <div class="bg-slate-50 p-4 rounded-xl cursor-pointer hover:bg-slate-100 transition-all" onclick="viewNutritionLog(${log.id})">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold">${formattedDate}</p>
+                            <p class="text-xs text-slate-500">${log.autoSaved ? '🌙 Auto-saved' : '💾 Manually saved'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-indigo-600">${Math.round(log.calories)} kcal</p>
+                            <p class="text-xs text-slate-500">${Math.round(log.protein)}g protein</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400">${log.meals.length} meals logged</p>
+                </div>
+            `;
+        }).join('');
+        
+        historyEl.innerHTML = html;
+    }
+
+    function viewNutritionLog(logId) {
+        const log = (state.nutritionHistory || []).find(l => l.id === logId);
+        if (!log) return;
+
+        const date = new Date(log.date + 'T00:00:00');
+        const formattedDate = date.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+
+        let message = `📊 ${formattedDate}\n\n`;
+        message += `Total: ${Math.round(log.calories)} kcal\n`;
+        message += `Protein: ${Math.round(log.protein)}g\n\n`;
+        message += `Meals (${log.meals.length}):\n`;
+        log.meals.forEach((meal, i) => {
+            message += `${i + 1}. ${meal.name} - ${meal.calories} kcal\n`;
+        });
+
+        alert(message);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // COPY FROM PREVIOUS DAY
+    // ═══════════════════════════════════════════════════════════════
+
+    function openCopyPreviousDay() {
+        selectedPreviousMeals = [];
+        
+        // Get all unique dates that have meals
+        const datesWithMeals = new Set();
+        
+        // From daily meals
+        (state.dailyMeals || []).forEach(m => {
+            if (m.date) datesWithMeals.add(m.date);
+        });
+        
+        // From nutrition history
+        (state.nutritionHistory || []).forEach(h => {
+            if (h.date) datesWithMeals.add(h.date);
+        });
+        
+        // Convert to array and sort descending
+        const sortedDates = Array.from(datesWithMeals).sort((a, b) => b.localeCompare(a));
+        
+        // Remove today from options
+        const today = new Date().toISOString().split('T')[0];
+        const availableDates = sortedDates.filter(d => d !== today);
+        if (availableDates.length === 0) {
+            showToast('No previous days with meals found');
+            return;
+        }
+        
+        // Populate date dropdown
+        const select = document.getElementById('copy-date-select');
+        if (select) {
+            select.innerHTML = '<option value="">Choose a date...</option>' + 
+                availableDates.map(date => {
+                    const d = new Date(date + 'T00:00:00');
+                    const formatted = d.toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                    });
+                    return `<option value="${date}">${formatted}</option>`;
+                }).join('');
+        }
+        
+        document.getElementById('previous-meals-list').innerHTML = 
+            '<p class="text-sm text-slate-400 text-center py-8">Select a date above</p>';
+        document.getElementById('copy-previous-day-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeCopyPreviousDay() {
+        document.getElementById('copy-previous-day-modal').style.display = 'none';
+        selectedPreviousMeals = [];
+    }
+
+    function loadPreviousDayMeals() {
+        const selectedDate = document.getElementById('copy-date-select')?.value;
+        if (!selectedDate) return;
+        
+        // Get meals from that date
+        let mealsFromDate = [];
+        
+        // Check daily meals first
+        const dailyMeals = (state.dailyMeals || []).filter(m => m.date === selectedDate);
+        if (dailyMeals.length > 0) {
+            mealsFromDate = dailyMeals;
+        } else {
+            // Check nutrition history
+            const historyEntry = (state.nutritionHistory || []).find(h => h.date === selectedDate);
+            if (historyEntry && historyEntry.meals) {
+                mealsFromDate = historyEntry.meals;
+            }
+        }
+        
+        if (mealsFromDate.length === 0) {
+            document.getElementById('previous-meals-list').innerHTML = 
+                '<p class="text-sm text-slate-400 text-center py-8">No meals found for this date</p>';
+            return;
+        }
+        
+        // Render meals with checkboxes
+        const html = mealsFromDate.map((meal, idx) => {
+            const safeData = JSON.stringify(meal).replace(/"/g, '&quot;');
+            return `
+                <div class="bg-slate-50 p-4 rounded-xl flex items-center gap-4 border-2 border-transparent hover:border-indigo-200 transition-all">
+                    <input type="checkbox" 
+                           id="prev-meal-${idx}" 
+                           data-meal-index="${idx}"
+                           class="w-5 h-5 accent-indigo-600 cursor-pointer"
+                           onchange='togglePreviousMeal(${idx}, ${safeData})'>
+                    <img src="${meal.image || 'https://via.placeholder.com/100'}" 
+                         class="w-12 h-12 object-contain bg-white rounded-lg p-1 flex-shrink-0" 
+                         onerror="this.src='https://via.placeholder.com/100'">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-sm truncate">${meal.name}</p>
+                        <p class="text-xs text-slate-400">${meal.amount} • ${meal.calories}kcal • ${meal.protein}g protein</p>
+                        <p class="text-xs text-indigo-600 font-semibold">${meal.mealType || 'snack'}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('previous-meals-list').innerHTML = html;
+        lucide.createIcons();
+    }
+
+    function togglePreviousMeal(index, mealData) {
+        const checkbox = document.getElementById(`prev-meal-${index}`);
+        if (!checkbox) return;
+        
+        if (checkbox.checked) {
+            selectedPreviousMeals.push(mealData);
+        } else {
+            selectedPreviousMeals = selectedPreviousMeals.filter(m => 
+                !(m.name === mealData.name && m.calories === mealData.calories && m.date === mealData.date)
+            );
+        }
+    }
+
+    function copySelectedMeals() {
+        if (selectedPreviousMeals.length === 0) {
+            showToast('Please select at least one meal');
+            return;
+        }
+        
+        closeCopyPreviousDay();
+        
+        // Open edit modal for first meal
+        currentEditingMeal = { ...selectedPreviousMeals[0] };
+        selectedPreviousMeals.shift(); // Remove first meal from queue
+        
+        openEditCopiedMeal(currentEditingMeal);
+    }
+
+    function openEditCopiedMeal(meal) {
+        document.getElementById('edit-meal-image').src = meal.image || 'https://via.placeholder.com/100';
+        document.getElementById('edit-meal-name').textContent = meal.name;
+        document.getElementById('edit-meal-original').textContent = `Original: ${meal.amount} • ${meal.calories}kcal`;
+        document.getElementById('edit-meal-amount').value = 1;
+        document.getElementById('edit-meal-type').value = meal.mealType || 'dinner';
+        
+        editAmountType = 'portion';
+        setEditAmountType('portion');
+        updateEditPreview();
+        
+        document.getElementById('edit-copied-meal-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeEditCopiedMeal() {
+        document.getElementById('edit-copied-meal-modal').style.display = 'none';
+        currentEditingMeal = null;
+    }
+
+    function setEditAmountType(type) {
+        editAmountType = type;
+        const portionBtn = document.getElementById('edit-amount-type-portion');
+        const gramsBtn = document.getElementById('edit-amount-type-grams');
+        
+        if (portionBtn) {
+            portionBtn.className = `flex-1 py-3 rounded-xl text-xs font-black uppercase ${
+                type === 'portion' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'
+            }`;
+        }
+        if (gramsBtn) {
+            gramsBtn.className = `flex-1 py-3 rounded-xl text-xs font-black uppercase ${
+                type === 'grams' ? 'bg-white shadow text-emerald-600' : 'text-slate-400'
+            }`;
+        }
+        
+        updateEditPreview();
+    }
+
+    function updateEditPreview() {
+        if (!currentEditingMeal) return;
+        
+        const amount = parseFloat(document.getElementById('edit-meal-amount')?.value) || 0;
+        let multiplier = 1;
+        
+        if (editAmountType === 'portion') {
+            multiplier = amount;
+        } else {
+            // Grams mode - assume original was 100g base
+            multiplier = amount / 100;
+        }
+        
+        const newCals = Math.round(currentEditingMeal.calories * multiplier);
+        const newProtein = (parseFloat(currentEditingMeal.protein) * multiplier).toFixed(1);
+        
+        document.getElementById('edit-total-cals').textContent = newCals;
+        document.getElementById('edit-total-protein').textContent = newProtein + 'g';
+    }
+
+    function saveEditedMeal() {
+        if (!currentEditingMeal) return;
+        
+        const amount = parseFloat(document.getElementById('edit-meal-amount')?.value) || 0;
+        const mealType = document.getElementById('edit-meal-type')?.value || 'dinner';
+        
+        let multiplier = 1;
+        if (editAmountType === 'portion') {
+            multiplier = amount;
+        } else {
+            multiplier = amount / 100;
+        }
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Create new meal entry
+        const newMeal = {
+            id: Date.now() + Math.random(), // Ensure unique ID
+            date: today,
+            name: currentEditingMeal.name,
+            image: currentEditingMeal.image,
+            amount: editAmountType === 'portion' ? `${amount} portion(s)` : `${amount}g`,
+            calories: Math.round(currentEditingMeal.calories * multiplier),
+            protein: parseFloat((parseFloat(currentEditingMeal.protein) * multiplier).toFixed(1)),
+            carbs: parseFloat(((parseFloat(currentEditingMeal.carbs) || 0) * multiplier).toFixed(1)),
+            fat: parseFloat(((parseFloat(currentEditingMeal.fat) || 0) * multiplier).toFixed(1)),
+            fiber: parseFloat(((parseFloat(currentEditingMeal.fiber) || 0) * multiplier).toFixed(1)),
+            sugar: parseFloat(((parseFloat(currentEditingMeal.sugar) || 0) * multiplier).toFixed(1)),
+            sodium: parseFloat(((parseFloat(currentEditingMeal.sodium) || 0) * multiplier).toFixed(3)),
+            saturated_fat: parseFloat(((parseFloat(currentEditingMeal.saturated_fat) || 0) * multiplier).toFixed(1)),
+            cholesterol: parseFloat(((parseFloat(currentEditingMeal.cholesterol) || 0) * multiplier).toFixed(1)),
+            mealType: mealType,
+            source: currentEditingMeal.source || 'Copied'
+        };
+        
+        if (!state.dailyMeals) state.dailyMeals = [];
+        state.dailyMeals.push(newMeal);
+        
+        saveState();
+        closeEditCopiedMeal();
+        
+        // If there are more meals in queue, open next one
+        if (selectedPreviousMeals.length > 0) {
+            currentEditingMeal = { ...selectedPreviousMeals[0] };
+            selectedPreviousMeals.shift();
+            setTimeout(() => openEditCopiedMeal(currentEditingMeal), 300);
+        } else {
+            // All done
+            setNutritionTab('diary');
+            renderDashboard();
+            showToast('Meals copied to today! 🍽️');
+        }
+        }
 
     // ==========================================================================
     // LOGS
@@ -3872,52 +4455,116 @@
         }
     });
 
-    function saveMetrics() {
-        const weight = parseFloat(document.getElementById('metric-weight')?.value);
-        if (!weight) { showToast('Please enter weight'); return; }
-
-        const metricsDate = state.metricsDate || new Date().toISOString().split('T')[0];
-        const existingIndex = (state.metricsHistory || []).findIndex(m => m.date === metricsDate);
-
-        const metricsData = {
-            id: existingIndex >= 0 ? state.metricsHistory[existingIndex].id : Date.now(),
-            date: metricsDate,
-            weight,
-            chest: parseFloat(document.getElementById('metric-chest')?.value) || 0,
-            shoulders: parseFloat(document.getElementById('metric-shoulders')?.value) || 0,
-            arms: parseFloat(document.getElementById('metric-arms')?.value) || 0,
-            waist: parseFloat(document.getElementById('metric-waist')?.value) || 0,
-            legs: parseFloat(document.getElementById('metric-legs')?.value) || 0,
-            glutes: parseFloat(document.getElementById('metric-glutes')?.value) || 0,
-            photos: { ...state.currentPhotos }
-        };
-
-        if (!state.metricsHistory) state.metricsHistory = [];
-        if (existingIndex >= 0) {
-            state.metricsHistory[existingIndex] = metricsData;
-            showToast('Metrics updated!');
-        } else {
-            state.metricsHistory.unshift(metricsData);
-            showToast('Metrics saved! 📊');
-        }
-
-        saveState();
-        renderDashboard();
-        populateComparisonDates();
-
-        ['weight', 'chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].forEach(f => {
-            const el = document.getElementById(`metric-${f}`);
-            if (el) el.value = '';
-        });
-        state.currentPhotos = { front: null, side: null, back: null };
-        ['front', 'side', 'back'].forEach(t => {
-            const img = document.getElementById(`photo-${t}-preview`);
-            if (img) img.classList.add('hidden');
-        });
-
-        const today = new Date().toISOString().split('T')[0];
-        if (metricsDate !== today) selectMetricsDate(today);
+   function saveMetrics() {
+    const weight = parseFloat(document.getElementById('metric-weight')?.value);
+    const chest = parseFloat(document.getElementById('metric-chest')?.value);
+    const shoulders = parseFloat(document.getElementById('metric-shoulders')?.value);
+    const arms = parseFloat(document.getElementById('metric-arms')?.value);
+    const waist = parseFloat(document.getElementById('metric-waist')?.value);
+    const legs = parseFloat(document.getElementById('metric-legs')?.value);
+    const glutes = parseFloat(document.getElementById('metric-glutes')?.value);
+    
+    // Check if at least ONE field has data
+    const hasWeight = weight && !isNaN(weight);
+    const hasMeasurements = (chest && !isNaN(chest)) || 
+                           (shoulders && !isNaN(shoulders)) || 
+                           (arms && !isNaN(arms)) || 
+                           (waist && !isNaN(waist)) || 
+                           (legs && !isNaN(legs)) || 
+                           (glutes && !isNaN(glutes));
+    const hasPhotos = state.currentPhotos && 
+                     (state.currentPhotos.front || state.currentPhotos.side || state.currentPhotos.back);
+    
+    if (!hasWeight && !hasMeasurements && !hasPhotos) {
+        showToast('Please enter at least weight, measurements, or photos');
+        return;
     }
+    
+    const metricsDate = state.metricsDate || new Date().toISOString().split('T')[0];
+    const existingIndex = (state.metricsHistory || []).findIndex(m => m.date === metricsDate);
+    
+    // Build metrics data - only include fields that have values
+    const metricsData = {
+        id: existingIndex >= 0 ? state.metricsHistory[existingIndex].id : Date.now(),
+        date: metricsDate
+    };
+    
+    // Add weight if provided
+    if (hasWeight) {
+        metricsData.weight = weight;
+    } else if (existingIndex >= 0 && state.metricsHistory[existingIndex].weight) {
+        // Keep existing weight if updating and not providing new weight
+        metricsData.weight = state.metricsHistory[existingIndex].weight;
+    }
+    
+    // Add measurements only if provided (don't default to 0)
+    if (chest && !isNaN(chest)) metricsData.chest = chest;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].chest) {
+        metricsData.chest = state.metricsHistory[existingIndex].chest;
+    }
+    
+    if (shoulders && !isNaN(shoulders)) metricsData.shoulders = shoulders;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].shoulders) {
+        metricsData.shoulders = state.metricsHistory[existingIndex].shoulders;
+    }
+    
+    if (arms && !isNaN(arms)) metricsData.arms = arms;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].arms) {
+        metricsData.arms = state.metricsHistory[existingIndex].arms;
+    }
+    
+    if (waist && !isNaN(waist)) metricsData.waist = waist;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].waist) {
+        metricsData.waist = state.metricsHistory[existingIndex].waist;
+    }
+    
+    if (legs && !isNaN(legs)) metricsData.legs = legs;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].legs) {
+        metricsData.legs = state.metricsHistory[existingIndex].legs;
+    }
+    
+    if (glutes && !isNaN(glutes)) metricsData.glutes = glutes;
+    else if (existingIndex >= 0 && state.metricsHistory[existingIndex].glutes) {
+        metricsData.glutes = state.metricsHistory[existingIndex].glutes;
+    }
+    
+    // Add photos if provided
+    if (hasPhotos) {
+        metricsData.photos = { ...state.currentPhotos };
+    } else if (existingIndex >= 0 && state.metricsHistory[existingIndex].photos) {
+        // Keep existing photos if updating and not providing new photos
+        metricsData.photos = state.metricsHistory[existingIndex].photos;
+    }
+    
+    if (!state.metricsHistory) state.metricsHistory = [];
+    
+    if (existingIndex >= 0) {
+        state.metricsHistory[existingIndex] = metricsData;
+        showToast('Metrics updated! 📊');
+    } else {
+        state.metricsHistory.unshift(metricsData);
+        showToast('Metrics saved! 📊');
+    }
+    
+    saveState();
+    renderDashboard();
+    populateComparisonDates();
+    
+    // Clear form
+    ['weight', 'chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].forEach(f => {
+        const el = document.getElementById(`metric-${f}`);
+        if (el) el.value = '';
+    });
+    
+    state.currentPhotos = { front: null, side: null, back: null };
+    ['front', 'side', 'back'].forEach(t => {
+        document.getElementById(`photo-${t}-preview`)?.classList.add('hidden');
+    });
+    
+    const today = new Date().toISOString().split('T')[0];
+    if (metricsDate !== today) selectMetricsDate(today);
+
+        } 
 
     function populateComparisonDates() {
         const dates = (state.metricsHistory || [])
@@ -7809,6 +8456,7 @@
         if (!currentUser) {
             loadState();
         }
+         window.addEventListener('focus', checkForMidnight);
     });
 
     // Initialize Firebase Authentication observer
