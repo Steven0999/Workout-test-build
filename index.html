@@ -645,7 +645,7 @@
                     </div>
 
                     <div id="meal-sections"></div>
-                    
+
                     <!-- Save Today's Nutrition Button -->
                     <button onclick="openSaveNutritionModal()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 mt-6">
                         <i data-lucide="save" class="w-5 h-5"></i>
@@ -1367,7 +1367,8 @@
             </div>
         </div>
     </div>
-                <!-- SAVE NUTRITION MODAL -->
+   
+    <!-- SAVE NUTRITION MODAL -->
     <div id="save-nutrition-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8">
             <h2 class="text-2xl font-bold mb-4 text-center">Save Today's Nutrition</h2>
@@ -1477,7 +1478,7 @@
             </button>
         </div>
     </div>
-            
+
     <!-- CREATE MEAL MODAL -->
     <div id="create-meal-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
@@ -3879,7 +3880,231 @@
         closeCreateMeal();
         renderCreatedMeals();
     }
-        // ═══        if (select) {
+        // ═══════════════════════════════════════════════════════════════
+    // MIDNIGHT AUTO-SAVE SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+
+    function setupMidnightCheck() {
+        midnightCheckInterval = setInterval(checkForMidnight, 60000); // Check every minute
+        checkForMidnight(); // Initial check
+    }
+
+    function checkForMidnight() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (lastCheckDate && lastCheckDate !== today) {
+            console.log('🌙 Midnight detected! Auto-saving yesterday\'s nutrition...');
+            autoSaveYesterdayNutrition(lastCheckDate);
+        }
+        
+        lastCheckDate = today;
+    }
+
+    async function autoSaveYesterdayNutrition(yesterdayDate) {
+        const yesterdayMeals = (state.dailyMeals || []).filter(m => m.date === yesterdayDate);
+        
+        if (yesterdayMeals.length === 0) {
+            console.log('No meals from yesterday to save');
+            return;
+        }
+
+        const totalCals = yesterdayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = yesterdayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        if (!state.nutritionHistory) state.nutritionHistory = [];
+        
+        state.nutritionHistory.unshift({
+            id: Date.now(),
+            date: yesterdayDate,
+            savedAt: new Date().toISOString(),
+            calories: totalCals,
+            protein: totalProtein,
+            meals: yesterdayMeals,
+            autoSaved: true
+        });
+
+        // Remove yesterday's meals from current meals
+        state.dailyMeals = state.dailyMeals.filter(m => m.date !== yesterdayDate);
+
+        saveState();
+        showToast(`📊 Yesterday's nutrition auto-saved (${Math.round(totalCals)} kcal)`);
+        renderNutritionHistory();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MANUAL SAVE NUTRITION
+    // ═══════════════════════════════════════════════════════════════
+
+    function openSaveNutritionModal() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = (state.dailyMeals || []).filter(m => m.date === today);
+        
+        if (todayMeals.length === 0) {
+            showToast('No meals logged today to save');
+            return;
+        }
+
+        const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        document.getElementById('save-nutrition-date').value = today;
+        document.getElementById('save-cal-preview').textContent = Math.round(totalCals);
+        document.getElementById('save-protein-preview').textContent = Math.round(totalProtein);
+        document.getElementById('save-meals-preview').textContent = todayMeals.length;
+
+        document.getElementById('save-nutrition-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeSaveNutritionModal() {
+        document.getElementById('save-nutrition-modal').style.display = 'none';
+    }
+
+    function confirmSaveNutrition() {
+        const selectedDate = document.getElementById('save-nutrition-date').value;
+        
+        if (!selectedDate) {
+            showToast('Please select a date');
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const todayMeals = (state.dailyMeals || []).filter(m => m.date === today);
+
+        if (todayMeals.length === 0) {
+            showToast('No meals to save');
+            closeSaveNutritionModal();
+            return;
+        }
+
+        const totalCals = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = todayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+        if (!state.nutritionHistory) state.nutritionHistory = [];
+        
+        // Remove any existing entry for this date
+        state.nutritionHistory = state.nutritionHistory.filter(h => h.date !== selectedDate);
+        
+        // Add new entry
+        state.nutritionHistory.unshift({
+            id: Date.now(),
+            date: selectedDate,
+            savedAt: new Date().toISOString(),
+            calories: totalCals,
+            protein: totalProtein,
+            meals: todayMeals,
+            autoSaved: false
+        });
+
+        // Clear today's meals
+        state.dailyMeals = state.dailyMeals.filter(m => m.date !== today);
+
+        saveState();
+        closeSaveNutritionModal();
+        showToast(`✓ Nutrition saved for ${selectedDate}`);
+        renderDiary();
+        renderDashboard();
+        renderNutritionHistory();
+    }
+
+    function renderNutritionHistory() {
+        const historyEl = document.getElementById('nutrition-history-display');
+        if (!historyEl) return;
+        
+        const history = state.nutritionHistory || [];
+        
+        if (history.length === 0) {
+            historyEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No saved nutrition logs yet</p>';
+            return;
+        }
+
+        const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const html = sorted.map(log => {
+            const date = new Date(log.date + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+            
+            return `
+                <div class="bg-slate-50 p-4 rounded-xl cursor-pointer hover:bg-slate-100 transition-all" onclick="viewNutritionLog(${log.id})">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold">${formattedDate}</p>
+                            <p class="text-xs text-slate-500">${log.autoSaved ? '🌙 Auto-saved' : '💾 Manually saved'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-indigo-600">${Math.round(log.calories)} kcal</p>
+                            <p class="text-xs text-slate-500">${Math.round(log.protein)}g protein</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400">${log.meals.length} meals logged</p>
+                </div>
+            `;
+        }).join('');
+        
+        historyEl.innerHTML = html;
+    }
+
+    function viewNutritionLog(logId) {
+        const log = (state.nutritionHistory || []).find(l => l.id === logId);
+        if (!log) return;
+
+        const date = new Date(log.date + 'T00:00:00');
+        const formattedDate = date.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+
+        let message = `📊 ${formattedDate}\n\n`;
+        message += `Total: ${Math.round(log.calories)} kcal\n`;
+        message += `Protein: ${Math.round(log.protein)}g\n\n`;
+        message += `Meals (${log.meals.length}):\n`;
+        log.meals.forEach((meal, i) => {
+            message += `${i + 1}. ${meal.name} - ${meal.calories} kcal\n`;
+        });
+
+        alert(message);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // COPY FROM PREVIOUS DAY
+    // ═══════════════════════════════════════════════════════════════
+
+    function openCopyPreviousDay() {
+        selectedPreviousMeals = [];
+        
+        // Get all unique dates that have meals
+        const datesWithMeals = new Set();
+        
+        // From daily meals
+        (state.dailyMeals || []).forEach(m => {
+            if (m.date) datesWithMeals.add(m.date);
+        });
+        
+        // From nutrition history
+        (state.nutritionHistory || []).forEach(h => {
+            if (h.date) datesWithMeals.add(h.date);
+        });
+        
+        // Convert to array and sort descending
+        const sortedDates = Array.from(datesWithMeals).sort((a, b) => b.localeCompare(a));
+        
+        // Remove today from options
+        const today = new Date().toISOString().split('T')[0];
+        const availableDates = sortedDates.filter(d => d !== today);
+        if (availableDates.length === 0) {
+            showToast('No previous days with meals found');
+            return;
+        }
+        
+        // Populate date dropdown
+        const select = document.getElementById('copy-date-select');
+        if (select) {
             select.innerHTML = '<option value="">Choose a date...</option>' + 
                 availableDates.map(date => {
                     const d = new Date(date + 'T00:00:00');
@@ -4094,7 +4319,7 @@
             renderDashboard();
             showToast('Meals copied to today! 🍽️');
         }
-     }
+        }
 
     // ==========================================================================
     // LOGS
