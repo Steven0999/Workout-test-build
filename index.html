@@ -4153,14 +4153,13 @@
                 '<p class="text-sm text-slate-400 text-center py-8">No meals found for this date</p>';
             return;
         }
-        //Store meals globally for access by togglePreviousMeal
-        window.previousDayMeals = mealsFromDate;
         
         // Render meals with checkboxes
-        const html = mealsFromDate.map((meal, idx) => '
-            <div class="bg-slate-50 p-4 rounded-xl flex items-center gap-4 border-2 border-transparent haver:border-indego-200
-            transition-all">
-            <input type="checkbox" 
+        const html = mealsFromDate.map((meal, idx) => {
+            const safeData = JSON.stringify(meal).replace(/"/g, '&quot;');
+            return `
+                <div class="bg-slate-50 p-4 rounded-xl flex items-center gap-4 border-2 border-transparent hover:border-indigo-200 transition-all">
+                    <input type="checkbox" 
                            id="prev-meal-${idx}" 
                            data-meal-index="${idx}"
                            class="w-5 h-5 accent-indigo-600 cursor-pointer"
@@ -8472,4 +8471,4 @@
 
     </script>
 </body>
-    </html>
+        </html>
