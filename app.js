@@ -1,4 +1,77 @@
 // ==========================================================================
+// DEEP MERGE UTILITY  (must be first — used by state init below)
+// ==========================================================================
+function deepMerge(target, source) {
+    for (const key of Object.keys(source)) {
+        if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            target[key] = deepMerge(target[key] || {}, source[key]);
+        } else {
+            target[key] = source[key];
+        }
+    }
+    return target;
+}
+
+// ==========================================================================
+// STATE — declared here so every function below can reference it safely
+// ==========================================================================
+const DEFAULT_STATE = {
+    viewDate:    new Date().toISOString().split('T')[0],
+    metricsDate: new Date().toISOString().split('T')[0],
+    goals:       { calories: 2500, water: 2500, steps: 10000 },
+    waterLogs:   {}, stepsLogs: {},
+    dailyMeals:         [],
+    workoutHistory:     [],
+    nutritionHistory:   [],
+    metricsHistory:     [],
+    createdMeals:       [],
+    customFoods:        [],
+    workoutEnv:  'gym',
+    currentPhotos: { front: null, side: null, back: null },
+    habits:          [],
+    habitsEnabled:   false,
+    habitCompletions:         {},
+    hydrationGoalCompletions: {},
+    stepsGoalCompletions:     {},
+    trackHydration: true,
+    trackSteps:     true,
+    aiCoachEnabled: true,
+    userGoals:   [],
+    cardioLogs:  [],
+    hydrationLogs: {},
+    equipment: {
+        gym:  { 'Barbell': true,  'Dumbbells': true, 'Cable Machine': true, 'Leg Press': true, 'Pull Up Bar': true, 'Bench': true },
+        home: { 'Dumbbells': false, 'Resistance Bands': false, 'Pull Up Bar': false, 'Yoga Mat': true }
+    }
+};
+
+let state = deepMerge({}, DEFAULT_STATE);
+
+// Runtime vars
+let workoutTimer    = null;
+let workoutStartTime = null;
+let currentFoodItem = null;
+let lastCheckDate   = null;
+let midnightCheckInterval = null;
+let selectedPreviousMeals = [];
+let currentEditingMeal    = null;
+let editAmountType    = 'portion';
+let currentAmountType = 'portion';
+let searchResults  = [];
+let mealIngredients = [];
+let html5QrCode     = null;
+let metricsChart    = null;
+let exerciseProgressChart = null;
+let calorieTrackingChart  = null;
+let proteinTrackingChart  = null;
+let currentPhotoType      = null;
+let manualFoodImageData   = null;
+let currentCalorieView    = 'daily';
+let currentProteinView    = 'daily';
+let proteinGoal = 150;
+let currentComparePhotoType = 'front';
+
+// ==========================================================================
 // FIREBASE CONFIGURATION
 // ==========================================================================
 const firebaseConfig = {
@@ -198,79 +271,6 @@ function renderProfile() {
         document.getElementById('profile-created').textContent = 'Recently';
     }
     document.getElementById('profile-workouts').textContent = state.workoutHistory.length;
-}
-
-// ==========================================================================
-// STATE MANAGEMENT
-// ==========================================================================
-const DEFAULT_STATE = {
-    viewDate:    new Date().toISOString().split('T')[0],
-    metricsDate: new Date().toISOString().split('T')[0],
-    goals:       { calories: 2500, water: 2500, steps: 10000 },
-    waterLogs:   {}, stepsLogs: {},
-    dailyMeals:         [],
-    workoutHistory:     [],
-    nutritionHistory:   [],
-    metricsHistory:     [],
-    createdMeals:       [],
-    customFoods:        [],
-    workoutEnv:  'gym',
-    currentPhotos: { front: null, side: null, back: null },
-    habits:          [],
-    habitsEnabled:   false,
-    habitCompletions:         {},
-    hydrationGoalCompletions: {},
-    stepsGoalCompletions:     {},
-    trackHydration: true,
-    trackSteps:     true,
-    aiCoachEnabled: true,
-    userGoals:   [],
-    cardioLogs:  [],
-    hydrationLogs: {},
-    equipment: {
-        gym:  { 'Barbell': true,  'Dumbbells': true, 'Cable Machine': true, 'Leg Press': true, 'Pull Up Bar': true, 'Bench': true },
-        home: { 'Dumbbells': false, 'Resistance Bands': false, 'Pull Up Bar': false, 'Yoga Mat': true }
-    }
-};
-
-let state = deepMerge({}, DEFAULT_STATE);
-
-// Runtime vars
-let workoutTimer    = null;
-let workoutStartTime = null;
-let currentFoodItem = null;
-let lastCheckDate   = null;
-let midnightCheckInterval = null;
-let selectedPreviousMeals = [];
-let currentEditingMeal    = null;
-let editAmountType    = 'portion';
-let currentAmountType = 'portion';
-let searchResults  = [];
-let mealIngredients = [];
-let html5QrCode     = null;
-let metricsChart    = null;
-let exerciseProgressChart = null;
-let calorieTrackingChart  = null;
-let proteinTrackingChart  = null;
-let currentPhotoType      = null;
-let manualFoodImageData   = null;
-let currentCalorieView    = 'daily';
-let currentProteinView    = 'daily';
-let proteinGoal = 150;
-let currentComparePhotoType = 'front';
-
-// ==========================================================================
-// DEEP MERGE UTILITY
-// ==========================================================================
-function deepMerge(target, source) {
-    for (const key of Object.keys(source)) {
-        if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-            target[key] = deepMerge(target[key] || {}, source[key]);
-        } else {
-            target[key] = source[key];
-        }
-    }
-    return target;
 }
 
 // ==========================================================================
@@ -1848,4 +1848,4 @@ function renderMetricChart() {
 // EXERCISE PROGRESS CHART
 // ==========================================================================
 function openExerciseProgressModal() { document.getElementById('exercise-progress-modal').style.display='flex'; populateExerciseDropdown(); lucide.createIcons(); }
-function closeExerciseProgressModal() { document.getElementById('exercise-progress-modal').style.display='no
+function cl
