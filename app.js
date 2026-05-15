@@ -2,13 +2,13 @@
 // FIREBASE CONFIGURATION
 // ==========================================================================
 const firebaseConfig = {
-    apiKey: "AIzaSyA9H9hmvfrQmc2wIwnS2jCPLgdmXBquQXM",
-    authDomain: "vfit-app-pro.firebaseapp.com",
-    projectId: "vfit-app-pro",
-    storageBucket: "vfit-app-pro.firebasestorage.app",
-    messagingSenderId: "815730068689",
-    appId: "1:815730068689:web:0c6587d7dbe62b0f3c09f0",
-    measurementId: "G-74L12X0NE8"
+  apiKey: "AIzaSyA9H9hmvfrQmc2wIwnS2jCPLgdmXBquQXM",
+  authDomain: "vfit-app-pro.firebaseapp.com",
+  projectId: "vfit-app-pro",
+  storageBucket: "vfit-app-pro.firebasestorage.app",
+  messagingSenderId: "815730068689",
+  appId: "1:815730068689:web:0c6587d7dbe62b0f3c09f0",
+  measurementId: "G-74L12X0NE8"
 };
 
 firebase.initializeApp(firebaseConfig);
