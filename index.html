@@ -998,7 +998,7 @@
                     <button onclick="switchTab('dashboard'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
                         <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
                             <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-600"></i>
-                                                    </div>
+                        </div>
                         <span class="font-bold text-slate-700">Dashboard</span>
                     </button>
                     <button onclick="switchTab('training'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
@@ -2138,6 +2138,13 @@
                     gym: Object.assign({}, DEFAULT_STATE.equipment.gym, (parsed.equipment && parsed.equipment.gym) || {}),
                     home: Object.assign({}, DEFAULT_STATE.equipment.home, (parsed.equipment && parsed.equipment.home) || {})
                 };
+                // Migration: older versions may have saved meals with field `type` instead of `mealType`.
+                // Normalize so the diary shows them under the right section.
+                if (Array.isArray(state.dailyMeals)) {
+                    state.dailyMeals.forEach(m => {
+                        if (!m.mealType && m.type) m.mealType = m.type;
+                    });
+                }
             }
         } catch (e) {
             console.error('Load error:', e);
@@ -2941,7 +2948,7 @@
         if (!sections) return;
 
         sections.innerHTML = mealTypes.map(type => {
-            const meals = todayMeals.filter(m => m.type === type);
+            const meals = todayMeals.filter(m => m.mealType === type);
             const totalCal = meals.reduce((s, m) => s + (m.calories || 0), 0);
 
             return `
@@ -3755,7 +3762,7 @@
                 <input type="checkbox" data-idx="${i}" data-meal-id="${m.id}" onchange="togglePreviousMeal(this, ${i}, '${date}')" class="w-5 h-5 accent-indigo-600">
                 <div class="flex-1">
                     <p class="font-bold text-sm">${m.name}</p>
-                    <p class="text-xs text-slate-400">${m.type} • ${Math.round(m.calories || 0)} kcal</p>
+                    <p class="text-xs text-slate-400">${m.mealType} • ${Math.round(m.calories || 0)} kcal</p>
                 </div>
                 <button onclick="editPreviousMealItem(${i}, '${date}'); event.preventDefault();" class="text-xs text-indigo-600 font-bold">Edit</button>
             </label>
@@ -4998,7 +5005,6 @@
         const notes = document.getElementById('cardio-notes').value.trim();
 
         if (!duration || duration <= 0) { showToast('Enter duration'); return; }
-
 
         if (!state.cardioLogs) state.cardioLogs = [];
         state.cardioLogs.unshift({
