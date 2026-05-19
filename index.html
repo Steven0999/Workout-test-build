@@ -2430,6 +2430,7 @@
                 'Barbell': true,
                 'Dumbbells': true,
                 'Cable Machine': true,
+                'Weighted Machine': true,
                 'Leg Press': true,
                 'Pull Up Bar': true,
                 'Bench': true
@@ -2657,64 +2658,64 @@
     const EXERCISE_DB = {
         gym: {
             'Full Body': {
-                compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press'],
-                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise']
+                compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press', 'Romanian Deadlift', 'Leg Press', 'Barbell Row'],
+                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise', 'Cable Flyes', 'Face Pulls']
             },
             'Upper': {
-                compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips'],
-                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Face Pulls', 'Cable Flyes']
+                compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips', 'Incline Press', 'Lat Pulldown', 'Chest Press Machine', 'Shoulder Press Machine', 'Seated Row Machine'],
+                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Face Pulls', 'Cable Flyes', 'Pec Deck', 'Reverse Flyes', 'Hammer Curl']
             },
             'Lower': {
-                compound: ['Barbell Squat', 'Romanian Deadlift', 'Leg Press', 'Lunges'],
-                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Abduction', 'Glute Kickback']
+                compound: ['Barbell Squat', 'Romanian Deadlift', 'Leg Press', 'Lunges', 'Hack Squat', 'Bulgarian Split Squat', 'Hip Thrust', 'Front Squat'],
+                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Abduction', 'Glute Kickback', 'Adductor Machine', 'Standing Calf Raise', 'Seated Calf Raise']
             },
             'Push': {
-                compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips'],
-                isolation: ['Tricep Pushdown', 'Lateral Raise', 'Cable Flyes', 'Skull Crushers']
+                compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Decline Bench Press', 'Close Grip Bench Press'],
+                isolation: ['Tricep Pushdown', 'Lateral Raise', 'Cable Flyes', 'Skull Crushers', 'Pec Deck', 'Overhead Tricep Extension', 'Front Raise', 'Dumbbell Flyes']
             },
             'Pull': {
-                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row'],
-                isolation: ['Bicep Curl', 'Face Pulls', 'Hammer Curl', 'Cable Row']
+                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
+                isolation: ['Bicep Curl', 'Face Pulls', 'Hammer Curl', 'Cable Row', 'Preacher Curl', 'Reverse Flyes', 'Straight Arm Pulldown', 'Cable Curl']
             },
             'Legs': {
-                compound: ['Squat', 'Deadlift', 'Leg Press', 'Lunges'],
-                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust']
+                compound: ['Squat', 'Deadlift', 'Leg Press', 'Lunges', 'Romanian Deadlift', 'Hack Squat', 'Bulgarian Split Squat', 'Front Squat'],
+                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust', 'Hip Abduction', 'Adductor Machine', 'Standing Calf Raise', 'Glute Kickback']
             },
             'Chest': {
-                compound: ['Bench Press', 'Incline Press', 'Dumbbell Press'],
-                isolation: ['Cable Flyes', 'Pec Deck', 'Dumbbell Flyes']
+                compound: ['Bench Press', 'Incline Press', 'Dumbbell Press', 'Chest Press Machine', 'Decline Bench Press', 'Incline Dumbbell Press', 'Dips'],
+                isolation: ['Cable Flyes', 'Pec Deck', 'Dumbbell Flyes', 'Incline Dumbbell Flyes', 'Cable Crossover', 'Low to High Cable Flyes']
             },
             'Back': {
-                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row'],
-                isolation: ['Cable Row', 'Face Pulls', 'Straight Arm Pulldown']
+                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
+                isolation: ['Cable Row', 'Face Pulls', 'Straight Arm Pulldown', 'Reverse Flyes', 'Single Arm Lat Pulldown', 'Machine Pullover']
             },
             'Shoulders': {
-                compound: ['Overhead Press', 'Arnold Press'],
-                isolation: ['Lateral Raise', 'Front Raise', 'Face Pulls', 'Reverse Flyes']
+                compound: ['Overhead Press', 'Arnold Press', 'Shoulder Press Machine', 'Seated Dumbbell Press', 'Push Press'],
+                isolation: ['Lateral Raise', 'Front Raise', 'Face Pulls', 'Reverse Flyes', 'Cable Lateral Raise', 'Rear Delt Machine', 'Upright Row']
             },
             'Biceps': {
-                compound: ['Chin Ups'],
-                isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl']
+                compound: ['Chin Ups', 'Close Grip Pull Ups', 'Underhand Barbell Row', 'Machine Bicep Curl'],
+                isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl']
             },
             'Triceps': {
-                compound: ['Close Grip Bench Press', 'Dips'],
-                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension']
+                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press'],
+                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension']
             },
             'Quads': {
-                compound: ['Squat', 'Leg Press', 'Lunges'],
-                isolation: ['Leg Extension', 'Sissy Squat']
+                compound: ['Squat', 'Leg Press', 'Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat'],
+                isolation: ['Leg Extension', 'Sissy Squat', 'Step Ups', 'Single Leg Extension', 'Walking Lunges']
             },
             'Hamstrings': {
-                compound: ['Romanian Deadlift', 'Good Morning'],
-                isolation: ['Leg Curl', 'Nordic Curl']
+                compound: ['Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift'],
+                isolation: ['Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through']
             },
             'Glutes': {
-                compound: ['Hip Thrust', 'Bulgarian Split Squat'],
-                isolation: ['Cable Kickback', 'Hip Abduction', 'Glute Bridge']
+                compound: ['Hip Thrust', 'Bulgarian Split Squat', 'Sumo Deadlift', 'Romanian Deadlift', 'Walking Lunges'],
+                isolation: ['Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps']
             },
             'Calves': {
-                compound: [],
-                isolation: ['Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise']
+                compound: ['Smith Machine Calf Raise', 'Leg Press Calf Raise', 'Calf Press Machine', 'Weighted Box Jumps'],
+                isolation: ['Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Single Leg Calf Raise', 'Tibialis Raise']
             }
         },
         home: {
@@ -2781,26 +2782,18 @@
         }
     };
 
-    const ALL_EXERCISES = [
-        'Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press',
-        'Dumbbell Press', 'Incline Press', 'Dips', 'Barbell Row', 'Lat Pulldown',
-        'T-Bar Row', 'Romanian Deadlift', 'Leg Press', 'Lunges', 'Good Morning',
-        'Hip Thrust', 'Bulgarian Split Squat', 'Arnold Press', 'Close Grip Bench Press',
-        'Resistance Bands Deadlift', 'Resistance Bands Squats', 'Resistance Bands Back Rows',
-        'Resistance Bands Bicep Curls', 'Resistance Bands Tricep Extension', 'Resistand Bands Reverse Lunges',
-        'Resistance Bands Lateral Shoulder Raises',
-        'Chin Ups', 'Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl',
-        'Calf Raise', 'Face Pulls', 'Cable Flyes', 'Leg Extension', 'Hip Abduction',
-        'Glute Kickback', 'Cable Row', 'Hammer Curl', 'Skull Crushers', 'Pec Deck',
-        'Dumbbell Flyes', 'Front Raise', 'Reverse Flyes', 'Preacher Curl', 'Cable Curl',
-        'Overhead Extension', 'Sissy Squat', 'Nordic Curl', 'Cable Kickback', 'Glute Bridge',
-        'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Straight Arm Pulldown',
-        'Push Ups', 'Bodyweight Squat', 'Burpees', 'Pike Push Ups', 'Inverted Row',
-        'Step Ups', 'Donkey Kicks', 'Diamond Push Ups', 'Shoulder Taps', 'Superman',
-        'Reverse Snow Angels', 'Bicep Holds', 'Jump Squat', 'Plank', 'Crunches',
-        'Leg Raises', 'Tricep Dips', 'Plank to Push Up', 'Barbell Curl',
-        'Dumbbell Row'
-    ].filter((v, i, a) => a.indexOf(v) === i).sort();
+    // ALL_EXERCISES is auto-derived from EXERCISE_DB so any new exercise added to the DB
+    // automatically appears in the dropdown picker without needing to update this list manually.
+    const ALL_EXERCISES = (function () {
+        const set = new Set();
+        Object.values(EXERCISE_DB).forEach(env => {
+            Object.values(env).forEach(group => {
+                (group.compound || []).forEach(ex => set.add(ex));
+                (group.isolation || []).forEach(ex => set.add(ex));
+            });
+        });
+        return Array.from(set).sort();
+    })();
 
     const CARDIO_EXERCISES = ['Treadmill', 'Rowing Machine', 'Stationary Bike', 'Elliptical', 'Stair Climber'];
     const CORE_EXERCISES = ['Plank', 'Crunches', 'Russian Twists', 'Leg Raises', 'Mountain Climbers', 'Dead Bug'];
@@ -3963,20 +3956,48 @@
         const modal = document.getElementById('barcode-scanner-modal');
         modal.style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("barcode-reader");
-        Html5Qrcode.getCameras().then(cams => {
-            if (cams && cams.length > 0) {
-                html5QrCode.start(
-                    cams[0].id,
-                    { fps: 10, qrbox: { width: 250, height: 100 } },
-                    async (decodedText) => {
-                        await html5QrCode.stop();
-                        document.getElementById('manual-barcode').value = decodedText;
-                        lookupBarcode();
-                    },
-                    () => {}
-                ).catch(err => { console.warn('Scanner failed:', err); });
-            }
-        }).catch(err => { console.warn('Camera access denied:', err); });
+
+        const config = { fps: 10, qrbox: { width: 250, height: 100 } };
+
+        const onScan = async (decodedText) => {
+            try { await html5QrCode.stop(); } catch (e) {}
+            document.getElementById('manual-barcode').value = decodedText;
+            lookupBarcode();
+        };
+
+        // Strict back-camera-only policy. Try in order of strictness:
+        // 1. exact: "environment"  — hard requirement, fails fast if no back camera
+        // 2. ideal: "environment"  — softer hint, in case the browser rejects `exact`
+        // 3. Enumerate cameras and pick one whose label clearly says back/rear
+        // If none of these find a back camera, we refuse to start rather than
+        // silently falling back to the front (selfie) camera.
+
+        html5QrCode.start({ facingMode: { exact: "environment" } }, config, onScan, () => {})
+            .catch(() => {
+                return html5QrCode.start({ facingMode: { ideal: "environment" } }, config, onScan, () => {});
+            })
+            .catch(() => {
+                return Html5Qrcode.getCameras().then(cams => {
+                    if (!cams || cams.length === 0) {
+                        throw new Error('no-camera');
+                    }
+                    const backCam = cams.find(c => /back|rear|environment/i.test(c.label || ''));
+                    if (!backCam) {
+                        throw new Error('no-back-camera');
+                    }
+                    return html5QrCode.start(backCam.id, config, onScan, () => {});
+                });
+            })
+            .catch(err => {
+                console.warn('Back camera unavailable:', err);
+                if (err && err.message === 'no-camera') {
+                    showToast('No camera found — enter barcode manually', 5000);
+                } else if (err && err.message === 'no-back-camera') {
+                    showToast('No back camera detected — enter barcode manually', 5000);
+                } else {
+                    showToast('Back camera unavailable — enter barcode manually', 5000);
+                }
+            });
     }
 
     async function closeBarcodeScanner() {
