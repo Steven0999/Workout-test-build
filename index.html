@@ -902,6 +902,38 @@
             <!-- ============================== -->
             <section id="settings" class="tab-content space-y-6">
                 <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
+                    <!-- ABOUT YOU - opens modal with profile questions -->
+                    <div>
+                        <h3 class="text-[11px] font-black uppercase text-slate-400 mb-3">About You</h3>
+                        <button onclick="openAboutYouModal()" class="w-full bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 p-4 rounded-2xl flex items-center justify-between hover:from-indigo-100 hover:to-purple-100 transition-all active:scale-[0.98]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="user-cog" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-black text-sm text-slate-900">Profile & Body Stats</p>
+                                    <p id="about-you-status" class="text-xs text-slate-500">Tap to set up</p>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                        </button>
+
+                        <!-- Maintenance calorie summary card (only visible once profile is complete) -->
+                        <div id="maintenance-display" class="hidden mt-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 p-4 rounded-2xl">
+                            <p class="text-[10px] font-black uppercase text-indigo-700 mb-2">Your Maintenance Calories</p>
+                            <p class="text-3xl font-black text-indigo-900 mb-1"><span id="maintenance-value">--</span> kcal/day</p>
+                            <p id="maintenance-explanation" class="text-xs text-slate-600 mb-3">Based on Mifflin-St Jeor equation</p>
+                            <div id="bmi-display" class="hidden mb-3 pt-3 border-t border-indigo-200">
+                                <p class="text-[10px] font-black uppercase text-indigo-700 mb-1">BMI</p>
+                                <p class="text-lg font-black"><span id="bmi-value">--</span> <span id="bmi-category" class="text-xs font-bold ml-2"></span></p>
+                            </div>
+                            <button onclick="applyMaintenanceAsCalorieGoal()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700">
+                                Use as Calorie Goal
+                            </button>
+                            <p id="goal-adjusted-note" class="hidden mt-2 text-xs text-emerald-700 font-bold text-center"></p>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Daily Calorie Goal</label>
                         <input id="calorie-goal-input" type="number" value="2500" class="w-full bg-slate-50 p-4 rounded-2xl font-bold outline-none" onchange="updateCalorieGoal(this.value)">
@@ -981,7 +1013,6 @@
             </section>
 
         </main>
-
         <!-- ========================================== -->
         <!-- SIDEBAR -->
         <!-- ========================================== -->
@@ -1143,28 +1174,191 @@
     </div>
 
     <!-- GOAL SETTING MODAL -->
+    <!-- ABOUT YOU MODAL -->
+    <div id="about-you-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black">About You</h3>
+                    <p class="text-xs text-slate-400 mt-1">Helps calculate your maintenance calories</p>
+                </div>
+                <button onclick="closeAboutYouModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Gender</label>
+                        <select id="profile-gender" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Age</label>
+                        <input id="profile-age" type="number" min="13" max="100" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm" placeholder="e.g. 28">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Height (cm)</label>
+                        <input id="profile-height" type="number" min="100" max="250" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm" placeholder="e.g. 175">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Years Training</label>
+                        <input id="profile-years-training" type="number" min="0" max="60" step="0.5" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm" placeholder="e.g. 2">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Activity Level</label>
+                    <select id="profile-activity" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
+                        <option value="">Select...</option>
+                        <option value="sedentary">Sedentary (desk job, no exercise)</option>
+                        <option value="light">Lightly active (1-3 workouts/week)</option>
+                        <option value="moderate">Moderately active (3-5 workouts/week)</option>
+                        <option value="active">Very active (6-7 workouts/week)</option>
+                        <option value="very_active">Extremely active (physical job + training)</option>
+                    </select>
+                </div>
+                <p id="experience-level-display" class="text-xs text-slate-500 italic"></p>
+
+                <p class="text-[10px] text-slate-400 italic pt-2 border-t border-slate-100">
+                    Your current weight is taken from the latest entry in the Metrics tab.
+                </p>
+            </div>
+
+            <button onclick="saveAboutYou()" class="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black hover:bg-indigo-700 mb-3">
+                Save
+            </button>
+            <button onclick="closeAboutYouModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
+
     <div id="goal-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black">Set Goal</h3>
                 <button onclick="closeGoalModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
             </div>
-            <div class="mb-4">
-                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Goal Type</label>
-                <select id="goal-type" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
-                    <option value="short">Short-term (1-4 weeks)</option>
-                    <option value="medium">Medium-term (1-3 months)</option>
-                    <option value="long">Long-term (3+ months)</option>
-                </select>
+
+            <!-- FOCUS PICKER -->
+            <div class="mb-5">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Focus</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="setGoalFocus('weight_loss')" id="focus-weight_loss" class="p-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        🔥<br>Weight Loss
+                    </button>
+                    <button type="button" onclick="setGoalFocus('muscle_gain')" id="focus-muscle_gain" class="p-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        💪<br>Muscle Gain
+                    </button>
+                    <button type="button" onclick="setGoalFocus('health')" id="focus-health" class="p-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        🌱<br>Health
+                    </button>
+                </div>
             </div>
+
+            <!-- WEIGHT LOSS FOLLOW-UPS -->
+            <div id="focus-fields-weight_loss" class="hidden space-y-3 mb-5">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Weight to lose (kg)</label>
+                        <input id="wl-kg" type="number" min="0" step="0.5" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none" placeholder="e.g. 5">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">In how many weeks</label>
+                        <input id="wl-weeks" type="number" min="1" max="104" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none" placeholder="e.g. 12">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Style</label>
+                    <select id="wl-style" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+                        <option value="">Select...</option>
+                        <option value="toned">Toned & defined (preserve muscle)</option>
+                        <option value="scale">Just losing weight on the scale</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Progress photos frequency</label>
+                    <select id="wl-photos" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+                        <option value="">Select...</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Every 2 weeks</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="none">Don't want to</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- MUSCLE GAIN FOLLOW-UPS -->
+            <div id="focus-fields-muscle_gain" class="hidden space-y-3 mb-5">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Priority muscle group(s)</label>
+                    <select id="mg-priority" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+                        <option value="">Select...</option>
+                        <option value="full">Full body</option>
+                        <option value="upper">Upper body</option>
+                        <option value="lower">Lower body</option>
+                        <option value="chest">Chest</option>
+                        <option value="back">Back</option>
+                        <option value="shoulders">Shoulders</option>
+                        <option value="arms">Arms (biceps/triceps)</option>
+                        <option value="legs">Legs (quads/hamstrings)</option>
+                        <option value="glutes">Glutes</option>
+                        <option value="core">Core</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Current physique</label>
+                    <select id="mg-physique" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+                        <option value="">Select...</option>
+                        <option value="skinny">Skinny</option>
+                        <option value="overweight">Overweight</option>
+                        <option value="regular">Regular / average</option>
+                        <option value="athletic">Athletic</option>
+                        <option value="bodybuilder">Bodybuilder</option>
+                    </select>
+                </div>
+                <p class="text-[10px] text-slate-400 italic">Experience level is taken from your years training in Settings.</p>
+            </div>
+
+            <!-- HEALTH FOLLOW-UPS -->
+            <div id="focus-fields-health" class="hidden space-y-3 mb-5">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Focus area</label>
+                    <select id="h-area" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+                        <option value="">Select...</option>
+                        <option value="cardio">Cardiovascular fitness</option>
+                        <option value="energy">More daily energy</option>
+                        <option value="sleep">Better sleep</option>
+                        <option value="mobility">Mobility & flexibility</option>
+                        <option value="general">General wellbeing</option>
+                        <option value="bmi">Get BMI into healthy range</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Why is this important to you?</label>
+                    <textarea id="h-reason" rows="2" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-sm outline-none resize-none" placeholder="e.g. keep up with the kids, prevent illness..."></textarea>
+                </div>
+            </div>
+
+            <!-- COMMON FIELDS -->
             <div class="mb-4">
                 <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Goal Description</label>
-                <input type="text" id="goal-description" placeholder="e.g., Lose 5kg, Run 5k" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                <input type="text" id="goal-description" placeholder="e.g. Lose 5kg by summer" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
             </div>
             <div class="mb-6">
                 <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Target Date</label>
                 <input type="date" id="goal-deadline" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
             </div>
+
+            <!-- CALCULATED RECOMMENDATION -->
+            <div id="goal-recommendation" class="hidden mb-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-4 rounded-2xl">
+                <p class="text-[10px] font-black uppercase text-emerald-700 mb-2">Recommended for this goal</p>
+                <div id="goal-rec-content" class="text-xs text-slate-700 space-y-1"></div>
+            </div>
+
             <button onclick="saveGoal()" class="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black hover:bg-indigo-700 mb-3">
                 Save Goal
             </button>
@@ -2079,6 +2273,13 @@
         hydrationLogs: {},
         aiCoachEnabled: true,
         proteinGoal: 150,
+        userProfile: {
+            gender: '',         // 'male' | 'female' | ''
+            heightCm: null,     // number
+            age: null,          // number
+            yearsTraining: null, // number — used to derive experience level
+            activityLevel: ''   // 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | ''
+        },
         equipment: {
             gym: {
                 'Barbell': true,
@@ -2138,6 +2339,7 @@
                     gym: Object.assign({}, DEFAULT_STATE.equipment.gym, (parsed.equipment && parsed.equipment.gym) || {}),
                     home: Object.assign({}, DEFAULT_STATE.equipment.home, (parsed.equipment && parsed.equipment.home) || {})
                 };
+                state.userProfile = Object.assign({}, DEFAULT_STATE.userProfile, parsed.userProfile || {});
                 // Migration: older versions may have saved meals with field `type` instead of `mealType`.
                 // Normalize so the diary shows them under the right section.
                 if (Array.isArray(state.dailyMeals)) {
@@ -4905,6 +5107,10 @@
         const calInput = document.getElementById('calorie-goal-input');
         if (calInput) calInput.value = state.goals.calories || 2500;
 
+        // About You button status (inputs live inside the modal, not here)
+        renderAboutYouStatus();
+        renderMaintenanceDisplay();
+
         // AI coach enabled
         const aiCheck = document.getElementById('ai-coach-enabled');
         if (aiCheck) aiCheck.checked = state.aiCoachEnabled !== false;
@@ -4952,7 +5158,7 @@
                 </label>`).join('');
         }
 
-        // Goals list
+        // Goals list — show focus emoji + details summary
         const goalsList = document.getElementById('goals-list');
         if (goalsList) {
             const goals = state.userGoals || [];
@@ -4960,14 +5166,37 @@
                 goalsList.innerHTML = '<p class="text-xs text-slate-400 italic">No goals set yet</p>';
             } else {
                 goalsList.innerHTML = goals.map(g => {
-                    const typeLabel = g.type === 'short' ? 'Short-term' : g.type === 'medium' ? 'Medium-term' : 'Long-term';
+                    const focusInfo = {
+                        weight_loss: { emoji: '🔥', label: 'Weight Loss', color: 'text-rose-600' },
+                        muscle_gain: { emoji: '💪', label: 'Muscle Gain', color: 'text-indigo-600' },
+                        health:      { emoji: '🌱', label: 'Health',      color: 'text-emerald-600' }
+                    }[g.focus] || { emoji: '🎯', label: g.type ? g.type : 'Goal', color: 'text-slate-600' };
+
+                    let summary = '';
+                    if (g.focus === 'weight_loss' && g.details) {
+                        const parts = [];
+                        if (g.details.kg) parts.push(`${g.details.kg}kg`);
+                        if (g.details.weeks) parts.push(`${g.details.weeks}w`);
+                        if (g.details.style) parts.push(g.details.style === 'toned' ? 'toned' : 'scale weight');
+                        if (parts.length) summary = parts.join(' · ');
+                    } else if (g.focus === 'muscle_gain' && g.details) {
+                        const parts = [];
+                        if (g.details.priority) parts.push(g.details.priority);
+                        if (g.details.physique) parts.push(g.details.physique);
+                        if (g.details.experience) parts.push(g.details.experience);
+                        if (parts.length) summary = parts.join(' · ');
+                    } else if (g.focus === 'health' && g.details && g.details.area) {
+                        summary = g.details.area;
+                    }
+
                     return `
                         <div class="bg-slate-50 p-3 rounded-xl">
                             <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10px] font-black text-indigo-600 uppercase">${typeLabel}</span>
+                                <span class="text-[10px] font-black ${focusInfo.color} uppercase">${focusInfo.emoji} ${focusInfo.label}</span>
                                 <button onclick="removeGoal(${g.id})" class="text-red-500 text-xs font-bold">×</button>
                             </div>
                             <p class="font-bold text-sm">${g.description}</p>
+                            ${summary ? `<p class="text-xs text-slate-500 mt-1">${summary}</p>` : ''}
                             ${g.deadline ? `<p class="text-xs text-slate-400 mt-1">Target: ${new Date(g.deadline).toLocaleDateString()}</p>` : ''}
                         </div>`;
                 }).join('');
@@ -5340,37 +5569,504 @@
     // GOAL MODAL
     // ==========================================================================
 
+    // ==========================================================================
+    // USER PROFILE (gender, age, height, years training, activity level)
+    // Used for maintenance calorie calculation and goal recommendations.
+    // ==========================================================================
+
+    function saveUserProfile() {
+        if (!state.userProfile) state.userProfile = {};
+        const gender = document.getElementById('profile-gender').value || '';
+        const age = parseInt(document.getElementById('profile-age').value);
+        const heightCm = parseFloat(document.getElementById('profile-height').value);
+        const yearsTraining = parseFloat(document.getElementById('profile-years-training').value);
+        const activityLevel = document.getElementById('profile-activity').value || '';
+
+        state.userProfile.gender = gender;
+        state.userProfile.age = isNaN(age) ? null : age;
+        state.userProfile.heightCm = isNaN(heightCm) ? null : heightCm;
+        state.userProfile.yearsTraining = isNaN(yearsTraining) ? null : yearsTraining;
+        state.userProfile.activityLevel = activityLevel;
+
+        saveState();
+        renderExperienceLevel();
+        renderMaintenanceDisplay();
+    }
+
+    /**
+     * Open the About You modal, pre-filling the inputs from state.
+     */
+    function openAboutYouModal() {
+        const p = state.userProfile || {};
+        document.getElementById('profile-gender').value = p.gender || '';
+        document.getElementById('profile-age').value = (p.age !== null && p.age !== undefined) ? p.age : '';
+        document.getElementById('profile-height').value = (p.heightCm !== null && p.heightCm !== undefined) ? p.heightCm : '';
+        document.getElementById('profile-years-training').value = (p.yearsTraining !== null && p.yearsTraining !== undefined) ? p.yearsTraining : '';
+        document.getElementById('profile-activity').value = p.activityLevel || '';
+
+        renderExperienceLevel();
+        document.getElementById('about-you-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeAboutYouModal() {
+        document.getElementById('about-you-modal').style.display = 'none';
+    }
+
+    /**
+     * Save handler for the About You modal — persist then close.
+     */
+    function saveAboutYou() {
+        saveUserProfile();
+        renderAboutYouStatus();
+        closeAboutYouModal();
+        showToast('Profile saved ✓');
+    }
+
+    /**
+     * Update the status line on the Settings button so user can see at a glance
+     * whether their profile is complete (and what's filled in).
+     */
+    function renderAboutYouStatus() {
+        const statusEl = document.getElementById('about-you-status');
+        if (!statusEl) return;
+        const p = state.userProfile || {};
+        const required = ['gender', 'age', 'heightCm', 'activityLevel'];
+        const filled = required.filter(k => p[k] !== null && p[k] !== undefined && p[k] !== '').length;
+
+        if (filled === required.length) {
+            const parts = [];
+            if (p.gender) parts.push(p.gender.charAt(0).toUpperCase() + p.gender.slice(1));
+            if (p.age) parts.push(p.age + 'y');
+            if (p.heightCm) parts.push(p.heightCm + 'cm');
+            statusEl.textContent = parts.join(' · ');
+            statusEl.className = 'text-xs text-emerald-600 font-bold';
+        } else if (filled === 0) {
+            statusEl.textContent = 'Tap to set up';
+            statusEl.className = 'text-xs text-slate-500';
+        } else {
+            statusEl.textContent = `${filled} of ${required.length} fields filled — tap to complete`;
+            statusEl.className = 'text-xs text-amber-600 font-bold';
+        }
+    }
+
+    /**
+     * Show a friendly experience-level label based on years training.
+     * <1 year = Beginner, 1-3 = Intermediate, 3+ = Advanced.
+     */
+    function getExperienceLevel() {
+        const yrs = state.userProfile && state.userProfile.yearsTraining;
+        if (yrs === null || yrs === undefined || isNaN(yrs)) return null;
+        if (yrs < 1) return 'Beginner';
+        if (yrs < 3) return 'Intermediate';
+        return 'Advanced';
+    }
+
+    function renderExperienceLevel() {
+        const el = document.getElementById('experience-level-display');
+        if (!el) return;
+        const lvl = getExperienceLevel();
+        const yrs = state.userProfile && state.userProfile.yearsTraining;
+        if (lvl) {
+            el.textContent = `Experience level: ${lvl} (${yrs} year${yrs === 1 ? '' : 's'} training)`;
+        } else {
+            el.textContent = '';
+        }
+    }
+
+    // ==========================================================================
+    // MAINTENANCE CALORIES (Mifflin-St Jeor) + BMI
+    // ==========================================================================
+
+    const ACTIVITY_MULTIPLIERS = {
+        sedentary: 1.2,
+        light: 1.375,
+        moderate: 1.55,
+        active: 1.725,
+        very_active: 1.9
+    };
+
+    /**
+     * Calculate maintenance (TDEE) from profile.
+     * Returns null if any required field is missing.
+     * Uses the user's most recent recorded weight from metricsHistory.
+     */
+    function calculateMaintenanceCalories() {
+        const p = state.userProfile || {};
+        if (!p.gender || !p.age || !p.heightCm || !p.activityLevel) return null;
+
+        const latestWeight = getLatestWeightKg();
+        if (!latestWeight) return null;
+
+        // Mifflin-St Jeor BMR
+        let bmr;
+        if (p.gender === 'male') {
+            bmr = 10 * latestWeight + 6.25 * p.heightCm - 5 * p.age + 5;
+        } else {
+            bmr = 10 * latestWeight + 6.25 * p.heightCm - 5 * p.age - 161;
+        }
+
+        const multiplier = ACTIVITY_MULTIPLIERS[p.activityLevel] || 1.2;
+        return Math.round(bmr * multiplier);
+    }
+
+    function getLatestWeightKg() {
+        const history = (state.metricsHistory || []).filter(m => m.weight);
+        if (history.length === 0) return null;
+        // metricsHistory is sorted desc by date, but be defensive
+        const sorted = history.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        return sorted[0].weight;
+    }
+
+    /**
+     * BMI = weight(kg) / height(m)^2
+     */
+    function calculateBMI() {
+        const weight = getLatestWeightKg();
+        const heightCm = state.userProfile && state.userProfile.heightCm;
+        if (!weight || !heightCm) return null;
+        const heightM = heightCm / 100;
+        return weight / (heightM * heightM);
+    }
+
+    function getBMICategory(bmi) {
+        if (bmi < 18.5) return { label: 'Underweight', color: 'text-blue-600' };
+        if (bmi < 25) return { label: 'Healthy', color: 'text-emerald-600' };
+        if (bmi < 30) return { label: 'Overweight', color: 'text-amber-600' };
+        return { label: 'Obese', color: 'text-rose-600' };
+    }
+
+    function renderMaintenanceDisplay() {
+        const display = document.getElementById('maintenance-display');
+        if (!display) return;
+
+        const maintenance = calculateMaintenanceCalories();
+        const bmi = calculateBMI();
+
+        if (!maintenance && !bmi) {
+            display.classList.add('hidden');
+            return;
+        }
+        display.classList.remove('hidden');
+
+        if (maintenance) {
+            document.getElementById('maintenance-value').textContent = maintenance.toLocaleString();
+            const weight = getLatestWeightKg();
+            const p = state.userProfile;
+            document.getElementById('maintenance-explanation').textContent =
+                `Based on ${weight}kg, ${p.heightCm}cm, ${p.age}y, ${p.gender}, ${p.activityLevel.replace('_', ' ')} activity.`;
+        } else {
+            document.getElementById('maintenance-value').textContent = '--';
+            document.getElementById('maintenance-explanation').textContent =
+                'Fill in all About You fields + log a weight in Metrics to calculate.';
+        }
+
+        // BMI section
+        const bmiSection = document.getElementById('bmi-display');
+        if (bmi) {
+            bmiSection.classList.remove('hidden');
+            document.getElementById('bmi-value').textContent = bmi.toFixed(1);
+            const cat = getBMICategory(bmi);
+            const catEl = document.getElementById('bmi-category');
+            catEl.textContent = '(' + cat.label + ')';
+            catEl.className = 'text-xs font-bold ml-2 ' + cat.color;
+        } else {
+            bmiSection.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Apply maintenance calories as the daily calorie goal, possibly adjusted for an active goal.
+     */
+    function applyMaintenanceAsCalorieGoal() {
+        const maintenance = calculateMaintenanceCalories();
+        if (!maintenance) {
+            showToast('Complete your profile first');
+            return;
+        }
+
+        // If there's an active weight-loss or muscle-gain goal, adjust automatically.
+        const activeGoal = (state.userGoals || []).find(g => !g.completed && (g.focus === 'weight_loss' || g.focus === 'muscle_gain'));
+        let target = maintenance;
+        let note = `Calorie goal set to maintenance: ${maintenance} kcal/day`;
+
+        if (activeGoal) {
+            const adj = calculateGoalCalorieAdjustment(activeGoal, maintenance);
+            target = adj.target;
+            note = adj.note;
+        }
+
+        state.goals.calories = target;
+        saveState();
+        document.getElementById('calorie-goal-input').value = target;
+
+        const noteEl = document.getElementById('goal-adjusted-note');
+        if (noteEl) {
+            noteEl.textContent = '✓ ' + note;
+            noteEl.classList.remove('hidden');
+            setTimeout(() => noteEl.classList.add('hidden'), 6000);
+        }
+        renderDashboard();
+        showToast(note);
+    }
+
+    /**
+     * Given a goal and maintenance calories, return { target, note }.
+     * Caps deficits at 750 kcal/day and surpluses at 500 kcal/day for safety.
+     */
+    function calculateGoalCalorieAdjustment(goal, maintenance) {
+        if (goal.focus === 'weight_loss' && goal.details) {
+            const kg = parseFloat(goal.details.kg);
+            const weeks = parseFloat(goal.details.weeks);
+            if (kg > 0 && weeks > 0) {
+                // ~7700 kcal per kg of fat. Daily deficit:
+                let deficit = Math.round((kg * 7700) / (weeks * 7));
+                // Cap based on style — "toned" = more conservative deficit to preserve muscle
+                const maxDeficit = goal.details.style === 'toned' ? 500 : 750;
+                if (deficit > maxDeficit) {
+                    deficit = maxDeficit;
+                    return {
+                        target: maintenance - deficit,
+                        note: `Capped at ${maxDeficit} kcal/day deficit for safety — your timeframe may need to be longer.`
+                    };
+                }
+                return {
+                    target: maintenance - deficit,
+                    note: `Deficit: ${deficit} kcal/day for ${kg}kg in ${weeks}w → ${maintenance - deficit} kcal target.`
+                };
+            }
+        }
+
+        if (goal.focus === 'muscle_gain' && goal.details) {
+            const physique = goal.details.physique;
+            const exp = getExperienceLevel();
+            // Skinny + beginner = bigger surplus; advanced bodybuilder = smaller surplus
+            let surplus = 300;
+            if (physique === 'skinny') surplus = 400;
+            else if (physique === 'overweight') surplus = 150;
+            else if (physique === 'bodybuilder' || physique === 'athletic') surplus = 200;
+
+            if (exp === 'Advanced') surplus = Math.min(surplus, 250);
+            else if (exp === 'Beginner') surplus = Math.min(surplus + 100, 500);
+
+            return {
+                target: maintenance + surplus,
+                note: `Surplus: +${surplus} kcal/day → ${maintenance + surplus} kcal target.`
+            };
+        }
+
+        // Health goal or unknown — stay at maintenance
+        return {
+            target: maintenance,
+            note: `Maintenance: ${maintenance} kcal/day.`
+        };
+    }
+
+    // ==========================================================================
+    // GOAL MODAL (focus-driven)
+    // ==========================================================================
+
+    let currentGoalFocus = null;
+
     function openGoalSetting() {
-        document.getElementById('goal-modal').style.display = 'flex';
+        currentGoalFocus = null;
         document.getElementById('goal-description').value = '';
         document.getElementById('goal-deadline').value = '';
-        document.getElementById('goal-type').value = 'short';
+
+        // Reset focus buttons
+        ['weight_loss', 'muscle_gain', 'health'].forEach(f => {
+            const btn = document.getElementById('focus-' + f);
+            if (btn) btn.className = 'p-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200';
+            const fields = document.getElementById('focus-fields-' + f);
+            if (fields) fields.classList.add('hidden');
+        });
+
+        // Reset all follow-up fields
+        ['wl-kg', 'wl-weeks', 'wl-style', 'wl-photos',
+         'mg-priority', 'mg-physique',
+         'h-area', 'h-reason'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        document.getElementById('goal-recommendation').classList.add('hidden');
+        document.getElementById('goal-modal').style.display = 'flex';
     }
 
     function closeGoalModal() {
         document.getElementById('goal-modal').style.display = 'none';
     }
 
+    function setGoalFocus(focus) {
+        currentGoalFocus = focus;
+
+        // Update button styles
+        ['weight_loss', 'muscle_gain', 'health'].forEach(f => {
+            const btn = document.getElementById('focus-' + f);
+            if (!btn) return;
+            if (f === focus) {
+                btn.className = 'p-3 rounded-xl font-bold text-xs bg-indigo-600 text-white shadow-md';
+            } else {
+                btn.className = 'p-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200';
+            }
+            // Toggle field visibility
+            const fields = document.getElementById('focus-fields-' + f);
+            if (fields) fields.classList.toggle('hidden', f !== focus);
+        });
+
+        previewGoalRecommendation();
+
+        // Wire up follow-up inputs to live-preview
+        ['wl-kg', 'wl-weeks', 'wl-style', 'wl-photos',
+         'mg-priority', 'mg-physique',
+         'h-area'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.onchange = previewGoalRecommendation;
+        });
+    }
+
+    /**
+     * Build the goal details object from the visible fields.
+     */
+    function collectGoalDetails() {
+        if (currentGoalFocus === 'weight_loss') {
+            return {
+                kg: parseFloat(document.getElementById('wl-kg').value) || null,
+                weeks: parseFloat(document.getElementById('wl-weeks').value) || null,
+                style: document.getElementById('wl-style').value || '',
+                photosFrequency: document.getElementById('wl-photos').value || ''
+            };
+        }
+        if (currentGoalFocus === 'muscle_gain') {
+            return {
+                priority: document.getElementById('mg-priority').value || '',
+                physique: document.getElementById('mg-physique').value || '',
+                experience: getExperienceLevel() || 'Unknown'
+            };
+        }
+        if (currentGoalFocus === 'health') {
+            return {
+                area: document.getElementById('h-area').value || '',
+                reason: document.getElementById('h-reason').value.trim()
+            };
+        }
+        return {};
+    }
+
+    /**
+     * Live preview the calorie / training recommendation as the user fills the form.
+     */
+    function previewGoalRecommendation() {
+        const recBox = document.getElementById('goal-recommendation');
+        const recContent = document.getElementById('goal-rec-content');
+        if (!recBox || !recContent || !currentGoalFocus) return;
+
+        const maintenance = calculateMaintenanceCalories();
+        const details = collectGoalDetails();
+        const draftGoal = { focus: currentGoalFocus, details };
+
+        const lines = [];
+
+        if (currentGoalFocus === 'weight_loss') {
+            if (details.kg && details.weeks) {
+                if (maintenance) {
+                    const adj = calculateGoalCalorieAdjustment(draftGoal, maintenance);
+                    lines.push(`📉 <b>${adj.target} kcal/day</b> (${maintenance} maintenance − deficit)`);
+                    lines.push(`<span class="text-slate-500">${adj.note}</span>`);
+                    if ((details.kg / details.weeks) > 1) {
+                        lines.push('⚠️ <span class="text-amber-700">Losing more than 1kg/week is hard to sustain and may cost muscle.</span>');
+                    }
+                } else {
+                    lines.push(`Complete your profile (gender, age, height, activity) + log a weight to see a calorie target.`);
+                }
+                if (details.style === 'toned') {
+                    lines.push('💪 Keep resistance training 3-4×/week and protein at ~1.6-2.2 g/kg bodyweight.');
+                }
+            }
+            if (details.photosFrequency) {
+                const label = { daily: 'daily', weekly: 'weekly', biweekly: 'every 2 weeks', monthly: 'monthly', none: 'no photos' }[details.photosFrequency];
+                lines.push(`📸 Progress photos: ${label}.`);
+            }
+        } else if (currentGoalFocus === 'muscle_gain') {
+            if (details.physique && maintenance) {
+                const adj = calculateGoalCalorieAdjustment(draftGoal, maintenance);
+                lines.push(`📈 <b>${adj.target} kcal/day</b> (${maintenance} maintenance + surplus)`);
+                lines.push(`<span class="text-slate-500">${adj.note}</span>`);
+            }
+            if (details.experience && details.experience !== 'Unknown') {
+                const tips = {
+                    Beginner: 'Focus on compound lifts (squat, bench, deadlift, row, OHP) 3×/week. Beginner gains are real — use them.',
+                    Intermediate: 'Run a structured 4-5 day split. Track progressive overload week by week.',
+                    Advanced: 'Specialization phases and periodization matter more than total volume now.'
+                };
+                lines.push('🎓 <b>' + details.experience + ':</b> ' + tips[details.experience]);
+            }
+            if (details.priority) {
+                lines.push(`🎯 Prioritizing: ${details.priority}. Add 1-2 extra direct sets per week.`);
+            }
+        } else if (currentGoalFocus === 'health') {
+            if (details.area === 'bmi') {
+                const bmi = calculateBMI();
+                if (bmi) {
+                    const cat = getBMICategory(bmi);
+                    lines.push(`📊 Current BMI: <b>${bmi.toFixed(1)}</b> (${cat.label}). Healthy range is 18.5-24.9.`);
+                }
+            }
+            if (details.area === 'cardio') {
+                lines.push('❤️ Aim for 150 min moderate or 75 min vigorous cardio per week (WHO recommendation).');
+            }
+            if (details.area === 'sleep') {
+                lines.push('😴 Target 7-9 hours nightly. Avoid caffeine after 2pm and screens 30 min before bed.');
+            }
+            if (details.area === 'mobility') {
+                lines.push('🤸 5-10 min of dynamic stretching daily; consider 1-2 dedicated mobility sessions/week.');
+            }
+            if (maintenance) {
+                lines.push(`🍽️ Aim for maintenance: <b>${maintenance} kcal/day</b>.`);
+            }
+        }
+
+        if (lines.length > 0) {
+            recContent.innerHTML = lines.map(l => '<p>' + l + '</p>').join('');
+            recBox.classList.remove('hidden');
+        } else {
+            recBox.classList.add('hidden');
+        }
+    }
+
     function saveGoal() {
-        const type = document.getElementById('goal-type').value;
+        if (!currentGoalFocus) { showToast('Pick a focus first'); return; }
+
         const desc = document.getElementById('goal-description').value.trim();
         const deadline = document.getElementById('goal-deadline').value;
-
         if (!desc) { showToast('Enter goal description'); return; }
 
         if (!state.userGoals) state.userGoals = [];
-        state.userGoals.unshift({
+        const newGoal = {
             id: Date.now(),
-            type: type,
+            focus: currentGoalFocus,
+            details: collectGoalDetails(),
             description: desc,
             deadline: deadline,
             createdAt: new Date().toISOString(),
             completed: false
-        });
+        };
+        state.userGoals.unshift(newGoal);
+
+        // Auto-adjust calorie goal if we have enough info
+        const maintenance = calculateMaintenanceCalories();
+        if (maintenance && (currentGoalFocus === 'weight_loss' || currentGoalFocus === 'muscle_gain')) {
+            const adj = calculateGoalCalorieAdjustment(newGoal, maintenance);
+            state.goals.calories = adj.target;
+            showToast('Goal saved! Calorie target → ' + adj.target);
+        } else {
+            showToast('Goal added! 🎯');
+        }
+
         saveState();
         closeGoalModal();
         renderSettings();
-        showToast('Goal added! 🎯');
+        renderDashboard();
     }
 
     // ==========================================================================
@@ -5397,3 +6093,4 @@
     </script>
 </body>
 </html>
+
