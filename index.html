@@ -545,18 +545,19 @@
                     </div>
 
                     <div id="specific-muscle-container" class="hidden">
-                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Select Muscle</label>
-                        <select id="specific-muscle" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
-                            <option>Chest</option>
-                            <option>Back</option>
-                            <option>Shoulders</option>
-                            <option>Biceps</option>
-                            <option>Triceps</option>
-                            <option>Quads</option>
-                            <option>Hamstrings</option>
-                            <option>Glutes</option>
-                            <option>Calves</option>
-                        </select>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Select Muscles <span class="text-slate-300 font-normal normal-case">(pick one or more)</span></label>
+                        <div id="specific-muscle-chips" class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="toggleMuscleChip('Chest')" data-muscle="Chest" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Chest</button>
+                            <button type="button" onclick="toggleMuscleChip('Back')" data-muscle="Back" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Back</button>
+                            <button type="button" onclick="toggleMuscleChip('Shoulders')" data-muscle="Shoulders" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Shoulders</button>
+                            <button type="button" onclick="toggleMuscleChip('Biceps')" data-muscle="Biceps" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Biceps</button>
+                            <button type="button" onclick="toggleMuscleChip('Triceps')" data-muscle="Triceps" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Triceps</button>
+                            <button type="button" onclick="toggleMuscleChip('Quads')" data-muscle="Quads" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Quads</button>
+                            <button type="button" onclick="toggleMuscleChip('Hamstrings')" data-muscle="Hamstrings" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Hams</button>
+                            <button type="button" onclick="toggleMuscleChip('Glutes')" data-muscle="Glutes" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Glutes</button>
+                            <button type="button" onclick="toggleMuscleChip('Calves')" data-muscle="Calves" class="muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50">Calves</button>
+                        </div>
+                        <p id="specific-muscle-count" class="text-xs text-slate-400 mt-2 italic">No muscles selected</p>
                     </div>
 
                     <div class="bg-slate-50 p-4 rounded-2xl space-y-3">
@@ -2948,33 +2949,117 @@
         if (homeTab) homeTab.className = `flex-1 py-2 text-[10px] font-black uppercase rounded-xl ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
     }
 
+    // ==========================================================================
+    // SPECIFIC MUSCLE PICKER (multi-select chips)
+    // ==========================================================================
+
+    let selectedMuscles = [];
+
     function toggleSpecificMuscle() {
         const focus = document.getElementById('workout-focus').value;
         const container = document.getElementById('specific-muscle-container');
-        if (container) container.classList.toggle('hidden', focus !== 'Specific Muscle');
+        const isSpecific = focus === 'Specific Muscle';
+        if (container) container.classList.toggle('hidden', !isSpecific);
+        // Reset selection when leaving Specific Muscle mode so a leftover choice
+        // doesn't silently apply next time it's opened.
+        if (!isSpecific) clearMuscleChips();
+    }
+
+    function toggleMuscleChip(muscle) {
+        const idx = selectedMuscles.indexOf(muscle);
+        if (idx >= 0) selectedMuscles.splice(idx, 1);
+        else selectedMuscles.push(muscle);
+        renderMuscleChipStates();
+    }
+
+    function clearMuscleChips() {
+        selectedMuscles = [];
+        renderMuscleChipStates();
+    }
+
+    function renderMuscleChipStates() {
+        document.querySelectorAll('#specific-muscle-chips .muscle-chip').forEach(btn => {
+            const m = btn.getAttribute('data-muscle');
+            const selected = selectedMuscles.indexOf(m) >= 0;
+            if (selected) {
+                btn.className = 'muscle-chip py-3 px-2 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-sm font-bold text-white shadow-md';
+            } else {
+                btn.className = 'muscle-chip py-3 px-2 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-600 hover:border-indigo-300 hover:bg-indigo-50';
+            }
+        });
+        const countEl = document.getElementById('specific-muscle-count');
+        if (countEl) {
+            if (selectedMuscles.length === 0) {
+                countEl.textContent = 'No muscles selected';
+                countEl.className = 'text-xs text-slate-400 mt-2 italic';
+            } else {
+                countEl.textContent = selectedMuscles.length + ' selected: ' + selectedMuscles.join(', ');
+                countEl.className = 'text-xs text-indigo-600 mt-2 font-bold';
+            }
+        }
     }
 
     function startWorkout(mode) {
         const focus = document.getElementById('workout-focus').value;
-        const muscle = focus === 'Specific Muscle' ? document.getElementById('specific-muscle').value : focus;
+        const isSpecific = focus === 'Specific Muscle';
+
+        // Validate Specific Muscle selection before starting
+        if (isSpecific && selectedMuscles.length === 0) {
+            showToast('Pick at least one muscle');
+            return;
+        }
+
+        // Title is either the focus, the single muscle, or a list of muscles
+        let title;
+        if (isSpecific) {
+            title = selectedMuscles.length === 1 ? selectedMuscles[0] : selectedMuscles.join(' + ');
+        } else {
+            title = focus;
+        }
 
         document.getElementById('workout-setup').classList.add('hidden');
         document.getElementById('workout-active').classList.remove('hidden');
-        document.getElementById('active-workout-title').innerText = muscle;
+        document.getElementById('active-workout-title').innerText = title;
         document.getElementById('exercise-list').innerHTML = '';
 
         if (mode === 'ai') {
             const env = state.workoutEnv || 'gym';
-            const exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscle];
             const addCardio = document.getElementById('add-cardio-check').checked;
             const addCore = document.getElementById('add-core-check').checked;
 
-            if (exercises) {
-                const compounds = (exercises.compound || []).sort(() => 0.5 - Math.random()).slice(0, 2);
-                const isolations = (exercises.isolation || []).sort(() => 0.5 - Math.random()).slice(0, 3);
+            // Build the list of muscles we need exercises for. For non-specific focus,
+            // it's just the single focus key. For specific, it's the user's checked chips.
+            const muscleKeys = isSpecific ? selectedMuscles.slice() : [focus];
 
+            // Per-muscle exercise allocation. With 1 muscle we want the original ~5 exercises.
+            // With more, we still want a sensible total — so taper compounds/isolations per muscle.
+            const exercisesPerMuscle = muscleKeys.length === 1 ? { compound: 2, isolation: 3 }
+                : muscleKeys.length === 2 ? { compound: 2, isolation: 2 }
+                : muscleKeys.length === 3 ? { compound: 1, isolation: 2 }
+                : { compound: 1, isolation: 1 }; // 4+ muscles → keep total manageable
+
+            const queued = [];
+            muscleKeys.forEach(muscleKey => {
+                const exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                if (!exercises) return;
+                const compounds = (exercises.compound || []).sort(() => 0.5 - Math.random()).slice(0, exercisesPerMuscle.compound);
+                const isolations = (exercises.isolation || []).sort(() => 0.5 - Math.random()).slice(0, exercisesPerMuscle.isolation);
+                queued.push(...compounds, ...isolations);
+            });
+
+            // De-duplicate (e.g. Bench Press could appear under both Chest and Triceps)
+            const seen = new Set();
+            const finalList = queued.filter(ex => {
+                if (seen.has(ex)) return false;
+                seen.add(ex);
+                return true;
+            });
+
+            if (finalList.length === 0) {
+                showToast('No exercises found for this selection');
+            } else {
                 let delay = 0;
-                [...compounds, ...isolations].forEach(ex => {
+                finalList.forEach(ex => {
                     setTimeout(() => addExercise(ex), delay);
                     delay += 20;
                 });
@@ -2993,8 +3078,6 @@
                     setTimeout(() => addExercise(core2), delay);
                 }
                 showToast('AI workout generated! 💪');
-            } else {
-                showToast('No exercises found for this selection');
             }
         }
 
