@@ -2481,6 +2481,14 @@
         }
     }
 
+    /**
+     * A real photo is a string starting with "data:image/". Anything else
+     * (null, the literal string "null", empty string, undefined) is invalid.
+     */
+    function isValidPhotoData(v) {
+        return typeof v === 'string' && v.indexOf('data:image/') === 0;
+    }
+
     function loadState() {
         try {
             const saved = localStorage.getItem('fittrack_state');
@@ -2499,6 +2507,30 @@
                     state.dailyMeals.forEach(m => {
                         if (!m.mealType && m.type) m.mealType = m.type;
                     });
+                }
+                // Migration: clean up corrupted photo entries where null was serialized
+                // as the string "null" or otherwise saved without a real image.
+                // If all photo angles for a date are invalid, remove the photos object entirely.
+                if (Array.isArray(state.metricsHistory)) {
+                    let cleanedAny = false;
+                    state.metricsHistory.forEach(m => {
+                        if (!m.photos) return;
+                        const cleaned = {};
+                        Object.entries(m.photos).forEach(([angle, data]) => {
+                            if (isValidPhotoData(data)) cleaned[angle] = data;
+                            else cleanedAny = true;
+                        });
+                        if (Object.keys(cleaned).length > 0) {
+                            m.photos = cleaned;
+                        } else {
+                            delete m.photos;
+                            cleanedAny = true;
+                        }
+                    });
+                    if (cleanedAny) {
+                        // Persist the cleaned state so we don't keep cleaning the same junk every load
+                        try { localStorage.setItem('fittrack_state', JSON.stringify(state)); } catch (e) {}
+                    }
                 }
             }
         } catch (e) {
@@ -4550,8 +4582,14 @@
         if (photos) {
             const mergedPhotos = Object.assign({}, existing.photos || {});
             Object.entries(photos).forEach(([k, v]) => {
-                if (v === 'REMOVE') delete mergedPhotos[k];
-                else if (v) mergedPhotos[k] = v;
+                if (v === 'REMOVE') {
+                    delete mergedPhotos[k];
+                } else if (isValidPhotoData(v)) {
+                    mergedPhotos[k] = v;
+                }
+                // Anything else (null, undefined, non-image strings) is silently ignored
+                // — we don't want to overwrite a real photo with garbage, and we don't
+                // want to save garbage where there was nothing.
             });
             if (Object.keys(mergedPhotos).length > 0) {
                 merged.photos = mergedPhotos;
@@ -4826,8 +4864,11 @@
         let anyChange = false;
         ['front', 'side', 'back'].forEach(t => {
             const v = state.currentPhotos[t];
-            if (v) {
-                photos[t] = v; // either base64 data or 'REMOVE' sentinel
+            // 'REMOVE' is a sentinel for "delete this angle".
+            // A valid image string is the only other thing we want to pass through.
+            // Anything else (null, undefined) means "no change for this angle".
+            if (v === 'REMOVE' || isValidPhotoData(v)) {
+                photos[t] = v;
                 anyChange = true;
             }
         });
