@@ -957,7 +957,6 @@
                         </div>
                         <p class="text-xs text-slate-500">Show AI-powered training and nutrition recommendations on dashboard</p>
                     </div>
-
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-[11px] font-black uppercase text-slate-400">Daily Habits</h3>
@@ -1918,6 +1917,7 @@
                     <i data-lucide="bar-chart-3" class="w-10 h-10 text-slate-400"></i>
                 </div>
                 <p class="text-slate-400 font-bold mb-2">Select an exercise to view progress</p>
+
                 <p class="text-xs text-slate-400">Track your strength gains over time</p>
             </div>
         </div>
@@ -2461,8 +2461,17 @@
     function saveState() {
         try {
             localStorage.setItem('fittrack_state', JSON.stringify(state));
+            return true;
         } catch (e) {
             console.error('Save error:', e);
+            // QuotaExceededError is the common case here — usually progress photos eating space.
+            // Surface it so the user doesn't silently lose data.
+            if (e && (e.name === 'QuotaExceededError' || (e.code && e.code === 22))) {
+                showToast('⚠️ Storage full — older photos may need to be removed', 6000);
+            } else {
+                showToast('⚠️ Could not save — ' + (e.message || 'unknown error'), 5000);
+            }
+            return false;
         }
     }
 
@@ -2868,7 +2877,6 @@
 
         lucide.createIcons();
     }
-
     function toggleHydrationGoal() {
         const date = state.viewDate;
         if (!state.hydrationGoalCompletions) state.hydrationGoalCompletions = {};
@@ -4440,24 +4448,69 @@
     function triggerPhotoUpload(type) {
         currentPhotoType = type;
         const input = document.getElementById('photo-upload-input');
+        // Reset value so picking the same file twice still fires `change`.
+        input.value = '';
         input.onchange = handlePhotoUpload;
         input.click();
     }
 
-    function handlePhotoUpload(event) {
+    /**
+     * Resize an image to fit within maxDim and re-encode as a JPEG of the given quality.
+     * Returns a base64 data URL. Progress photos compressed this way are typically
+     * 200-400 KB instead of 4-16 MB, which fits comfortably inside localStorage.
+     */
+    function compressImage(file, maxDim, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error('FileReader failed'));
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onerror = () => reject(new Error('Image decode failed'));
+                img.onload = () => {
+                    let { width, height } = img;
+                    // Scale down so the longest edge equals maxDim
+                    if (width > maxDim || height > maxDim) {
+                        if (width >= height) {
+                            height = Math.round(height * (maxDim / width));
+                            width = maxDim;
+                        } else {
+                            width = Math.round(width * (maxDim / height));
+                            height = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // toDataURL('image/jpeg', quality) produces a much smaller file than raw
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function handlePhotoUpload(event) {
         const file = event.target.files[0];
         if (!file || !currentPhotoType) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const preview = document.getElementById(`photo-${currentPhotoType}-preview`);
+
+        const preview = document.getElementById(`photo-${currentPhotoType}-preview`);
+
+        try {
+            // 1200px max edge, 80% JPEG quality — good visual fidelity, ~200-400 KB on disk
+            const compressed = await compressImage(file, 1200, 0.8);
             if (preview) {
-                preview.src = e.target.result;
+                preview.src = compressed;
                 preview.classList.remove('hidden');
             }
-            state.currentPhotos[currentPhotoType] = e.target.result;
+            state.currentPhotos[currentPhotoType] = compressed;
             showToast('Photo added — tap Save Photos to confirm');
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            console.error('Photo compression failed:', err);
+            showToast('Could not process that image — try another');
+        }
     }
 
     function removePhoto(type) {
@@ -6658,3 +6711,4 @@
     </script>
 </body>
 </html>
+
