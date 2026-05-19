@@ -957,6 +957,7 @@
                         </div>
                         <p class="text-xs text-slate-500">Show AI-powered training and nutrition recommendations on dashboard</p>
                     </div>
+
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-[11px] font-black uppercase text-slate-400">Daily Habits</h3>
@@ -1917,7 +1918,6 @@
                     <i data-lucide="bar-chart-3" class="w-10 h-10 text-slate-400"></i>
                 </div>
                 <p class="text-slate-400 font-bold mb-2">Select an exercise to view progress</p>
-
                 <p class="text-xs text-slate-400">Track your strength gains over time</p>
             </div>
         </div>
@@ -2101,6 +2101,12 @@
                 <h3 class="text-xl font-black">Compare Photos</h3>
                 <button onclick="closePhotoComparison()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
             </div>
+
+            <!-- DIAGNOSTIC BUTTON - shows what photo data is actually in storage -->
+            <button onclick="diagnosePhotoData()" class="w-full mb-4 py-2 bg-amber-100 text-amber-800 rounded-xl text-xs font-bold hover:bg-amber-200">
+                🔍 Why aren't my photos showing? (Diagnostic)
+            </button>
+            <pre id="diagnostic-output" class="hidden text-[10px] bg-slate-900 text-emerald-400 p-4 rounded-xl mb-4 whitespace-pre-wrap break-all max-h-64 overflow-y-auto"></pre>
             <div class="space-y-4 mb-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -2877,6 +2883,7 @@
 
         lucide.createIcons();
     }
+
     function toggleHydrationGoal() {
         const date = state.viewDate;
         if (!state.hydrationGoalCompletions) state.hydrationGoalCompletions = {};
@@ -4558,7 +4565,7 @@
 
         // Sort descending by date
         state.metricsHistory.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-        saveState();
+        return saveState();
     }
 
     function getCurrentMetricEntry() {
@@ -4830,15 +4837,27 @@
             return;
         }
 
-        mergeMetricEntry(date, {}, photos);
+        // mergeMetricEntry calls saveState internally. We need to know if it succeeded
+        // before clearing the buffer — otherwise quota errors silently lose data.
+        const ok = mergeMetricEntry(date, {}, photos);
+        if (!ok) {
+            // Save failed — keep the buffer so the user can try again or remove a photo first
+            showToast('Photos not saved — see message above', 5000);
+            return;
+        }
 
-        // Reset buffer
+        // Verify it actually persisted (defensive — in case mergeMetricEntry's
+        // internal state was updated but localStorage write threw)
+        const verifyEntry = (state.metricsHistory || []).find(m => m.date === date);
+        const savedCount = verifyEntry && verifyEntry.photos ? Object.keys(verifyEntry.photos).length : 0;
+
+        // Reset buffer only on confirmed success
         state.currentPhotos = { front: null, side: null, back: null };
 
         document.getElementById('progress-photos-modal').style.display = 'none';
         renderMetricsStatusLines();
         renderMetricsHistory();
-        showToast('Photos saved ✓');
+        showToast('Photos saved ✓ (' + savedCount + ' on file for this date)');
     }
 
     // ==========================================================================
@@ -5006,6 +5025,85 @@
 
     function closePhotoComparison() {
         document.getElementById('photo-comparison-modal').style.display = 'none';
+        // Hide diagnostic on close
+        const diag = document.getElementById('diagnostic-output');
+        if (diag) diag.classList.add('hidden');
+    }
+
+    /**
+     * Diagnostic — show exactly what photo data is in state.metricsHistory
+     * and what localStorage actually contains. Helps identify whether photos
+     * are being saved at all, or saved but read incorrectly.
+     */
+    function diagnosePhotoData() {
+        const out = document.getElementById('diagnostic-output');
+        if (!out) return;
+
+        const lines = [];
+        lines.push('=== METRICS HISTORY (in-memory) ===');
+        const hist = state.metricsHistory || [];
+        lines.push('Total entries: ' + hist.length);
+
+        const withPhotos = hist.filter(m => m.photos && Object.keys(m.photos).length > 0);
+        lines.push('Entries with photos: ' + withPhotos.length);
+        lines.push('');
+
+        if (withPhotos.length === 0) {
+            lines.push('⚠️ No entries have any photos attached.');
+            lines.push('');
+            lines.push('Showing all metric entries (first 5):');
+            hist.slice(0, 5).forEach(m => {
+                const keys = Object.keys(m);
+                lines.push('  ' + m.date + ' → keys: ' + keys.join(', '));
+                if (m.photos) {
+                    lines.push('    photos object: ' + JSON.stringify(Object.keys(m.photos)));
+                }
+            });
+        } else {
+            withPhotos.forEach(m => {
+                lines.push('Date: ' + m.date);
+                Object.entries(m.photos).forEach(([angle, data]) => {
+                    const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+                    const preview = dataStr.length > 60 ? dataStr.substring(0, 60) + '...' : dataStr;
+                    lines.push('  ' + angle + ' (' + dataStr.length + ' chars): ' + preview);
+                });
+            });
+        }
+
+        lines.push('');
+        lines.push('=== LOCAL STORAGE ===');
+        try {
+            const raw = localStorage.getItem('fittrack_state');
+            if (raw) {
+                lines.push('Total size: ' + (raw.length / 1024).toFixed(1) + ' KB');
+                const parsed = JSON.parse(raw);
+                const lsHist = parsed.metricsHistory || [];
+                const lsWithPhotos = lsHist.filter(m => m.photos && Object.keys(m.photos).length > 0);
+                lines.push('Entries in storage: ' + lsHist.length);
+                lines.push('With photos in storage: ' + lsWithPhotos.length);
+                if (lsWithPhotos.length !== withPhotos.length) {
+                    lines.push('');
+                    lines.push('⚠️ Mismatch between memory and storage!');
+                    lines.push('Memory has ' + withPhotos.length + ' photo entries,');
+                    lines.push('Storage has ' + lsWithPhotos.length + ' photo entries.');
+                    lines.push('This means saveState() failed at some point.');
+                }
+            } else {
+                lines.push('⚠️ No state in localStorage');
+            }
+        } catch (e) {
+            lines.push('Storage read error: ' + e.message);
+        }
+
+        lines.push('');
+        lines.push('=== CURRENT PHOTO BUFFER ===');
+        lines.push(JSON.stringify(Object.entries(state.currentPhotos || {}).map(([k, v]) => ({
+            angle: k,
+            value: v === null ? 'null' : (v === 'REMOVE' ? 'REMOVE' : 'photo (' + (v ? v.length : 0) + ' chars)')
+        })), null, 2));
+
+        out.textContent = lines.join('\n');
+        out.classList.remove('hidden');
     }
 
     /**
@@ -6711,4 +6809,3 @@
     </script>
 </body>
 </html>
-
