@@ -802,7 +802,9 @@
             <!-- METRICS TAB -->
             <!-- ============================== -->
             <section id="metrics" class="tab-content space-y-6">
+                <!-- Date picker — applies to whichever modal you open next -->
                 <div class="glass-card p-4 rounded-2xl">
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 text-center">Recording for</p>
                     <div class="flex items-center justify-between gap-3">
                         <button onclick="changeMetricsDate(-1)" class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-slate-200">
                             <i data-lucide="chevron-left" class="w-5 h-5"></i>
@@ -815,70 +817,53 @@
                         </button>
                     </div>
                     <div id="metrics-date-warning" class="hidden mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                        <p class="text-xs text-amber-800 font-bold text-center">⚠️ Recording for past date - Click "Save Metrics" to confirm</p>
+                        <p class="text-xs text-amber-800 font-bold text-center">⚠️ Editing past date — values you save will apply to this date</p>
                     </div>
                 </div>
 
-                <div class="glass-card p-8 rounded-[3rem] space-y-8">
-                    <div class="bg-slate-50 p-6 rounded-3xl text-center border">
-                        <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">Weight (kg)</span>
-                        <input id="metric-weight" type="number" step="0.1" placeholder="00.0" class="w-full bg-transparent text-center text-5xl font-black outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Chest (cm)</label>
-                            <input id="metric-chest" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Shoulders (cm)</label>
-                            <input id="metric-shoulders" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Arms (cm)</label>
-                            <input id="metric-arms" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Waist (cm)</label>
-                            <input id="metric-waist" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Legs (cm)</label>
-                            <input id="metric-legs" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <label class="text-[9px] font-black text-slate-400 block uppercase">Glutes (cm)</label>
-                            <input id="metric-glutes" type="number" class="w-full bg-transparent font-bold outline-none">
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <h4 class="text-[10px] font-black uppercase text-slate-400 text-center">Progress Photos</h4>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="photo-slot" onclick="triggerPhotoUpload('front')">
-                                <img id="photo-front-preview" class="hidden" alt="Front">
-                                <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                                <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
+                <!-- 3 RECORD BUTTONS -->
+                <div class="space-y-3">
+                    <button onclick="openRecordWeightModal()" class="w-full glass-card p-5 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-[0.98]">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="scale" class="w-7 h-7 text-white"></i>
                             </div>
-                            <div class="photo-slot" onclick="triggerPhotoUpload('side')">
-                                <img id="photo-side-preview" class="hidden" alt="Side">
-                                <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                                <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
-                            </div>
-                            <div class="photo-slot" onclick="triggerPhotoUpload('back')">
-                                <img id="photo-back-preview" class="hidden" alt="Back">
-                                <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
-                                <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
+                            <div class="text-left">
+                                <h4 class="font-black text-base">Record Weight</h4>
+                                <p id="weight-status-line" class="text-xs text-slate-400">No weight logged for this date</p>
                             </div>
                         </div>
-                        <input type="file" id="photo-upload-input" accept="image/*" class="hidden">
-                    </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    </button>
 
-                    <button onclick="saveMetrics()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black uppercase hover:bg-rose-600">
-                        Save Metrics
+                    <button onclick="openRecordMeasurementsModal()" class="w-full glass-card p-5 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-[0.98]">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="ruler" class="w-7 h-7 text-white"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-base">Record Measurements</h4>
+                                <p id="measurements-status-line" class="text-xs text-slate-400">No measurements for this date</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    </button>
+
+                    <button onclick="openProgressPhotosModal()" class="w-full glass-card p-5 rounded-2xl flex items-center justify-between hover:shadow-lg transition-all active:scale-[0.98]">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="camera" class="w-7 h-7 text-white"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-base">Progress Photos</h4>
+                                <p id="photos-status-line" class="text-xs text-slate-400">No photos for this date</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
                     </button>
                 </div>
 
+                <!-- VIEW PROGRESS BUTTONS -->
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="openMetricsChart()" class="glass-card p-6 rounded-2xl text-center hover:shadow-lg transition-all active:scale-95">
                         <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
@@ -895,6 +880,18 @@
                         <p class="text-xs text-slate-400">Side by side</p>
                     </button>
                 </div>
+
+                <!-- HISTORY LIST -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <h3 class="font-black text-sm uppercase tracking-wide text-slate-600 mb-4 flex items-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4"></i>
+                        History
+                    </h3>
+                    <div id="metrics-history-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Hidden file input shared by photo modal -->
+                <input type="file" id="photo-upload-input" accept="image/*" class="hidden">
             </section>
 
             <!-- ============================== -->
@@ -1013,6 +1010,7 @@
             </section>
 
         </main>
+
         <!-- ========================================== -->
         <!-- SIDEBAR -->
         <!-- ========================================== -->
@@ -1694,6 +1692,145 @@
     </div>
 
     <!-- METRICS CHART MODAL -->
+    <!-- RECORD WEIGHT MODAL -->
+    <div id="record-weight-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black">Record Weight</h3>
+                    <p id="record-weight-date" class="text-xs text-slate-400 mt-1">Today</p>
+                </div>
+                <button onclick="closeRecordWeightModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <!-- Unit picker -->
+            <div class="mb-5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Unit</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="setWeightUnit('kg')" id="weight-unit-kg" class="p-3 rounded-xl font-black text-sm bg-slate-100 text-slate-600 hover:bg-slate-200">kg</button>
+                    <button type="button" onclick="setWeightUnit('lbs')" id="weight-unit-lbs" class="p-3 rounded-xl font-black text-sm bg-slate-100 text-slate-600 hover:bg-slate-200">lbs</button>
+                    <button type="button" onclick="setWeightUnit('st')" id="weight-unit-st" class="p-3 rounded-xl font-black text-sm bg-slate-100 text-slate-600 hover:bg-slate-200">stone</button>
+                </div>
+            </div>
+
+            <!-- kg/lbs single input -->
+            <div id="weight-input-single" class="mb-5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Weight (<span id="weight-unit-label">kg</span>)</label>
+                <input id="weight-input-value" type="number" step="0.1" min="0" placeholder="00.0" class="w-full bg-slate-50 p-5 rounded-2xl text-center text-4xl font-black outline-none border-2 border-transparent focus:border-rose-500">
+            </div>
+
+            <!-- stone+lbs two-input -->
+            <div id="weight-input-stone" class="hidden mb-5 grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Stone</label>
+                    <input id="weight-input-stone-major" type="number" min="0" step="1" placeholder="0" class="w-full bg-slate-50 p-5 rounded-2xl text-center text-3xl font-black outline-none border-2 border-transparent focus:border-rose-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Pounds</label>
+                    <input id="weight-input-stone-minor" type="number" min="0" max="13.99" step="0.1" placeholder="0" class="w-full bg-slate-50 p-5 rounded-2xl text-center text-3xl font-black outline-none border-2 border-transparent focus:border-rose-500">
+                </div>
+            </div>
+
+            <p id="weight-conversion-preview" class="hidden text-xs text-slate-500 text-center mb-4 italic"></p>
+
+            <button onclick="saveRecordedWeight()" class="w-full bg-rose-500 text-white p-5 rounded-2xl font-black hover:bg-rose-600 mb-3">
+                Save Weight
+            </button>
+            <button onclick="closeRecordWeightModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
+
+    <!-- RECORD MEASUREMENTS MODAL -->
+    <div id="record-measurements-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black">Record Measurements</h3>
+                    <p id="record-meas-date" class="text-xs text-slate-400 mt-1">Today</p>
+                </div>
+                <button onclick="closeRecordMeasurementsModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <p class="text-xs text-slate-500 mb-4">Fill in only what you're measuring — empty fields stay as they were.</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Chest (cm)</label>
+                    <input id="meas-chest" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Shoulders (cm)</label>
+                    <input id="meas-shoulders" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Arms (cm)</label>
+                    <input id="meas-arms" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Waist (cm)</label>
+                    <input id="meas-waist" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Legs (cm)</label>
+                    <input id="meas-legs" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl">
+                    <label class="text-[9px] font-black text-slate-400 block uppercase mb-1">Glutes (cm)</label>
+                    <input id="meas-glutes" type="number" step="0.1" class="w-full bg-transparent font-bold outline-none text-lg">
+                </div>
+            </div>
+
+            <button onclick="saveRecordedMeasurements()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black hover:bg-indigo-700 mb-3">
+                Save Measurements
+            </button>
+            <button onclick="closeRecordMeasurementsModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
+
+    <!-- PROGRESS PHOTOS MODAL -->
+    <div id="progress-photos-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-black">Progress Photos</h3>
+                    <p id="record-photos-date" class="text-xs text-slate-400 mt-1">Today</p>
+                </div>
+                <button onclick="closeProgressPhotosModal()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <p class="text-xs text-slate-500 mb-4">Tap a slot to upload. Photos save when you tap Save below.</p>
+
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="photo-slot" onclick="triggerPhotoUpload('front')">
+                    <img id="photo-front-preview" class="hidden" alt="Front">
+                    <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Front</span>
+                </div>
+                <div class="photo-slot" onclick="triggerPhotoUpload('side')">
+                    <img id="photo-side-preview" class="hidden" alt="Side">
+                    <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Side</span>
+                </div>
+                <div class="photo-slot" onclick="triggerPhotoUpload('back')">
+                    <img id="photo-back-preview" class="hidden" alt="Back">
+                    <i data-lucide="camera" class="text-slate-300 w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase mt-2 text-slate-400">Back</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button onclick="removePhoto('front')" class="py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Clear Front</button>
+                <button onclick="removePhoto('side')" class="py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Clear Side</button>
+                <button onclick="removePhoto('back')" class="py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg">Clear Back</button>
+            </div>
+
+            <button onclick="saveRecordedPhotos()" class="w-full bg-emerald-600 text-white p-5 rounded-2xl font-black hover:bg-emerald-700 mb-3">
+                Save Photos
+            </button>
+            <button onclick="closeProgressPhotosModal()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase">Cancel</button>
+        </div>
+    </div>
+
     <div id="metrics-chart-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-2xl rounded-[40px] p-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -2273,6 +2410,7 @@
         hydrationLogs: {},
         aiCoachEnabled: true,
         proteinGoal: 150,
+        weightUnit: 'kg', // user's preferred display unit: 'kg' | 'lbs' | 'st'
         userProfile: {
             gender: '',         // 'male' | 'female' | ''
             heightCm: null,     // number
@@ -2422,6 +2560,13 @@
         if (tabId === 'profile') renderProfile();
         if (tabId === 'settings') renderSettings();
         if (tabId === 'dashboard') renderDashboard();
+        if (tabId === 'metrics') {
+            // Set date picker to current viewing date and refresh status + history
+            const picker = document.getElementById('metrics-date-picker');
+            if (picker && !picker.value) picker.value = state.metricsDate || new Date().toISOString().split('T')[0];
+            renderMetricsStatusLines();
+            renderMetricsHistory();
+        }
         lucide.createIcons();
     }
 
@@ -4283,29 +4428,13 @@
         const warning = document.getElementById('metrics-date-warning');
         if (warning) warning.classList.toggle('hidden', dateStr === today);
 
-        // Load existing data for that date
-        const existing = (state.metricsHistory || []).find(m => m.date === dateStr);
-        if (existing) {
-            document.getElementById('metric-weight').value = existing.weight || '';
-            document.getElementById('metric-chest').value = existing.chest || '';
-            document.getElementById('metric-shoulders').value = existing.shoulders || '';
-            document.getElementById('metric-arms').value = existing.arms || '';
-            document.getElementById('metric-waist').value = existing.waist || '';
-            document.getElementById('metric-legs').value = existing.legs || '';
-            document.getElementById('metric-glutes').value = existing.glutes || '';
+        // Reset photo buffer when changing dates so we don't accidentally apply
+        // photos picked for a different day.
+        state.currentPhotos = { front: null, side: null, back: null };
 
-            ['front', 'side', 'back'].forEach(t => {
-                const preview = document.getElementById(`photo-${t}-preview`);
-                if (existing.photos && existing.photos[t]) {
-                    preview.src = existing.photos[t];
-                    preview.classList.remove('hidden');
-                } else {
-                    preview.classList.add('hidden');
-                    preview.src = '';
-                }
-            });
-        }
         saveState();
+        renderMetricsStatusLines();
+        renderMetricsHistory();
     }
 
     function triggerPhotoUpload(type) {
@@ -4321,63 +4450,427 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             const preview = document.getElementById(`photo-${currentPhotoType}-preview`);
-            preview.src = e.target.result;
-            preview.classList.remove('hidden');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            }
             state.currentPhotos[currentPhotoType] = e.target.result;
-            saveState();
-            showToast('Photo added — save metrics to confirm');
+            showToast('Photo added — tap Save Photos to confirm');
         };
         reader.readAsDataURL(file);
     }
 
-    function saveMetrics() {
-        const date = state.metricsDate || new Date().toISOString().split('T')[0];
-        const weight = parseFloat(document.getElementById('metric-weight').value);
-        const chest = parseFloat(document.getElementById('metric-chest').value);
-        const shoulders = parseFloat(document.getElementById('metric-shoulders').value);
-        const arms = parseFloat(document.getElementById('metric-arms').value);
-        const waist = parseFloat(document.getElementById('metric-waist').value);
-        const legs = parseFloat(document.getElementById('metric-legs').value);
-        const glutes = parseFloat(document.getElementById('metric-glutes').value);
-
-        // Build a partial entry — only include fields the user actually filled in.
-        // This way, if they later add another field for the same date, we don't wipe earlier ones.
-        const newEntry = { date };
-        if (!isNaN(weight)) newEntry.weight = weight;
-        if (!isNaN(chest)) newEntry.chest = chest;
-        if (!isNaN(shoulders)) newEntry.shoulders = shoulders;
-        if (!isNaN(arms)) newEntry.arms = arms;
-        if (!isNaN(waist)) newEntry.waist = waist;
-        if (!isNaN(legs)) newEntry.legs = legs;
-        if (!isNaN(glutes)) newEntry.glutes = glutes;
-
-        const photos = {};
-        ['front', 'side', 'back'].forEach(t => {
-            if (state.currentPhotos[t]) photos[t] = state.currentPhotos[t];
-        });
-        if (Object.keys(photos).length > 0) newEntry.photos = photos;
-
-        // Merge with existing entry for that date (preserve fields not updated this time)
-        const existingIdx = (state.metricsHistory || []).findIndex(m => m.date === date);
-        if (existingIdx >= 0) {
-            const existing = state.metricsHistory[existingIdx];
-            const merged = { ...existing, ...newEntry };
-            if (existing.photos || newEntry.photos) {
-                merged.photos = { ...(existing.photos || {}), ...(newEntry.photos || {}) };
-            }
-            state.metricsHistory[existingIdx] = merged;
-        } else {
-            if (!state.metricsHistory) state.metricsHistory = [];
-            state.metricsHistory.unshift(newEntry);
+    function removePhoto(type) {
+        state.currentPhotos[type] = 'REMOVE'; // sentinel value handled by saveRecordedPhotos
+        const preview = document.getElementById(`photo-${type}-preview`);
+        if (preview) {
+            preview.classList.add('hidden');
+            preview.src = '';
         }
+        showToast(`${type} photo cleared — tap Save Photos to confirm`);
+    }
+
+    // ==========================================================================
+    // METRIC RECORD MODALS (weight / measurements / photos)
+    // ==========================================================================
+
+    /**
+     * Merge a partial metric entry into state.metricsHistory for a given date.
+     * Empty/null fields are preserved from any existing entry on that date.
+     * The `photos` parameter, when provided, is a plain object whose values are
+     * either base64 strings (to set) or the string 'REMOVE' (to delete).
+     */
+    function mergeMetricEntry(date, fields, photos) {
+        if (!state.metricsHistory) state.metricsHistory = [];
+        const idx = state.metricsHistory.findIndex(m => m.date === date);
+        const existing = idx >= 0 ? state.metricsHistory[idx] : { date };
+
+        const merged = Object.assign({}, existing, fields);
+
+        if (photos) {
+            const mergedPhotos = Object.assign({}, existing.photos || {});
+            Object.entries(photos).forEach(([k, v]) => {
+                if (v === 'REMOVE') delete mergedPhotos[k];
+                else if (v) mergedPhotos[k] = v;
+            });
+            if (Object.keys(mergedPhotos).length > 0) {
+                merged.photos = mergedPhotos;
+            } else {
+                delete merged.photos;
+            }
+        }
+
+        if (idx >= 0) state.metricsHistory[idx] = merged;
+        else state.metricsHistory.unshift(merged);
 
         // Sort descending by date
         state.metricsHistory.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
-        // Reset current photos buffer
-        state.currentPhotos = { front: null, side: null, back: null };
         saveState();
-        showToast('Metrics saved! ✓');
+    }
+
+    function getCurrentMetricEntry() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+        return (state.metricsHistory || []).find(m => m.date === date) || null;
+    }
+
+    function formatMetricsDateLabel(dateStr) {
+        const today = new Date().toISOString().split('T')[0];
+        if (dateStr === today) return 'Today';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // -- WEIGHT MODAL --
+
+    /**
+     * Convert any unit to canonical kg (for storage).
+     */
+    function toKg(value, unit, minor) {
+        if (unit === 'kg') return parseFloat(value);
+        if (unit === 'lbs') return parseFloat(value) * 0.45359237;
+        if (unit === 'st') {
+            const st = parseFloat(value) || 0;
+            const lb = parseFloat(minor) || 0;
+            return (st * 14 + lb) * 0.45359237;
+        }
+        return parseFloat(value);
+    }
+
+    /**
+     * Convert canonical kg to a display unit.
+     * Returns { primary, secondary } — secondary is non-null only for stone.
+     */
+    function fromKg(kg, unit) {
+        if (kg === null || kg === undefined || isNaN(kg)) return { primary: '', secondary: '' };
+        if (unit === 'kg') return { primary: kg.toFixed(1), secondary: '' };
+        if (unit === 'lbs') return { primary: (kg / 0.45359237).toFixed(1), secondary: '' };
+        if (unit === 'st') {
+            const totalLb = kg / 0.45359237;
+            const st = Math.floor(totalLb / 14);
+            const lb = totalLb - st * 14;
+            return { primary: String(st), secondary: lb.toFixed(1) };
+        }
+        return { primary: kg.toFixed(1), secondary: '' };
+    }
+
+    function openRecordWeightModal() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+        document.getElementById('record-weight-date').textContent = formatMetricsDateLabel(date);
+
+        // Apply the user's preferred unit
+        const unit = state.weightUnit || 'kg';
+        setWeightUnit(unit, /*skipSave=*/true);
+
+        // Pre-fill existing weight for this date
+        const existing = getCurrentMetricEntry();
+        if (existing && existing.weight) {
+            const { primary, secondary } = fromKg(existing.weight, unit);
+            document.getElementById('weight-input-value').value = primary;
+            document.getElementById('weight-input-stone-major').value = primary;
+            document.getElementById('weight-input-stone-minor').value = secondary;
+        } else {
+            document.getElementById('weight-input-value').value = '';
+            document.getElementById('weight-input-stone-major').value = '';
+            document.getElementById('weight-input-stone-minor').value = '';
+        }
+
+        updateWeightConversionPreview();
+        document.getElementById('record-weight-modal').style.display = 'flex';
+
+        // Live-update conversion preview
+        ['weight-input-value', 'weight-input-stone-major', 'weight-input-stone-minor'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.oninput = updateWeightConversionPreview;
+        });
+    }
+
+    function closeRecordWeightModal() {
+        document.getElementById('record-weight-modal').style.display = 'none';
+    }
+
+    function setWeightUnit(unit, skipSave) {
+        state.weightUnit = unit;
+        if (!skipSave) saveState();
+
+        // Update button styles
+        ['kg', 'lbs', 'st'].forEach(u => {
+            const btn = document.getElementById('weight-unit-' + u);
+            if (!btn) return;
+            if (u === unit) {
+                btn.className = 'p-3 rounded-xl font-black text-sm bg-rose-500 text-white shadow-md';
+            } else {
+                btn.className = 'p-3 rounded-xl font-black text-sm bg-slate-100 text-slate-600 hover:bg-slate-200';
+            }
+        });
+
+        // Toggle inputs
+        const single = document.getElementById('weight-input-single');
+        const stone = document.getElementById('weight-input-stone');
+        if (unit === 'st') {
+            single.classList.add('hidden');
+            stone.classList.remove('hidden');
+        } else {
+            single.classList.remove('hidden');
+            stone.classList.add('hidden');
+            const label = document.getElementById('weight-unit-label');
+            if (label) label.textContent = unit;
+        }
+        updateWeightConversionPreview();
+    }
+
+    function updateWeightConversionPreview() {
+        const unit = state.weightUnit || 'kg';
+        let kg = null;
+        if (unit === 'st') {
+            const major = document.getElementById('weight-input-stone-major').value;
+            const minor = document.getElementById('weight-input-stone-minor').value;
+            if (major || minor) kg = toKg(major || 0, 'st', minor || 0);
+        } else {
+            const v = document.getElementById('weight-input-value').value;
+            if (v) kg = toKg(v, unit);
+        }
+
+        const preview = document.getElementById('weight-conversion-preview');
+        if (!preview) return;
+        if (kg && kg > 0) {
+            const inKg = kg.toFixed(1);
+            const inLbs = (kg / 0.45359237).toFixed(1);
+            const stConv = fromKg(kg, 'st');
+            const inSt = stConv.primary + 'st ' + stConv.secondary + 'lb';
+            const parts = [];
+            if (unit !== 'kg') parts.push(inKg + ' kg');
+            if (unit !== 'lbs') parts.push(inLbs + ' lbs');
+            if (unit !== 'st') parts.push(inSt);
+            preview.textContent = '≈ ' + parts.join(' · ');
+            preview.classList.remove('hidden');
+        } else {
+            preview.classList.add('hidden');
+        }
+    }
+
+    function saveRecordedWeight() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+        const unit = state.weightUnit || 'kg';
+
+        let kg;
+        if (unit === 'st') {
+            const major = document.getElementById('weight-input-stone-major').value;
+            const minor = document.getElementById('weight-input-stone-minor').value;
+            if (!major && !minor) { showToast('Enter a weight'); return; }
+            kg = toKg(major || 0, 'st', minor || 0);
+        } else {
+            const v = document.getElementById('weight-input-value').value;
+            if (!v) { showToast('Enter a weight'); return; }
+            kg = toKg(v, unit);
+        }
+
+        if (isNaN(kg) || kg <= 0 || kg > 500) {
+            showToast('Please enter a valid weight');
+            return;
+        }
+
+        mergeMetricEntry(date, { weight: Math.round(kg * 10) / 10 }, null);
+        closeRecordWeightModal();
+        renderMetricsStatusLines();
+        renderMetricsHistory();
+        renderMaintenanceDisplay();
+        showToast('Weight saved ✓');
+    }
+
+    // -- MEASUREMENTS MODAL --
+
+    function openRecordMeasurementsModal() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+        document.getElementById('record-meas-date').textContent = formatMetricsDateLabel(date);
+
+        const existing = getCurrentMetricEntry() || {};
+        document.getElementById('meas-chest').value = existing.chest || '';
+        document.getElementById('meas-shoulders').value = existing.shoulders || '';
+        document.getElementById('meas-arms').value = existing.arms || '';
+        document.getElementById('meas-waist').value = existing.waist || '';
+        document.getElementById('meas-legs').value = existing.legs || '';
+        document.getElementById('meas-glutes').value = existing.glutes || '';
+
+        document.getElementById('record-measurements-modal').style.display = 'flex';
+    }
+
+    function closeRecordMeasurementsModal() {
+        document.getElementById('record-measurements-modal').style.display = 'none';
+    }
+
+    function saveRecordedMeasurements() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+
+        const fields = {};
+        const parts = ['chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'];
+        let anyEntered = false;
+        parts.forEach(p => {
+            const raw = document.getElementById('meas-' + p).value;
+            if (raw !== '' && raw !== null) {
+                const num = parseFloat(raw);
+                if (!isNaN(num) && num > 0) {
+                    fields[p] = num;
+                    anyEntered = true;
+                }
+            }
+        });
+
+        if (!anyEntered) {
+            showToast('Enter at least one measurement');
+            return;
+        }
+
+        mergeMetricEntry(date, fields, null);
+        closeRecordMeasurementsModal();
+        renderMetricsStatusLines();
+        renderMetricsHistory();
+        showToast('Measurements saved ✓');
+    }
+
+    // -- PHOTOS MODAL --
+
+    function openProgressPhotosModal() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+        document.getElementById('record-photos-date').textContent = formatMetricsDateLabel(date);
+
+        // Reset buffer and load any existing photos for the date
+        state.currentPhotos = { front: null, side: null, back: null };
+        const existing = getCurrentMetricEntry();
+
+        ['front', 'side', 'back'].forEach(t => {
+            const preview = document.getElementById(`photo-${t}-preview`);
+            if (!preview) return;
+            if (existing && existing.photos && existing.photos[t]) {
+                preview.src = existing.photos[t];
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+                preview.src = '';
+            }
+        });
+
+        document.getElementById('progress-photos-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeProgressPhotosModal() {
+        document.getElementById('progress-photos-modal').style.display = 'none';
+        // Discard buffered changes that weren't saved
+        state.currentPhotos = { front: null, side: null, back: null };
+    }
+
+    function saveRecordedPhotos() {
+        const date = state.metricsDate || new Date().toISOString().split('T')[0];
+
+        const photos = {};
+        let anyChange = false;
+        ['front', 'side', 'back'].forEach(t => {
+            const v = state.currentPhotos[t];
+            if (v) {
+                photos[t] = v; // either base64 data or 'REMOVE' sentinel
+                anyChange = true;
+            }
+        });
+
+        if (!anyChange) {
+            showToast('No new photos to save');
+            return;
+        }
+
+        mergeMetricEntry(date, {}, photos);
+
+        // Reset buffer
+        state.currentPhotos = { front: null, side: null, back: null };
+
+        document.getElementById('progress-photos-modal').style.display = 'none';
+        renderMetricsStatusLines();
+        renderMetricsHistory();
+        showToast('Photos saved ✓');
+    }
+
+    // ==========================================================================
+    // METRICS STATUS LINES & HISTORY LIST
+    // ==========================================================================
+
+    function renderMetricsStatusLines() {
+        const entry = getCurrentMetricEntry();
+        const unit = state.weightUnit || 'kg';
+
+        // Weight status
+        const wEl = document.getElementById('weight-status-line');
+        if (wEl) {
+            if (entry && entry.weight) {
+                const display = fromKg(entry.weight, unit);
+                const text = unit === 'st'
+                    ? `${display.primary}st ${display.secondary}lb logged`
+                    : `${display.primary} ${unit} logged`;
+                wEl.textContent = text;
+                wEl.className = 'text-xs text-emerald-600 font-bold';
+            } else {
+                wEl.textContent = 'No weight logged for this date';
+                wEl.className = 'text-xs text-slate-400';
+            }
+        }
+
+        // Measurements status
+        const mEl = document.getElementById('measurements-status-line');
+        if (mEl) {
+            const parts = ['chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'];
+            const count = entry ? parts.filter(p => entry[p]).length : 0;
+            if (count > 0) {
+                mEl.textContent = `${count} measurement${count === 1 ? '' : 's'} logged`;
+                mEl.className = 'text-xs text-emerald-600 font-bold';
+            } else {
+                mEl.textContent = 'No measurements for this date';
+                mEl.className = 'text-xs text-slate-400';
+            }
+        }
+
+        // Photos status
+        const pEl = document.getElementById('photos-status-line');
+        if (pEl) {
+            const photoCount = entry && entry.photos ? Object.keys(entry.photos).length : 0;
+            if (photoCount > 0) {
+                pEl.textContent = `${photoCount} photo${photoCount === 1 ? '' : 's'} on file`;
+                pEl.className = 'text-xs text-emerald-600 font-bold';
+            } else {
+                pEl.textContent = 'No photos for this date';
+                pEl.className = 'text-xs text-slate-400';
+            }
+        }
+    }
+
+    function renderMetricsHistory() {
+        const container = document.getElementById('metrics-history-list');
+        if (!container) return;
+        const history = (state.metricsHistory || []).slice(0, 30);
+        if (history.length === 0) {
+            container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-3">No entries yet</p>';
+            return;
+        }
+        const unit = state.weightUnit || 'kg';
+        container.innerHTML = history.map(e => {
+            const d = new Date(e.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            const tags = [];
+            if (e.weight) {
+                const w = fromKg(e.weight, unit);
+                tags.push(unit === 'st'
+                    ? `<span class="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[10px] font-bold">${w.primary}st ${w.secondary}lb</span>`
+                    : `<span class="px-2 py-0.5 bg-rose-50 text-rose-700 rounded text-[10px] font-bold">${w.primary}${unit}</span>`);
+            }
+            const measParts = ['chest', 'shoulders', 'arms', 'waist', 'legs', 'glutes'].filter(p => e[p]);
+            if (measParts.length > 0) {
+                tags.push(`<span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold">${measParts.length} meas</span>`);
+            }
+            if (e.photos && Object.keys(e.photos).length > 0) {
+                tags.push(`<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[10px] font-bold">📸 ${Object.keys(e.photos).length}</span>`);
+            }
+            return `
+                <div onclick="selectMetricsDate('${e.date}')" class="bg-slate-50 hover:bg-slate-100 p-3 rounded-xl cursor-pointer flex items-center justify-between">
+                    <p class="font-bold text-sm">${d}</p>
+                    <div class="flex gap-1 flex-wrap justify-end">${tags.join('')}</div>
+                </div>`;
+        }).join('');
     }
 
     // ==========================================================================
@@ -6093,4 +6586,3 @@
     </script>
 </body>
 </html>
-
