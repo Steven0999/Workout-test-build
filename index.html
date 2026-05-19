@@ -4955,23 +4955,69 @@
         document.getElementById('photo-comparison-modal').style.display = 'none';
     }
 
+    /**
+     * Build dropdowns of every date that has at least one photo. Each option label
+     * includes which angles are available on that date (e.g. "12 May — front, side").
+     * Then auto-pick the two most-recent dates and an angle that exists on both,
+     * so the user sees something useful immediately.
+     */
     function populateComparisonDates() {
         const datesWithPhotos = (state.metricsHistory || []).filter(m => m.photos && Object.keys(m.photos).length > 0);
 
         const sel1 = document.getElementById('compare-date-1');
         const sel2 = document.getElementById('compare-date-2');
 
-        const optionsHtml = '<option value="">Select date...</option>' + datesWithPhotos.map(m => {
+        if (datesWithPhotos.length === 0) {
+            sel1.innerHTML = '<option value="">No photos yet</option>';
+            sel2.innerHTML = '<option value="">No photos yet</option>';
+            const noMsg = document.getElementById('no-comparison-message');
+            noMsg.innerHTML = `
+                <i data-lucide="camera-off" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                <p class="font-bold mb-1">No progress photos yet</p>
+                <p class="text-xs">Add some from the Metrics tab → Progress Photos</p>`;
+            noMsg.classList.remove('hidden');
+            document.getElementById('comparison-view').classList.add('hidden');
+            lucide.createIcons();
+            return;
+        }
+
+        // Sort newest-first for the dropdowns
+        const sortedDates = datesWithPhotos.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+        const optionsHtml = '<option value="">Select date...</option>' + sortedDates.map(m => {
             const d = new Date(m.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            return `<option value="${m.date}">${d}</option>`;
+            const angles = Object.keys(m.photos).join(', ');
+            return `<option value="${m.date}">${d} — ${angles}</option>`;
         }).join('');
 
         sel1.innerHTML = optionsHtml;
         sel2.innerHTML = optionsHtml;
 
-        if (datesWithPhotos.length === 0) {
-            document.getElementById('no-comparison-message').classList.remove('hidden');
-            document.getElementById('comparison-view').classList.add('hidden');
+        // Auto-pick the two most recent dates that share at least one angle
+        if (sortedDates.length >= 2) {
+            // sortedDates[0] is newest, sortedDates[sortedDates.length - 1] is oldest
+            const newest = sortedDates[0];
+            const oldest = sortedDates[sortedDates.length - 1];
+            sel2.value = newest.date; // "After" = newest
+            sel1.value = oldest.date; // "Before" = oldest
+
+            // Pick a shared angle — prefer front, then side, then back, then any
+            const shared = ['front', 'side', 'back'].find(a => newest.photos[a] && oldest.photos[a]);
+            if (shared) {
+                setComparePhotoType(shared);
+            } else {
+                // No shared angle — pick whatever the newest has and let loadComparisonPhotos
+                // show the helpful "no matching angle" message.
+                const fallback = Object.keys(newest.photos)[0] || 'front';
+                setComparePhotoType(fallback);
+            }
+        } else {
+            // Only one date has photos — preselect it on both sides so the user can at least
+            // see what they've got. Comparing to itself is harmless.
+            sel1.value = sortedDates[0].date;
+            sel2.value = sortedDates[0].date;
+            const fallback = Object.keys(sortedDates[0].photos)[0] || 'front';
+            setComparePhotoType(fallback);
         }
     }
 
@@ -4979,6 +5025,7 @@
         comparePhotoType = type;
         ['front', 'side', 'back'].forEach(t => {
             const btn = document.getElementById(`compare-type-${t}`);
+            if (!btn) return;
             if (t === type) {
                 btn.className = 'p-4 rounded-2xl font-bold text-sm bg-indigo-600 text-white';
             } else {
@@ -4991,31 +5038,56 @@
     function loadComparisonPhotos() {
         const date1 = document.getElementById('compare-date-1').value;
         const date2 = document.getElementById('compare-date-2').value;
+        const noMsg = document.getElementById('no-comparison-message');
+        const view = document.getElementById('comparison-view');
 
         if (!date1 || !date2) {
-            document.getElementById('no-comparison-message').classList.remove('hidden');
-            document.getElementById('comparison-view').classList.add('hidden');
+            noMsg.innerHTML = `
+                <i data-lucide="images" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                <p class="font-bold">Select two dates to compare</p>`;
+            noMsg.classList.remove('hidden');
+            view.classList.add('hidden');
+            lucide.createIcons();
             return;
         }
 
-        const m1 = state.metricsHistory.find(m => m.date === date1);
-        const m2 = state.metricsHistory.find(m => m.date === date2);
+        const m1 = (state.metricsHistory || []).find(m => m.date === date1);
+        const m2 = (state.metricsHistory || []).find(m => m.date === date2);
 
         const photo1 = m1 && m1.photos && m1.photos[comparePhotoType];
         const photo2 = m2 && m2.photos && m2.photos[comparePhotoType];
 
         if (!photo1 || !photo2) {
-            document.getElementById('no-comparison-message').classList.remove('hidden');
-            document.getElementById('no-comparison-message').innerHTML = `
-                <i data-lucide="alert-circle" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
-                <p class="font-bold">No ${comparePhotoType} photo on one or both dates</p>`;
-            document.getElementById('comparison-view').classList.add('hidden');
+            // Tell the user exactly which angle is missing on which date,
+            // and what angles ARE available so they can switch.
+            const have1 = m1 && m1.photos ? Object.keys(m1.photos) : [];
+            const have2 = m2 && m2.photos ? Object.keys(m2.photos) : [];
+            const shared = ['front', 'side', 'back'].filter(a => have1.includes(a) && have2.includes(a));
+
+            let helpText = '';
+            if (shared.length > 0) {
+                helpText = `Both dates have: <b>${shared.join(', ')}</b>. Tap one of those angle buttons.`;
+            } else {
+                const d1Label = new Date(date1).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                const d2Label = new Date(date2).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                helpText = `
+                    ${d1Label} has: <b>${have1.length ? have1.join(', ') : 'no photos'}</b><br>
+                    ${d2Label} has: <b>${have2.length ? have2.join(', ') : 'no photos'}</b><br>
+                    No matching angle — try recording the same angle on both dates.`;
+            }
+
+            noMsg.innerHTML = `
+                <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3 text-amber-500"></i>
+                <p class="font-bold mb-2">No <span class="capitalize">${comparePhotoType}</span> photo on one or both dates</p>
+                <p class="text-xs leading-relaxed">${helpText}</p>`;
+            noMsg.classList.remove('hidden');
+            view.classList.add('hidden');
             lucide.createIcons();
             return;
         }
 
-        document.getElementById('no-comparison-message').classList.add('hidden');
-        document.getElementById('comparison-view').classList.remove('hidden');
+        noMsg.classList.add('hidden');
+        view.classList.remove('hidden');
 
         document.getElementById('compare-img-1').src = photo1;
         document.getElementById('compare-img-2').src = photo2;
