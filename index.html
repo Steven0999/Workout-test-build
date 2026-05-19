@@ -2741,6 +2741,42 @@
             'Legs': {
                 compound: ['Squat', 'Lunges', 'Jump Squat'],
                 isolation: ['Glute Bridge', 'Calf Raise', 'Leg Raises']
+            },
+            'Chest': {
+                compound: ['Push Ups', 'Decline Push Ups'],
+                isolation: ['Diamond Push Ups', 'Wide Push Ups', 'Resistance Band Chest Flyes']
+            },
+            'Back': {
+                compound: ['Inverted Row', 'Chin Ups', 'Resistance Band Back Rows'],
+                isolation: ['Superman', 'Reverse Snow Angels', 'Resistance Band Pull Aparts']
+            },
+            'Shoulders': {
+                compound: ['Pike Push Ups', 'Handstand Push Ups'],
+                isolation: ['Resistance Bands Lateral Shoulder Raises', 'Resistance Band Front Raises', 'Shoulder Taps']
+            },
+            'Biceps': {
+                compound: ['Chin Ups'],
+                isolation: ['Resistance Bands Bicep Curls', 'Bicep Holds', 'Resistance Band Hammer Curls']
+            },
+            'Triceps': {
+                compound: ['Diamond Push Ups', 'Tricep Dips'],
+                isolation: ['Resistance Bands Tricep Extension', 'Bench Dips', 'Close-Grip Push Ups']
+            },
+            'Quads': {
+                compound: ['Bodyweight Squat', 'Jump Squat', 'Lunges', 'Resistance Bands Squats'],
+                isolation: ['Wall Sit', 'Sissy Squat', 'Step Ups']
+            },
+            'Hamstrings': {
+                compound: ['Resistance Bands Romanian Deadlifts', 'Single-Leg Romanian Deadlift'],
+                isolation: ['Glute Bridge', 'Hamstring Walkouts', 'Nordic Curl']
+            },
+            'Glutes': {
+                compound: ['Bulgarian Split Squat', 'Resistand Bands Reverse Lunges'],
+                isolation: ['Glute Bridge', 'Donkey Kicks', 'Resistance Band Glute Kickbacks', 'Hip Thrust']
+            },
+            'Calves': {
+                compound: [],
+                isolation: ['Calf Raise', 'Single-Leg Calf Raise', 'Jump Rope']
             }
         }
     };
@@ -3039,9 +3075,24 @@
                 : { compound: 1, isolation: 1 }; // 4+ muscles → keep total manageable
 
             const queued = [];
+            const missingMuscles = [];
+            const fellBackMuscles = [];
+            const otherEnv = env === 'gym' ? 'home' : 'gym';
+
             muscleKeys.forEach(muscleKey => {
-                const exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
-                if (!exercises) return;
+                let exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                let usedEnv = env;
+                // Fallback: if the primary environment doesn't have this muscle, try the other.
+                // Better to give the user some exercises (and let them swap them out) than none.
+                if (!exercises || ((exercises.compound || []).length + (exercises.isolation || []).length === 0)) {
+                    exercises = EXERCISE_DB[otherEnv] && EXERCISE_DB[otherEnv][muscleKey];
+                    usedEnv = otherEnv;
+                    if (exercises) fellBackMuscles.push(muscleKey);
+                }
+                if (!exercises) {
+                    missingMuscles.push(muscleKey);
+                    return;
+                }
                 const compounds = (exercises.compound || []).sort(() => 0.5 - Math.random()).slice(0, exercisesPerMuscle.compound);
                 const isolations = (exercises.isolation || []).sort(() => 0.5 - Math.random()).slice(0, exercisesPerMuscle.isolation);
                 queued.push(...compounds, ...isolations);
@@ -3056,8 +3107,18 @@
             });
 
             if (finalList.length === 0) {
-                showToast('No exercises found for this selection');
+                // This should now be very rare since fallback covers most cases.
+                // Show the user *why* it failed so we can diagnose any remaining edge case.
+                const debugInfo = `env=${env}, muscles=[${muscleKeys.join(',')}], missing=[${missingMuscles.join(',')}]`;
+                console.error('AI workout produced 0 exercises:', debugInfo);
+                showToast('No exercises generated — ' + debugInfo, 8000);
             } else {
+                // Warn about partial misses so the user knows some muscles got skipped
+                if (missingMuscles.length > 0) {
+                    showToast('Skipped (no exercises anywhere): ' + missingMuscles.join(', '), 4000);
+                } else if (fellBackMuscles.length > 0) {
+                    showToast('Used ' + otherEnv + ' exercises for: ' + fellBackMuscles.join(', '), 4000);
+                }
                 let delay = 0;
                 finalList.forEach(ex => {
                     setTimeout(() => addExercise(ex), delay);
