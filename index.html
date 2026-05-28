@@ -2713,8 +2713,16 @@
     const EXERCISE_DB = {
         gym: {
             'Full Body': {
-                compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press', 'Romanian Deadlift', 'Leg Press', 'Barbell Row'],
-                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise', 'Cable Flyes', 'Face Pulls']
+                compound: [
+                   //Lower Body
+                    'Barbell Squat', 'Deadlift', 'Romanian Deadlift', 'Leg Press', 'Lunges', 'Hack Squat', 'Bulgarian Split Squat', 'Hip Thrust', 'Front Squat', 'Reverse Lunges', 'Deficit Reverse Lunges',
+                   //UpperBody
+                     'Bench Press', 'Pull Ups', 'Overhead Press', 'Barbell Row', 'Dumbbell Row', 'Dips', 'Incline Press', 'Lat Pulldown', 'Chest Press Machine', 'Shoulder Press Machine', 'Seated Row Machine'],
+                     isolation: [
+                         //Lower Body
+                         'Seated Leg Curl', 'Standing Leg Curl', 'Calf Raise', 'Leg Extensions', 'Sissy Squats', 'Lying Leg Curl', 'Glute Hyperextension',    
+                         //Upper Body
+                         'Bicep Curl', 'Hammer Curl', 'Tricep Pushdown', 'Tricep Extensions', 'Close Grip Upright Rows', 'Wide Grip Upright Rows', 'Lateral Raise', 'Cable Flyes', 'Face Pulls', 'High Step Up]
             },
             'Upper': {
                 compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips', 'Incline Press', 'Lat Pulldown', 'Chest Press Machine', 'Shoulder Press Machine', 'Seated Row Machine'],
@@ -2753,20 +2761,20 @@
                 isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl']
             },
             'Triceps': {
-                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press'],
-                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension']
+                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press', 'Close Grip Push Ups'],
+                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Cable X Tricep Extension']
             },
             'Quads': {
-                compound: ['Squat', 'Leg Press', 'Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat'],
+                compound: ['Squat', 'Leg Press', 'Lunges', 'Hack Squat', 'Front Squat'],
                 isolation: ['Leg Extension', 'Sissy Squat', 'Step Ups', 'Single Leg Extension', 'Walking Lunges']
             },
             'Hamstrings': {
                 compound: ['Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift'],
-                isolation: ['Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through']
+                isolation: ['Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Standing Leg Curl', 'Cable Pull Through']
             },
             'Glutes': {
-                compound: ['Hip Thrust', 'Bulgarian Split Squat', 'Sumo Deadlift', 'Romanian Deadlift', 'Walking Lunges'],
-                isolation: ['Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps']
+                compound: ['Hip Thrust', 'Bulgarian Split Squat', 'Sumo Deadlift', 'Romanian Deadlift', 'Reverse Lunges', 'Elevate Foot Reverse Lunges', 'Walking Lunges'],
+                isolation: ['Cable Kickback', 'Seated Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps', 'Standing Hip Abduction']
             },
             'Calves': {
                 compound: ['Smith Machine Calf Raise', 'Leg Press Calf Raise', 'Calf Press Machine', 'Weighted Box Jumps'],
