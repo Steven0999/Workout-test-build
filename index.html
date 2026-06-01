@@ -2218,6 +2218,16 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ==========================================================================
+    // USDA FOODDATA CENTRAL API KEY
+    // ==========================================================================
+    // Get your own free key at: https://fdc.nal.usda.gov/api-key-signup.html
+    // It arrives by email instantly. Paste it between the quotes below,
+    // replacing DEMO_KEY. The DEMO_KEY works but is heavily rate-limited
+    // (shared across everyone), so food search may intermittently fail until
+    // you add your own key.
+    const USDA_API_KEY = "DEMO_KEY";
+
     let currentUser = null;
     let firebaseUserData = {};
 
@@ -2405,6 +2415,7 @@
             renderDiary();
             renderSettings();
             setupMidnightSave();
+            setupFoodSearch();
 
             lucide.createIcons();
         } else {
@@ -2713,31 +2724,8 @@
     const EXERCISE_DB = {
         gym: {
             'Full Body': {
-                compound: [
-                   //LOWER BODY
-                    //Squat
-                    'Barbell Squat', 'Dumbbell Squat', 'Goblet Squat', 'Barbell Front Squat', 'Leg Press (Pin Machine)', 'Leg Press (Plate Machine)', 'Hack Squat', 'Bulgarian Split Squat', 'Walking Lunges', 'Reverse Lunges', 'Deficit Reverse Lunges',
-                    //Hinge
-                    'Barbell Deadlifts', 'Suitcase Deadlifts', 'Barbell Romanian Deadlift', 'Dumbbell Romanian Deadlifts', 'Barbell Hip Thrust', 'Hip Thrusts (Pin Machine)', 'Hip Thrusts (Plate Machine)', 'Good Mornings', 
-                   //UPPER BODY
-                    //Push
-                     'Barbell Bench Press', 'Dumbbell Bench Press', 'Forward Lean Dips (Chest)', 'Incline Press', 'Chest Press (Pin Machine)', 'Chest Press (Plate Machine)',
-                    'Barbell Shoulder Press', 'Dumbbell Shoulder Press', 'Shoulder Press (Pin Machine)', 'Shoulder Press (Plate Machine)', 
-                    'Upright Dips (Triceps)', 'Barbell Close Grip Bench Press', 'Tricep Push Down (Pin Machine)',
-                    //Pull
-                    'Assisted Pull Ups', 'Weighted Pull Ups', 'Barbell Row', 'Dumbbell Row', 'Lat Pulldown', 'Seated Row (Pin Machine)', 'Seated Row (Plate Machine)'],
-                     isolation: [
-                         //Lower Body
-                         'Seated Leg Curl', 'Standing Leg Curl', 'Lying Leg Curl',
-                         'Seated Calf Raise', 'Standing Calf Raises',
-                         'Leg Extensions', 'Sissy Squats',     
-                         'Glute Hyperextension', 'High Step Up',
-                         //Upper Body
-                         'Bicep Curl', 'Hammer Curl', 'Close Grip Upright Rows',
-                         'Tricep Pushdown', 'Tricep Extensions', 
-                         'Wide Grip Upright Rows', 'Lateral Raise', 
-                         'Cable Flies', 'Pec Dec', 'Dumbbell Flies',
-                         'Face Pulls', 'Back Flies']
+                compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press', 'Romanian Deadlift', 'Leg Press', 'Barbell Row'],
+                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise', 'Cable Flyes', 'Face Pulls']
             },
             'Upper': {
                 compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips', 'Incline Press', 'Lat Pulldown', 'Chest Press Machine', 'Shoulder Press Machine', 'Seated Row Machine'],
@@ -2757,7 +2745,7 @@
             },
             'Legs': {
                 compound: ['Squat', 'Deadlift', 'Leg Press', 'Lunges', 'Romanian Deadlift', 'Hack Squat', 'Bulgarian Split Squat', 'Front Squat'],
-                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust', 'Standing Hip Abduction', 'Adductor Machine', 'Standing Calf Raise', 'Glute Kickback']
+                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust', 'Hip Abduction', 'Adductor Machine', 'Standing Calf Raise', 'Glute Kickback']
             },
             'Chest': {
                 compound: ['Bench Press', 'Incline Press', 'Dumbbell Press', 'Chest Press Machine', 'Decline Bench Press', 'Incline Dumbbell Press', 'Dips'],
@@ -2776,20 +2764,20 @@
                 isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl']
             },
             'Triceps': {
-                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press', 'Close Grip Push Ups'],
-                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Cable X Tricep Extension']
+                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press'],
+                isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension']
             },
             'Quads': {
-                compound: ['Squat', 'Leg Press', 'Lunges', 'Hack Squat', 'Front Squat'],
+                compound: ['Squat', 'Leg Press', 'Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat'],
                 isolation: ['Leg Extension', 'Sissy Squat', 'Step Ups', 'Single Leg Extension', 'Walking Lunges']
             },
             'Hamstrings': {
                 compound: ['Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift'],
-                isolation: ['Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Standing Leg Curl', 'Cable Pull Through']
+                isolation: ['Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through']
             },
             'Glutes': {
-                compound: ['Hip Thrust', 'Bulgarian Split Squat', 'Sumo Deadlift', 'Romanian Deadlift', 'Reverse Lunges', 'Elevate Foot Reverse Lunges', 'Walking Lunges'],
-                isolation: ['Cable Kickback', 'Seated Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps', 'Standing Hip Abduction']
+                compound: ['Hip Thrust', 'Bulgarian Split Squat', 'Sumo Deadlift', 'Romanian Deadlift', 'Walking Lunges'],
+                isolation: ['Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps']
             },
             'Calves': {
                 compound: ['Smith Machine Calf Raise', 'Leg Press Calf Raise', 'Calf Press Machine', 'Weighted Box Jumps'],
@@ -4060,6 +4048,11 @@
     function setupFoodSearch() {
         const input = document.getElementById('food-search-input');
         if (!input) return;
+        // Guard against attaching the listener more than once (we call this from
+        // both DOMContentLoaded and the auth handler as a safety net).
+        if (input.dataset.searchWired === 'true') return;
+        input.dataset.searchWired = 'true';
+
         input.addEventListener('input', (e) => {
             clearTimeout(searchTimer);
             const query = e.target.value.trim();
@@ -4412,10 +4405,11 @@
 
     /**
      * USDA FoodData Central — clean entries for whole foods like "chicken breast" or "banana".
-     * Uses the public DEMO_KEY which is rate-limited but works without signup.
+     * Uses the key in USDA_API_KEY (top of script). DEMO_KEY works but is
+     * rate-limited; add your own free key for reliable results.
      */
     async function searchUSDA(query) {
-        const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(query)}&pageSize=10&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)`;
+        const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=10&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)`;
         const r = await fetch(url);
         if (!r.ok) return [];
         const data = await r.json();
@@ -7768,6 +7762,10 @@
 
         const metricsPicker = document.getElementById('metrics-date-picker');
         if (metricsPicker) metricsPicker.value = today;
+
+        // Wire up the food search input listener. Without this, typing in the
+        // food search box does nothing because no input handler is attached.
+        setupFoodSearch();
 
         lucide.createIcons();
     });
