@@ -689,7 +689,17 @@
                                 <i data-lucide="scan-barcode" class="w-6 h-6"></i>
                             </button>
                         </div>
-                        <p id="food-search-hint" class="text-xs text-slate-400 mt-2 px-1">Try "chicken breast" or "Cheerios"</p>
+                        <p id="food-search-hint" class="text-xs text-slate-400 mt-2 px-1">Try "chicken breast" or "Hobnobs"</p>
+                    </div>
+
+                    <!-- Region toggle — controls which food database region is searched -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black uppercase text-slate-400 flex-shrink-0">Region</span>
+                        <div class="flex bg-slate-100 p-1 rounded-xl flex-1">
+                            <button onclick="setFoodRegion('uk')" id="region-uk" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🇬🇧 UK</button>
+                            <button onclick="setFoodRegion('us')" id="region-us" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🇺🇸 US</button>
+                            <button onclick="setFoodRegion('world')" id="region-world" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🌍 World</button>
+                        </div>
                     </div>
 
                     <!-- Quick filter chips -->
@@ -746,6 +756,17 @@
                         <p class="text-xs text-slate-400 mt-3">Searching...</p>
                     </div>
                     <div id="search-results-list" class="space-y-2"></div>
+
+                    <!-- Pagination controls (shown only during an active multi-page search) -->
+                    <div id="search-pagination" class="hidden flex items-center justify-between gap-3 pt-2">
+                        <button onclick="searchPrevPage()" id="search-prev-btn" class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+                        </button>
+                        <span id="search-page-label" class="text-xs font-bold text-slate-500 flex-shrink-0">Page 1</span>
+                        <button onclick="searchNextPage()" id="search-next-btn" class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+                            Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
 
                     <div class="text-center py-4">
                         <p class="text-xs text-slate-400 mb-3">Can't find what you're looking for?</p>
@@ -2481,6 +2502,7 @@
         aiCoachEnabled: true,
         proteinGoal: 150,
         weightUnit: 'kg', // user's preferred display unit: 'kg' | 'lbs' | 'st'
+        foodRegion: 'uk', // food search region: 'uk' | 'us' | 'world'
         exerciseRatings: {}, // { 'Bench Press': { total: 14, count: 4 }, ... }  — average = total/count
         userProfile: {
             gender: '',         // 'male' | 'female' | ''
@@ -3863,6 +3885,7 @@
             renderCreatedMeals();
             // Show whatever filter is active (recent foods by default) so the
             // search tab is useful even before the user types anything.
+            renderRegionToggle();
             renderFilterContent();
         }
         lucide.createIcons();
@@ -4001,7 +4024,7 @@
         // If there's an active query, re-run the search with the new store filter
         const input = document.getElementById('food-search-input');
         if (input && input.value.trim().length >= 2) {
-            searchFood(input.value.trim());
+            searchFood(input.value.trim(), 1);
         }
     }
 
@@ -4061,15 +4084,22 @@
 
             if (query.length === 0) {
                 // Empty query → show whatever the current filter says (recent, my foods, etc.)
+                hideSearchPagination();
                 renderFilterContent();
                 return;
             }
             if (query.length < 2) {
                 document.getElementById('search-results-list').innerHTML = '';
+                hideSearchPagination();
                 return;
             }
-            searchTimer = setTimeout(() => searchFood(query), 350);
+            searchTimer = setTimeout(() => searchFood(query, 1), 350);
         });
+    }
+
+    function hideSearchPagination() {
+        const p = document.getElementById('search-pagination');
+        if (p) p.classList.add('hidden');
     }
 
     function clearFoodSearch() {
@@ -4077,7 +4107,39 @@
         if (input) input.value = '';
         const clearBtn = document.getElementById('food-search-clear');
         if (clearBtn) clearBtn.classList.add('hidden');
+        hideSearchPagination();
         renderFilterContent();
+    }
+
+    /**
+     * Set the food search region (UK / US / Worldwide) and persist it.
+     * Re-runs the active search so results update immediately.
+     */
+    function setFoodRegion(region) {
+        state.foodRegion = region;
+        saveState();
+        renderRegionToggle();
+
+        // Re-run search if there's an active query
+        const input = document.getElementById('food-search-input');
+        if (input && input.value.trim().length >= 2) {
+            searchFood(input.value.trim(), 1);
+        }
+        const labels = { uk: 'UK', us: 'US', world: 'Worldwide' };
+        showToast('Food region: ' + labels[region]);
+    }
+
+    function renderRegionToggle() {
+        const region = state.foodRegion || 'uk';
+        ['uk', 'us', 'world'].forEach(r => {
+            const btn = document.getElementById('region-' + r);
+            if (!btn) return;
+            if (r === region) {
+                btn.className = 'flex-1 py-2 rounded-lg text-xs font-black uppercase bg-white text-indigo-600 shadow-sm';
+            } else {
+                btn.className = 'flex-1 py-2 rounded-lg text-xs font-black uppercase text-slate-400';
+            }
+        });
     }
 
     function setFoodFilter(filter) {
@@ -4089,6 +4151,7 @@
         if (input) input.value = '';
         const clearBtn = document.getElementById('food-search-clear');
         if (clearBtn) clearBtn.classList.add('hidden');
+        hideSearchPagination();
         renderFilterContent();
     }
 
@@ -4329,10 +4392,21 @@
      * The main search. Calls USDA and OpenFoodFacts in parallel, then merges,
      * dedupes, scores by relevance, and renders.
      */
-    async function searchFood(query) {
+    // Pagination state for the active search
+    let searchState = { query: '', page: 1, pageSize: 20, hasMore: false };
+
+    /**
+     * Run a search for a given query + page. Page is 1-indexed.
+     */
+    async function searchFood(query, page) {
+        page = page || 1;
         const resultsList = document.getElementById('search-results-list');
         const loading = document.getElementById('search-loading');
+        const pagination = document.getElementById('search-pagination');
         const store = document.getElementById('store-select').value;
+
+        searchState.query = query;
+        searchState.page = page;
 
         // Clear the active filter chip when user starts typing — they're searching, not filtering
         currentFoodFilter = null;
@@ -4340,38 +4414,42 @@
 
         loading.classList.remove('hidden');
         resultsList.innerHTML = '';
+        if (pagination) pagination.classList.add('hidden');
 
         try {
-            // Run all three sources in parallel
+            // Run external sources in parallel for the requested page
             const [usdaResults, offResults] = await Promise.all([
-                searchUSDA(query).catch(err => { console.warn('USDA failed:', err); return []; }),
-                searchOpenFoodFacts(query, store).catch(err => { console.warn('OFF failed:', err); return []; })
+                searchUSDA(query, page).catch(err => { console.warn('USDA failed:', err); return { foods: [], more: false }; }),
+                searchOpenFoodFacts(query, store, page).catch(err => { console.warn('OFF failed:', err); return { products: [], more: false }; })
             ]);
 
-            // Match custom foods
-            const customMatches = (state.customFoods || []).filter(f =>
-                f.name && f.name.toLowerCase().includes(query.toLowerCase())
-            ).map(c => ({ ...c, _source: 'custom', isCustom: true, _score: scoreRelevance(c.name, query) + 100 }));
+            // Custom + recent matches only make sense on page 1 (they're local, not paged)
+            let localMatches = [];
+            if (page === 1) {
+                const customMatches = (state.customFoods || []).filter(f =>
+                    f.name && f.name.toLowerCase().includes(query.toLowerCase())
+                ).map(c => ({ ...c, _source: 'custom', isCustom: true, _score: scoreRelevance(c.name, query) + 100 }));
 
-            // Score recent foods too — if you've logged "chicken breast" before, it should come up first
-            const recentMatches = getRecentFoods(100).filter(r =>
-                r.name && r.name.toLowerCase().includes(query.toLowerCase())
-            ).map(r => ({ ...r, _source: 'recent', _score: scoreRelevance(r.name, query) + 50 }));
+                const recentMatches = getRecentFoods(100).filter(r =>
+                    r.name && r.name.toLowerCase().includes(query.toLowerCase())
+                ).map(r => ({ ...r, _source: 'recent', _score: scoreRelevance(r.name, query) + 50 }));
 
-            // Tag external results with their source and score
-            const usda = usdaResults.map(u => ({ ...u, _source: 'usda', _score: scoreRelevance(u.description, query) }));
-            const off = offResults.map(o => ({ ...o, _source: 'off', _score: scoreRelevance(o.product_name, query) }));
+                localMatches = [...customMatches, ...recentMatches];
+            }
 
-            // Penalize OpenFoodFacts entries with no protein/calorie data (often junk)
+            const usda = (usdaResults.foods || []).map(u => ({ ...u, _source: 'usda', _score: scoreRelevance(u.description, query) }));
+            const off = (offResults.products || []).map(o => ({ ...o, _source: 'off', _score: scoreRelevance(o.product_name, query) }));
+
+            // Penalize OpenFoodFacts entries with no nutrition data (often junk)
             off.forEach(o => {
                 const n = o.nutriments || {};
                 if (!n['energy-kcal_100g'] && !n['energy-kcal_serving']) o._score -= 300;
                 if (!n.proteins_100g && !n.proteins_serving) o._score -= 100;
             });
 
-            // Dedupe by lowercased name across sources, keeping the highest-scoring version
+            // Dedupe by lowercased name, keeping the highest-scoring version
             const byName = new Map();
-            [...customMatches, ...recentMatches, ...usda, ...off].forEach(item => {
+            [...localMatches, ...usda, ...off].forEach(item => {
                 const name = (item.name || item.product_name || item.description || '').toLowerCase().trim();
                 if (!name) return;
                 const existing = byName.get(name);
@@ -4382,19 +4460,29 @@
 
             const merged = Array.from(byName.values())
                 .filter(x => (x._score || 0) > 0)
-                .sort((a, b) => (b._score || 0) - (a._score || 0))
-                .slice(0, 30);
+                .sort((a, b) => (b._score || 0) - (a._score || 0));
+
+            // There are more pages if either external source reported more results
+            searchState.hasMore = !!(usdaResults.more || offResults.more);
 
             loading.classList.add('hidden');
 
             if (merged.length === 0) {
-                resultsList.innerHTML = emptyState('search-x', 'No results found',
-                    'Try a different search term, or add this food manually below.');
+                if (page > 1) {
+                    // Ran past the last useful page — go back one
+                    searchState.page = page - 1;
+                    resultsList.innerHTML = emptyState('search-x', 'No more results', 'You\'ve reached the end. Tap Previous to go back.');
+                    renderPagination();
+                } else {
+                    resultsList.innerHTML = emptyState('search-x', 'No results found',
+                        'Try a different search term or region, or add this food manually below.');
+                }
                 lucide.createIcons();
                 return;
             }
 
             renderResultCards(merged);
+            renderPagination();
         } catch (error) {
             console.error('Search error:', error);
             loading.classList.add('hidden');
@@ -4404,17 +4492,48 @@
     }
 
     /**
-     * USDA FoodData Central — clean entries for whole foods like "chicken breast" or "banana".
-     * Uses the key in USDA_API_KEY (top of script). DEMO_KEY works but is
-     * rate-limited; add your own free key for reliable results.
+     * Show/update the Previous/Next controls based on the current page.
      */
-    async function searchUSDA(query) {
-        const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=10&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)`;
+    function renderPagination() {
+        const pagination = document.getElementById('search-pagination');
+        const prevBtn = document.getElementById('search-prev-btn');
+        const nextBtn = document.getElementById('search-next-btn');
+        const label = document.getElementById('search-page-label');
+        if (!pagination) return;
+
+        pagination.classList.remove('hidden');
+        if (label) label.textContent = 'Page ' + searchState.page;
+        if (prevBtn) prevBtn.disabled = searchState.page <= 1;
+        if (nextBtn) nextBtn.disabled = !searchState.hasMore;
+        lucide.createIcons();
+    }
+
+    function searchNextPage() {
+        if (!searchState.hasMore) return;
+        searchFood(searchState.query, searchState.page + 1);
+        // Scroll results back to top of the search view
+        const el = document.getElementById('search-results-list');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function searchPrevPage() {
+        if (searchState.page <= 1) return;
+        searchFood(searchState.query, searchState.page - 1);
+        const el = document.getElementById('search-results-list');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
+     * USDA FoodData Central — clean entries for whole foods like "chicken breast".
+     * Returns { foods: [...], more: bool } for pagination.
+     */
+    async function searchUSDA(query, page) {
+        page = page || 1;
+        const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=10&pageNumber=${page}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)`;
         const r = await fetch(url);
-        if (!r.ok) return [];
+        if (!r.ok) return { foods: [], more: false };
         const data = await r.json();
-        return (data.foods || []).map(f => {
-            // Normalize USDA nutrient list into the macro fields we use everywhere else
+        const foods = (data.foods || []).map(f => {
             const find = (id) => {
                 const n = (f.foodNutrients || []).find(x => x.nutrientId === id);
                 return n ? (n.value || 0) : 0;
@@ -4422,29 +4541,42 @@
             return {
                 ...f,
                 _n: {
-                    calories: find(1008),    // Energy (kcal)
-                    protein: find(1003),     // Protein
-                    fat: find(1004),         // Total fat
-                    carbs: find(1005),       // Carbs
-                    fiber: find(1079),       // Fiber
-                    sugar: find(2000),       // Total sugars
-                    sodium: find(1093),      // Sodium
-                    satFat: find(1258),      // Saturated fat
-                    cholesterol: find(1253)  // Cholesterol
+                    calories: find(1008), protein: find(1003), fat: find(1004),
+                    carbs: find(1005), fiber: find(1079), sugar: find(2000),
+                    sodium: find(1093), satFat: find(1258), cholesterol: find(1253)
                 }
             };
         });
+        // USDA tells us the total hits; more pages exist if we haven't reached totalHits
+        const totalHits = data.totalHits || 0;
+        const more = (page * 10) < totalHits;
+        return { foods, more };
     }
 
-    async function searchOpenFoodFacts(query, store) {
-        let url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20`;
+    /**
+     * OpenFoodFacts — region-aware. Uses uk./us./world. subdomain based on the
+     * user's selected region so UK users get UK products and labels.
+     * Returns { products: [...], more: bool }.
+     */
+    async function searchOpenFoodFacts(query, store, page) {
+        page = page || 1;
+        const region = (state.foodRegion) || 'uk';
+        // Region → OpenFoodFacts subdomain. "world" searches everything.
+        const subdomain = region === 'us' ? 'us' : region === 'world' ? 'world' : 'uk';
+        const pageSize = 20;
+
+        let url = `https://${subdomain}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
         if (store && store !== 'all') {
             url += `&tagtype_0=stores&tag_contains_0=contains&tag_0=${encodeURIComponent(store)}`;
         }
         const r = await fetch(url);
-        if (!r.ok) return [];
+        if (!r.ok) return { products: [], more: false };
         const data = await r.json();
-        return (data.products || []).filter(p => p.product_name);
+        const products = (data.products || []).filter(p => p.product_name);
+        // OpenFoodFacts returns count + page_size; more pages exist if count exceeds what we've seen
+        const count = data.count || 0;
+        const more = (page * pageSize) < count;
+        return { products, more };
     }
 
     /**
