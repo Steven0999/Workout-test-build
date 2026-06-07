@@ -456,6 +456,20 @@
                         <button onclick="switchTab('nutrition')" class="bg-emerald-600 px-4 py-3 rounded-2xl font-bold text-xs uppercase hover:bg-emerald-700">Add Food</button>
                     </div>
                 </div>
+
+                <!-- Weekly Training Volume (hidden for beginners) -->
+                <div id="volume-tracker-card" class="hidden glass-card rounded-[2.5rem] p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-black">Weekly Volume</h3>
+                            <p class="text-xs text-slate-400">Sets per muscle this week · target 12-20 · assisting muscles count ½</p>
+                        </div>
+                        <div class="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="bar-chart-big" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                    </div>
+                    <div id="volume-tracker-list" class="space-y-2"></div>
+                </div>
             </section>
 
             <!-- ============================== -->
@@ -2746,16 +2760,52 @@
     const EXERCISE_DB = {
         gym: {
             'Full Body': {
-                compound: ['Barbell Squat', 'Deadlift', 'Bench Press', 'Pull Ups', 'Overhead Press', 'Romanian Deadlift', 'Leg Press', 'Barbell Row'],
-                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Leg Curl', 'Calf Raise', 'Cable Flyes', 'Face Pulls']
+                compound: [
+                    // LOWER BODY — Squat pattern
+                    'Barbell Squat', 'Squat', 'Weighted Machine Leg Press', 'Pin Machine Leg Press', 'Forward Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat', 'Reverse Lunges', 'Elevated Front Heel Reverse Lunges',
+                    // LOWER BODY — Hinge pattern
+                    'Deadlift', 'Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift', 'Barbell Hip Thrusts', 'Weight Machine Hip Thrusts',
+                    // UPPER BODY — Push
+                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press',
+                    // UPPER BODY — Pull
+                    'Assisted Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
+                ],
+                isolation: [
+                    // Biceps
+                    'Dumbbell Bicep Curl', 'Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl', 'Spider Curls', 'Drag Curls', 'Close Grip Upright Rows',
+                    // Triceps
+                    'Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension',
+                    // Shoulders
+                    'Cable Lateral Raise', 'Cable Front Raise', 'Face Pulls', 'Cable Reverse Flies', 'Dumbbell Lateral Raise', 'Dumbbell Reverse Flies', 'Rear Delt Machine', 'Wide Upright Row',
+                    // Chest
+                    'Cable Flies', 'Pec Deck', 'Dumbbell Flies', 'Incline Dumbbell Flies', 'Upper Chest Flies', 'Low to High Cable Flyes',
+                    // Back
+                    'Cable Row', 'Straight Arm Pulldown', 'Reverse Flyes', 'Single Arm Lat Pulldown', 'Machine Pullover',
+                    // Glutes
+                    'Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Clamshells',
+                    // Quads
+                    'Leg Extension', 'Sissy Squat', 'Step Ups', 'Single Leg Extension', 'Walking Lunges',
+                    // Hamstrings
+                    'Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through',
+                    // Calves
+                    'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Single Leg Calf Raise', 'Tibialis Raise'
+                ]
             },
             'Upper': {
-                compound: ['Bench Press', 'Pull Ups', 'Dumbbell Row', 'Overhead Press', 'Dips', 'Incline Press', 'Lat Pulldown', 'Chest Press Machine', 'Shoulder Press Machine', 'Seated Row Machine'],
-                isolation: ['Bicep Curl', 'Tricep Pushdown', 'Lateral Raise', 'Face Pulls', 'Cable Flyes', 'Pec Deck', 'Reverse Flyes', 'Hammer Curl']
+                compound: [
+                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press', 'Assisted Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
+                ],
+                isolation: [
+                    'Dumbbell Bicep Curl', 'Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl', 'Spider Curls', 'Drag Curls', 'Close Grip Upright Rows', 'Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension', 'Cable Row', 'Face Pulls', 'Straight Arm Pulldown', 'Reverse Flyes', 'Single Arm Lat Pulldown', 'Machine Pullover', 'Cable Flies', 'Pec Deck', 'Dumbbell Flies', 'Incline Dumbbell Flies', 'Upper Chest Flies', 'Low to High Cable Flyes'
+                ]
             },
             'Lower': {
-                compound: ['Barbell Squat', 'Romanian Deadlift', 'Leg Press', 'Lunges', 'Hack Squat', 'Bulgarian Split Squat', 'Hip Thrust', 'Front Squat'],
-                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Abduction', 'Glute Kickback', 'Adductor Machine', 'Standing Calf Raise', 'Seated Calf Raise']
+                compound: [
+                    'Barbell Squat', 'Squat', 'Weighted Machine Leg Press', 'Pin Machine Leg Press', 'Forward Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat', 'Reverse Lunges', 'Elevated Front Heel Reverse Lunges', 'Deadlift', 'Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift', 'Barbell Hip Thrusts', 'Weight Machine Hip Thrusts'
+                ],
+                isolation: [
+                    'Leg Extension', 'Walking Lunges', 'Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through', 'Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps', 'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Single Leg Calf Raise', 'Tibialis Raise'
+                ]
             },
             'Push': {
                 compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Decline Bench Press', 'Close Grip Bench Press'],
@@ -2766,12 +2816,14 @@
                 isolation: ['Bicep Curl', 'Face Pulls', 'Hammer Curl', 'Cable Row', 'Preacher Curl', 'Reverse Flyes', 'Straight Arm Pulldown', 'Cable Curl']
             },
             'Legs': {
-                compound: ['Squat', 'Deadlift', 'Leg Press', 'Lunges', 'Romanian Deadlift', 'Hack Squat', 'Bulgarian Split Squat', 'Front Squat'],
-                isolation: ['Leg Extension', 'Leg Curl', 'Calf Raise', 'Hip Thrust', 'Hip Abduction', 'Adductor Machine', 'Standing Calf Raise', 'Glute Kickback']
+                compound: [
+                    'Barbell Squat', 'Squat', 'Weighted Machine Leg Press', 'Pin Machine Leg Press', 'Forward Lunges', 'Hack Squat', 'Front Squat', 'Bulgarian Split Squat', 'Reverse Lunges', 'Elevated Front Heel Reverse Lunges', 'Deadlift', 'Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift', 'Barbell Hip Thrusts', 'Weight Machine Hip Thrusts'
+                ],
+                isolation: ['Leg Extension', 'Walking Lunges', 'Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through', 'Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps', 'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Single Leg Calf Raise', 'Tibialis Raise']
             },
             'Chest': {
                 compound: ['Bench Press', 'Incline Press', 'Dumbbell Press', 'Chest Press Machine', 'Decline Bench Press', 'Incline Dumbbell Press', 'Dips'],
-                isolation: ['Cable Flyes', 'Pec Deck', 'Dumbbell Flyes', 'Incline Dumbbell Flyes', 'Cable Crossover', 'Low to High Cable Flyes']
+                isolation: ['Cable Flies', 'Pec Deck', 'Dumbbell Flies', 'Incline Dumbbell Flies', 'Upper Chest Flies', 'Low to High Cable Flyes']
             },
             'Back': {
                 compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
@@ -2892,6 +2944,35 @@
     // ==========================================================================
     const SPECIFIC_MUSCLES = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Quads', 'Hamstrings', 'Glutes', 'Calves'];
 
+    // Supplementary muscle mappings for exercises whose names differ between the
+    // focus-group lists and the per-muscle lists (so they still get volume credit).
+    // Maps exercise name → the muscle(s) it primarily targets.
+    const SUPPLEMENTARY_MUSCLE_MAP = {
+        // Quads-dominant
+        'Barbell Squat': ['Quads'], 'Weighted Machine Leg Press': ['Quads'], 'Pin Machine Leg Press': ['Quads'],
+        'Forward Lunges': ['Quads', 'Glutes'], 'Reverse Lunges': ['Quads', 'Glutes'],
+        'Elevated Front Heel Reverse Lunges': ['Quads', 'Glutes'],
+        // Hinge / posterior chain
+        'Deadlift': ['Hamstrings', 'Glutes', 'Back'], 'Barbell Hip Thrusts': ['Glutes'],
+        'Weight Machine Hip Thrusts': ['Glutes'], 'Banded Clamshells': ['Glutes'],
+        // Chest pressing variants
+        'Incline Bench Press': ['Chest'], 'DB Bench Press': ['Chest'], 'Incline DB Bench Press': ['Chest'],
+        'Upright Dips': ['Chest', 'Triceps'], 'Lean Forward Dips': ['Chest', 'Triceps'],
+        'Cable Flyes': ['Chest'], 'Dumbbell Flyes': ['Chest'],
+        // Shoulders
+        'Z Press': ['Shoulders'], 'Cable Front Raise': ['Shoulders'], 'Cable Reverse Flies': ['Shoulders'],
+        'Dumbbell Lateral Raise': ['Shoulders'], 'Dumbbell Reverse Flies': ['Shoulders'],
+        'Wide Upright Row': ['Shoulders'],
+        // Back / pull
+        'Assisted Pull Ups': ['Back'], 'Seated Row Weight Machine': ['Back'],
+        'Seated Row Cable Machine': ['Back'],
+        // Biceps
+        'Dumbbell Bicep Curl': ['Biceps'], 'Bicep Curl': ['Biceps'], 'Spider Curls': ['Biceps'],
+        'Drag Curls': ['Biceps'], 'Close Grip Upright Rows': ['Biceps'],
+        // Triceps
+        'Overhead Tricep Extension': ['Triceps']
+    };
+
     const EXERCISE_TO_MUSCLES = (function () {
         const map = {};
         Object.values(EXERCISE_DB).forEach(env => {
@@ -2904,10 +2985,108 @@
                 });
             });
         });
+        // Fold in the supplementary mappings for exercises the per-muscle lists missed
+        Object.entries(SUPPLEMENTARY_MUSCLE_MAP).forEach(([ex, muscles]) => {
+            if (!map[ex]) map[ex] = new Set();
+            muscles.forEach(m => map[ex].add(m));
+        });
         // Convert sets to arrays
         Object.keys(map).forEach(k => { map[k] = Array.from(map[k]); });
         return map;
     })();
+
+    // ==========================================================================
+    // VOLUME CONTRIBUTION
+    // ==========================================================================
+    // Primary movers count 1.0 set toward a muscle's weekly volume.
+    // Secondary (assisting) movers count 0.5. This map lists the SECONDARY
+    // muscles for compound lifts — the primary muscle(s) come from
+    // EXERCISE_TO_MUSCLES (what the exercise is filed under in the DB).
+    const SECONDARY_MUSCLE_MAP = {
+        // Horizontal/incline presses → triceps + front delts assist the chest
+        'Bench Press': ['Triceps', 'Shoulders'],
+        'Incline Bench Press': ['Triceps', 'Shoulders'],
+        'Incline Press': ['Triceps', 'Shoulders'],
+        'Decline Bench Press': ['Triceps', 'Shoulders'],
+        'Dumbbell Press': ['Triceps', 'Shoulders'],
+        'Incline Dumbbell Press': ['Triceps', 'Shoulders'],
+        'DB Bench Press': ['Triceps', 'Shoulders'],
+        'Incline DB Bench Press': ['Triceps', 'Shoulders'],
+        'Chest Press Machine': ['Triceps', 'Shoulders'],
+        'Dips': ['Triceps', 'Shoulders'],
+        'Upright Dips': ['Triceps', 'Shoulders'],
+        'Lean Forward Dips': ['Triceps', 'Shoulders'],
+        // Overhead pressing → triceps assist the shoulders
+        'Overhead Press': ['Triceps'],
+        'Shoulder Press Machine': ['Triceps'],
+        'Seated Dumbbell Press': ['Triceps'],
+        'Arnold Press': ['Triceps'],
+        'Push Press': ['Triceps'],
+        'Z Press': ['Triceps'],
+        // Close-grip pressing → chest assists triceps
+        'Close Grip Bench Press': ['Chest', 'Shoulders'],
+        'JM Press': ['Chest'],
+        'Diamond Push Ups': ['Chest', 'Shoulders'],
+        // Vertical/horizontal pulls → biceps + rear delts assist the back
+        'Pull Ups': ['Biceps'],
+        'Chin Ups': ['Biceps'],
+        'Assisted Pull Ups': ['Biceps'],
+        'Close Grip Pull Ups': ['Biceps'],
+        'Lat Pulldown': ['Biceps'],
+        'Single Arm Lat Pulldown': ['Biceps'],
+        'Barbell Row': ['Biceps'],
+        'Pendlay Row': ['Biceps'],
+        'Dumbbell Row': ['Biceps'],
+        'T-Bar Row': ['Biceps'],
+        'Cable Row': ['Biceps'],
+        'Seated Row Machine': ['Biceps'],
+        'Seated Row Weight Machine': ['Biceps'],
+        'Seated Row Cable Machine': ['Biceps'],
+        'Underhand Barbell Row': ['Biceps'],
+        // Squat-pattern → glutes + hamstrings assist the quads
+        'Squat': ['Glutes', 'Hamstrings'],
+        'Barbell Squat': ['Glutes', 'Hamstrings'],
+        'Front Squat': ['Glutes', 'Hamstrings'],
+        'Hack Squat': ['Glutes'],
+        'Leg Press': ['Glutes', 'Hamstrings'],
+        'Weighted Machine Leg Press': ['Glutes', 'Hamstrings'],
+        'Pin Machine Leg Press': ['Glutes', 'Hamstrings'],
+        'Lunges': ['Quads', 'Hamstrings'],
+        'Walking Lunges': ['Quads', 'Hamstrings'],
+        'Forward Lunges': ['Hamstrings'],
+        'Reverse Lunges': ['Hamstrings'],
+        'Elevated Front Heel Reverse Lunges': ['Hamstrings'],
+        'Bulgarian Split Squat': ['Quads', 'Hamstrings'],
+        // Hinge-pattern → glutes + back assist the hamstrings
+        'Deadlift': ['Quads'],
+        'Romanian Deadlift': ['Glutes', 'Back'],
+        'Stiff Leg Deadlift': ['Glutes', 'Back'],
+        'Single Leg Romanian Deadlift': ['Glutes', 'Back'],
+        'Sumo Deadlift': ['Quads', 'Back'],
+        'Good Morning': ['Glutes', 'Back'],
+        'Hip Thrust': ['Hamstrings'],
+        'Barbell Hip Thrusts': ['Hamstrings'],
+        'Weight Machine Hip Thrusts': ['Hamstrings'],
+        'Cable Pull Through': ['Glutes']
+    };
+
+    /**
+     * Returns a map of muscle → volume contribution for ONE set of an exercise.
+     * Primary movers (what the exercise is filed under) count 1.0; secondary
+     * (assisting) movers count 0.5. If a muscle is somehow both, 1.0 wins.
+     */
+    function getExerciseVolumeContribution(exerciseName) {
+        const contrib = {};
+        const primary = EXERCISE_TO_MUSCLES[exerciseName] || [];
+        primary.forEach(m => { contrib[m] = 1.0; });
+
+        const secondary = SECONDARY_MUSCLE_MAP[exerciseName] || [];
+        secondary.forEach(m => {
+            // Don't let a secondary downgrade a primary; only add if not already primary
+            if (contrib[m] === undefined) contrib[m] = 0.5;
+        });
+        return contrib;
+    }
 
     // ==========================================================================
     // EXERCISE RATINGS — user "how much do you like this exercise" data.
@@ -3160,10 +3339,108 @@
             renderDashboardHabits();
         }
 
+        // Weekly training volume (intermediate/advanced only)
+        renderVolumeTracker();
+
         // Render AI Coach recommendations
         renderAICoach();
 
         lucide.createIcons();
+    }
+
+    /**
+     * Weekly set-volume tracker. Counts working sets per muscle group over the
+     * current week (Mon-Sun) from workoutHistory, mapping each exercise to the
+     * muscles it targets via EXERCISE_TO_MUSCLES. Each set counts once toward
+     * every muscle the exercise hits. Target range 12-20 sets per muscle/week.
+     *
+     * Only shown to Intermediate/Advanced lifters — beginners don't need to
+     * think about volume landmarks yet, so the card stays hidden for them.
+     */
+    function renderVolumeTracker() {
+        const card = document.getElementById('volume-tracker-card');
+        const list = document.getElementById('volume-tracker-list');
+        if (!card || !list) return;
+
+        const level = getExperienceLevel();
+        if (level !== 'Intermediate' && level !== 'Advanced') {
+            card.classList.add('hidden');
+            return;
+        }
+
+        // Determine start of the current week (Monday 00:00)
+        const now = new Date();
+        const day = now.getDay(); // 0=Sun..6=Sat
+        const daysSinceMon = (day === 0) ? 6 : day - 1;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - daysSinceMon);
+        monday.setHours(0, 0, 0, 0);
+
+        // Tally sets per muscle
+        const counts = {};
+        SPECIFIC_MUSCLES.forEach(m => { counts[m] = 0; });
+
+        (state.workoutHistory || []).forEach(workout => {
+            if (!workout.date) return;
+            const wDate = new Date(workout.date);
+            if (isNaN(wDate) || wDate < monday) return; // outside this week
+            (workout.exercises || []).forEach(ex => {
+                const setCount = (ex.sets || []).length;
+                if (setCount === 0) return;
+                // Each set contributes 1.0 to primary movers and 0.5 to secondary movers
+                const contrib = getExerciseVolumeContribution(ex.name);
+                Object.entries(contrib).forEach(([muscle, weight]) => {
+                    if (counts[muscle] !== undefined) counts[muscle] += setCount * weight;
+                });
+            });
+        });
+
+        // Only show muscles that have been trained this week, sorted by volume desc
+        const trained = SPECIFIC_MUSCLES
+            .filter(m => counts[m] > 0)
+            .sort((a, b) => counts[b] - counts[a]);
+
+        if (trained.length === 0) {
+            card.classList.remove('hidden');
+            list.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">No sets logged yet this week. Train a muscle to see volume here.</p>`;
+            return;
+        }
+
+        card.classList.remove('hidden');
+        list.innerHTML = trained.map(m => {
+            const sets = counts[m];
+            // Display whole numbers cleanly, halves as e.g. "13.5"
+            const setsLabel = Number.isInteger(sets) ? sets : sets.toFixed(1);
+            // Status: under 12 = below target (amber), 12-20 = on target (green), >20 = over (red)
+            let barColor, statusIcon, statusText, pct;
+            if (sets < 12) {
+                barColor = 'bg-amber-400';
+                statusIcon = '';
+                statusText = `<span class="text-amber-600">${(12 - sets) % 1 === 0 ? (12 - sets) : (12 - sets).toFixed(1)} below min</span>`;
+                pct = Math.min(100, (sets / 20) * 100);
+            } else if (sets <= 20) {
+                barColor = 'bg-emerald-500';
+                statusIcon = '✓';
+                statusText = `<span class="text-emerald-600">on target</span>`;
+                pct = (sets / 20) * 100;
+            } else {
+                barColor = 'bg-red-400';
+                statusIcon = '';
+                statusText = `<span class="text-red-500">${(sets - 20) % 1 === 0 ? (sets - 20) : (sets - 20).toFixed(1)} over max</span>`;
+                pct = 100;
+            }
+            return `
+                <div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="font-bold text-sm">${m} ${statusIcon}</span>
+                        <span class="text-xs font-black text-slate-700">${setsLabel}<span class="text-slate-400 font-normal">/12-20 sets</span></span>
+                    </div>
+                    <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="${barColor} h-full rounded-full transition-all" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="text-[10px] font-bold mt-1 text-right">${statusText}</div>
+                </div>`;
+        }).join('');
     }
 
     function toggleHydrationGoal() {
@@ -3488,17 +3765,26 @@
 
         const header = document.createElement('div');
         header.className = "flex gap-2 sm:gap-3 mb-2 sm:mb-3";
+        const weightHeaderLabel = isAssistanceExercise(name) ? 'Assist (kg)' : 'Weight (kg)';
         header.innerHTML = `
             <div class="flex-1 text-center"><span class="text-xs sm:text-sm font-black text-slate-600 uppercase">Reps</span></div>
-            <div class="flex-1 text-center"><span class="text-xs sm:text-sm font-black text-slate-600 uppercase">Weight (kg)</span></div>
+            <div class="flex-1 text-center"><span class="text-xs sm:text-sm font-black text-slate-600 uppercase" id="weight-header-${id}">${weightHeaderLabel}</span></div>
+            <div class="w-16 sm:w-20 text-center"><span class="text-xs sm:text-sm font-black text-amber-600 uppercase" title="Reps In Reserve">RIR</span></div>
             <div class="w-9 sm:w-10"></div>`;
         setsContainer.appendChild(header);
+
+        // When the exercise name changes, update the weight header label (Assist vs Weight)
+        nameInput.addEventListener('change', () => {
+            const hdr = document.getElementById(`weight-header-${id}`);
+            if (hdr) hdr.textContent = isAssistanceExercise(nameInput.value) ? 'Assist (kg)' : 'Weight (kg)';
+        });
 
         const addSetBtn = document.createElement('button');
         addSetBtn.type = "button";
         addSetBtn.className = "w-full py-3 sm:py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-indigo-700 active:bg-indigo-800";
         addSetBtn.textContent = "+ Add Set";
-        addSetBtn.addEventListener('click', () => addSetToExercise(id, pr));
+        // Read the exercise name live so suggestions/labels reflect any rename or swap
+        addSetBtn.addEventListener('click', () => addSetToExercise(id, getPersonalRecord(nameInput.value.trim()), nameInput.value.trim()));
 
         const deleteExBtn = document.createElement('button');
         deleteExBtn.type = "button";
@@ -3514,7 +3800,7 @@
         const exerciseList = document.getElementById('exercise-list');
         if (exerciseList) exerciseList.appendChild(card);
 
-        setTimeout(() => addSetToExercise(id, pr), 60);
+        setTimeout(() => addSetToExercise(id, pr, name), 60);
         lucide.createIcons();
     }
 
@@ -3618,35 +3904,65 @@
         if (pr) showToast(`PR for ${exerciseName}: ${pr}kg`);
     }
 
-    function addSetToExercise(exerciseId, pr) {
+    function addSetToExercise(exerciseId, pr, exerciseName) {
         const container = document.getElementById(`sets-${exerciseId}`);
         if (!container) return;
 
+        // Figure out how many sets already exist (for the suggested-weight hint on set 3)
+        const existingSets = container.querySelectorAll('.set-row').length;
+        const isAssist = isAssistanceExercise(exerciseName || '');
+
         const setRow = document.createElement('div');
-        setRow.className = "flex gap-2 sm:gap-3 items-center mb-2 bg-white p-2 sm:p-3 rounded-lg border border-slate-200";
+        setRow.className = "set-row flex gap-2 sm:gap-3 items-center mb-2 bg-white p-2 sm:p-3 rounded-lg border border-slate-200";
 
         const repsInput = document.createElement('input');
         repsInput.type = "number";
         repsInput.placeholder = "Reps";
         repsInput.min = "0";
-        repsInput.className = "flex-1 p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
+        repsInput.className = "set-reps flex-1 p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
 
         const weightDiv = document.createElement('div');
         weightDiv.className = "flex-1 relative";
 
         const weightInput = document.createElement('input');
         weightInput.type = "number";
-        weightInput.placeholder = "Weight";
+        weightInput.placeholder = isAssist ? "Assist" : "Weight";
         weightInput.min = "0";
         weightInput.step = "0.5";
-        weightInput.className = "w-full p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
+        weightInput.className = "set-weight w-full p-3 sm:p-4 bg-slate-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-indigo-500";
 
-        weightDiv.appendChild(weightInput);
+        // Pre-fill / hint with suggested weight from last performance
+        const suggestion = exerciseName ? getSuggestedWeight(exerciseName) : null;
+        if (suggestion) {
+            weightInput.placeholder = (isAssist ? 'Assist ' : '') + suggestion.suggested + 'kg';
+            const hint = document.createElement('span');
+            hint.className = "absolute -bottom-4 left-0 right-0 text-center text-[8px] font-bold " + (suggestion.bumped ? 'text-emerald-600' : 'text-slate-400');
+            if (suggestion.bumped) {
+                hint.textContent = isAssist
+                    ? `↓ ${suggestion.last}→${suggestion.suggested}kg assist`
+                    : `↑ ${suggestion.last}→${suggestion.suggested}kg`;
+            } else {
+                hint.textContent = `last ${suggestion.last}kg`;
+            }
+            weightDiv.appendChild(weightInput);
+            weightDiv.appendChild(hint);
+        } else {
+            weightDiv.appendChild(weightInput);
+        }
+
+        // RIR input (Reps In Reserve) — how many more reps you could have done
+        const rirInput = document.createElement('input');
+        rirInput.type = "number";
+        rirInput.placeholder = "RIR";
+        rirInput.min = "0";
+        rirInput.max = "10";
+        rirInput.title = "Reps In Reserve — how many more reps you could have done";
+        rirInput.className = "set-rir w-16 sm:w-20 p-3 sm:p-4 bg-amber-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-amber-400";
 
         if (pr) {
             const pbBadge = document.createElement('span');
             pbBadge.className = "absolute -top-2 -right-2 text-[9px] sm:text-[10px] font-black text-white bg-emerald-500 px-2 py-1 rounded-full shadow-md whitespace-nowrap z-10";
-            pbBadge.textContent = `PB ${pr}kg`;
+            pbBadge.textContent = isAssist ? `Best ${pr}kg assist` : `PB ${pr}kg`;
             weightDiv.appendChild(pbBadge);
         }
 
@@ -3658,12 +3974,30 @@
 
         setRow.appendChild(repsInput);
         setRow.appendChild(weightDiv);
+        setRow.appendChild(rirInput);
         setRow.appendChild(deleteBtn);
 
         container.appendChild(setRow);
     }
 
     function getPersonalRecord(exerciseName) {
+        // For assistance exercises (e.g. Assisted Pull Ups), a "better" record is a
+        // LOWER assist weight, so PR = the minimum assist weight ever used.
+        if (isAssistanceExercise(exerciseName)) {
+            let minAssist = null;
+            (state.workoutHistory || []).forEach(workout => {
+                (workout.exercises || []).forEach(ex => {
+                    if (ex.name === exerciseName) {
+                        (ex.sets || []).forEach(set => {
+                            const w = parseFloat(set.weight);
+                            if (!isNaN(w) && (minAssist === null || w < minAssist)) minAssist = w;
+                        });
+                    }
+                });
+            });
+            return minAssist;
+        }
+
         let maxWeight = 0;
         (state.workoutHistory || []).forEach(workout => {
             (workout.exercises || []).forEach(ex => {
@@ -3676,6 +4010,77 @@
             });
         });
         return maxWeight > 0 ? maxWeight : null;
+    }
+
+    // ==========================================================================
+    // PROGRESSION & ASSISTANCE
+    // ==========================================================================
+
+    /**
+     * Assistance exercises invert the normal progression: the resistance/weight
+     * field represents how much you're being ASSISTED, so getting stronger means
+     * the number goes DOWN (less help needed).
+     */
+    function isAssistanceExercise(name) {
+        return /assisted/i.test(name || '');
+    }
+
+    /**
+     * Whether an exercise is a compound (bigger jump per progression) vs isolation.
+     * Checked against the gym DB compound lists.
+     */
+    function isCompoundExercise(name) {
+        const gym = EXERCISE_DB.gym || {};
+        return Object.values(gym).some(group => (group.compound || []).indexOf(name) >= 0);
+    }
+
+    /**
+     * Find the most recent time this exercise was performed and return its sets.
+     * Returns { date, sets } or null.
+     */
+    function getLastPerformance(exerciseName) {
+        const history = (state.workoutHistory || []).slice()
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        for (const w of history) {
+            const match = (w.exercises || []).find(ex => ex.name === exerciseName);
+            if (match && match.sets && match.sets.length > 0) {
+                return { date: w.date, sets: match.sets };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Suggest a working weight for the next time you do this exercise.
+     * Rule: if the 3rd set last time had RIR > 5 (more than 5 reps left = too easy),
+     * bump the weight. Compounds +5kg, isolation +2.5kg. For assistance exercises,
+     * "bump" means REDUCE the assist weight instead.
+     * Returns { suggested, last, bumped } or null if no history.
+     */
+    function getSuggestedWeight(exerciseName) {
+        const last = getLastPerformance(exerciseName);
+        if (!last) return null;
+
+        // Use the 3rd set if it exists, else the last set
+        const refSet = last.sets[2] || last.sets[last.sets.length - 1];
+        const lastWeight = parseFloat(refSet.weight);
+        if (isNaN(lastWeight)) return null;
+
+        const rir = refSet.rir !== undefined && refSet.rir !== '' ? parseFloat(refSet.rir) : null;
+        const increment = isCompoundExercise(exerciseName) ? 5 : 2.5;
+
+        let suggested = lastWeight;
+        let bumped = false;
+        if (rir !== null && rir > 5) {
+            if (isAssistanceExercise(exerciseName)) {
+                // Less assistance = harder = progression. Don't go below 0.
+                suggested = Math.max(0, lastWeight - increment);
+            } else {
+                suggested = lastWeight + increment;
+            }
+            bumped = true;
+        }
+        return { suggested, last: lastWeight, bumped };
     }
 
     // Holds the pending workout while the user is rating exercises.
@@ -3692,10 +4097,17 @@
             if (!name) return;
 
             const sets = [];
-            card.querySelectorAll('.flex.gap-2.items-center.mb-2').forEach(row => {
-                const inputs = row.querySelectorAll('input[type="number"]');
-                if (inputs.length >= 2 && inputs[0].value && inputs[1].value) {
-                    sets.push({ reps: inputs[0].value, weight: inputs[1].value });
+            card.querySelectorAll('.set-row').forEach(row => {
+                const repsEl = row.querySelector('.set-reps');
+                const weightEl = row.querySelector('.set-weight');
+                const rirEl = row.querySelector('.set-rir');
+                const reps = repsEl ? repsEl.value : '';
+                const weight = weightEl ? weightEl.value : '';
+                if (reps && weight) {
+                    const setObj = { reps: reps, weight: weight };
+                    // RIR is optional — only store it if entered
+                    if (rirEl && rirEl.value !== '') setObj.rir = rirEl.value;
+                    sets.push(setObj);
                 }
             });
 
