@@ -462,7 +462,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h3 class="text-lg font-black">Weekly Volume</h3>
-                            <p class="text-xs text-slate-400">Sets per muscle this week · target 12-20 · assisting muscles count ½</p>
+                            <p class="text-xs text-slate-400">Sets per muscle · last 7 days · target 12-20 · assisting muscles count ½</p>
                         </div>
                         <div class="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
                             <i data-lucide="bar-chart-big" class="w-5 h-5 text-indigo-600"></i>
@@ -3357,37 +3357,32 @@
      * Only shown to Intermediate/Advanced lifters — beginners don't need to
      * think about volume landmarks yet, so the card stays hidden for them.
      */
-    function renderVolumeTracker() {
-        const card = document.getElementById('volume-tracker-card');
-        const list = document.getElementById('volume-tracker-list');
-        if (!card || !list) return;
+    /**
+     * Compute weekly set-volume per muscle for the current week (Mon-Sun).
+     * Primary movers count 1.0 per set, secondary movers 0.5.
+     * Returns an object { Chest: 14, Back: 9.5, ... } including only trained muscles.
+     * Shared by the dashboard volume card and the AI coach.
+     */
+    function getWeeklyVolume() {
+        // Rolling 7-day window: today and the previous 6 days (not a fixed Mon-Sun week).
+        const cutoff = new Date();
+        cutoff.setHours(0, 0, 0, 0);
+        cutoff.setDate(cutoff.getDate() - 6); // 6 days ago + today = 7 days inclusive
 
-        const level = getExperienceLevel();
-        if (level !== 'Intermediate' && level !== 'Advanced') {
-            card.classList.add('hidden');
-            return;
-        }
-
-        // Determine start of the current week (Monday 00:00)
-        const now = new Date();
-        const day = now.getDay(); // 0=Sun..6=Sat
-        const daysSinceMon = (day === 0) ? 6 : day - 1;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - daysSinceMon);
-        monday.setHours(0, 0, 0, 0);
-
-        // Tally sets per muscle
         const counts = {};
         SPECIFIC_MUSCLES.forEach(m => { counts[m] = 0; });
 
         (state.workoutHistory || []).forEach(workout => {
             if (!workout.date) return;
             const wDate = new Date(workout.date);
-            if (isNaN(wDate) || wDate < monday) return; // outside this week
+            if (isNaN(wDate)) return;
+            // Normalize to midnight so a workout earlier today still counts
+            const wDay = new Date(wDate);
+            wDay.setHours(0, 0, 0, 0);
+            if (wDay < cutoff) return; // outside the last 7 days
             (workout.exercises || []).forEach(ex => {
                 const setCount = (ex.sets || []).length;
                 if (setCount === 0) return;
-                // Each set contributes 1.0 to primary movers and 0.5 to secondary movers
                 const contrib = getExerciseVolumeContribution(ex.name);
                 Object.entries(contrib).forEach(([muscle, weight]) => {
                     if (counts[muscle] !== undefined) counts[muscle] += setCount * weight;
@@ -3395,14 +3390,49 @@
             });
         });
 
-        // Only show muscles that have been trained this week, sorted by volume desc
+        // Strip muscles with zero volume
+        const out = {};
+        Object.entries(counts).forEach(([m, v]) => { if (v > 0) out[m] = v; });
+        return out;
+    }
+
+    function renderVolumeTracker() {
+        const card = document.getElementById('volume-tracker-card');
+        const list = document.getElementById('volume-tracker-list');
+        if (!card || !list) return;
+
+        const level = getExperienceLevel();
+
+        // Beginners don't need volume landmarks — keep the card hidden for them.
+        if (level === 'Beginner') {
+            card.classList.add('hidden');
+            return;
+        }
+
+        // Experience not set yet → show the card but prompt them to set it, so the
+        // feature is discoverable rather than silently missing.
+        if (level !== 'Intermediate' && level !== 'Advanced') {
+            card.classList.remove('hidden');
+            list.innerHTML = `
+                <div class="text-center py-6">
+                    <p class="text-sm text-slate-500 mb-3">Set your training experience to unlock weekly volume tracking (for intermediate & advanced lifters).</p>
+                    <button onclick="switchTab('profile')" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700">Set Experience</button>
+                </div>`;
+            return;
+        }
+
+        // Determine start of the current week (Monday 00:00) — used only for display copy
+        // The actual tally comes from the shared getWeeklyVolume() helper.
+        const counts = getWeeklyVolume();
+
+        // Only show muscles trained in the last 7 days, sorted by volume desc
         const trained = SPECIFIC_MUSCLES
             .filter(m => counts[m] > 0)
             .sort((a, b) => counts[b] - counts[a]);
 
         if (trained.length === 0) {
             card.classList.remove('hidden');
-            list.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">No sets logged yet this week. Train a muscle to see volume here.</p>`;
+            list.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">No sets logged in the last 7 days. Train a muscle to see volume here.</p>`;
             return;
         }
 
@@ -4740,7 +4770,7 @@
             // OpenFoodFacts shape
             name = item.product_name || 'Unknown';
             brand = item.brands || item.stores || 'OpenFoodFacts';
-            image = item.image_url || '';
+            image = item.image_url || item.image_front_small_url || '';
             const n = item.nutriments || {};
             // Prefer per-serving when available; fall back to per-100g
             const hasServing = n['energy-kcal_serving'] && item.serving_size;
@@ -4810,6 +4840,22 @@
     /**
      * Run a search for a given query + page. Page is 1-indexed.
      */
+    /**
+     * fetch() with a timeout, so a hanging request can't freeze the search forever.
+     * Rejects after `ms` milliseconds if the request hasn't completed.
+     */
+    async function fetchWithTimeout(url, ms) {
+        ms = ms || 8000;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ms);
+        try {
+            const r = await fetch(url, { signal: controller.signal });
+            return r;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
     async function searchFood(query, page) {
         page = page || 1;
         const resultsList = document.getElementById('search-results-list');
@@ -4828,79 +4874,108 @@
         resultsList.innerHTML = '';
         if (pagination) pagination.classList.add('hidden');
 
-        try {
-            // Run external sources in parallel for the requested page
-            const [usdaResults, offResults] = await Promise.all([
-                searchUSDA(query, page).catch(err => { console.warn('USDA failed:', err); return { foods: [], more: false }; }),
-                searchOpenFoodFacts(query, store, page).catch(err => { console.warn('OFF failed:', err); return { products: [], more: false }; })
-            ]);
+        // Track whether each source actually errored (vs just returned nothing)
+        let usdaErrored = false;
+        let offErrored = false;
 
-            // Custom + recent matches only make sense on page 1 (they're local, not paged)
-            let localMatches = [];
-            if (page === 1) {
-                const customMatches = (state.customFoods || []).filter(f =>
-                    f.name && f.name.toLowerCase().includes(query.toLowerCase())
-                ).map(c => ({ ...c, _source: 'custom', isCustom: true, _score: scoreRelevance(c.name, query) + 100 }));
+        // Run external sources in parallel; each resolves to a result object even on failure
+        const [usdaResults, offResults] = await Promise.all([
+            searchUSDA(query, page).catch(err => { console.warn('USDA failed:', err); usdaErrored = true; return { foods: [], more: false }; }),
+            searchOpenFoodFacts(query, store, page).catch(err => { console.warn('OFF failed:', err); offErrored = true; return { products: [], more: false }; })
+        ]);
 
-                const recentMatches = getRecentFoods(100).filter(r =>
-                    r.name && r.name.toLowerCase().includes(query.toLowerCase())
-                ).map(r => ({ ...r, _source: 'recent', _score: scoreRelevance(r.name, query) + 50 }));
+        // Custom + recent matches only make sense on page 1 (they're local, not paged)
+        let localMatches = [];
+        if (page === 1) {
+            const customMatches = (state.customFoods || []).filter(f =>
+                f.name && f.name.toLowerCase().includes(query.toLowerCase())
+            ).map(c => ({ ...c, _source: 'custom', isCustom: true, _score: scoreRelevance(c.name, query) + 100 }));
 
-                localMatches = [...customMatches, ...recentMatches];
+            const recentMatches = getRecentFoods(100).filter(r =>
+                r.name && r.name.toLowerCase().includes(query.toLowerCase())
+            ).map(r => ({ ...r, _source: 'recent', _score: scoreRelevance(r.name, query) + 50 }));
+
+            localMatches = [...customMatches, ...recentMatches];
+        }
+
+        const usda = (usdaResults.foods || []).map(u => ({ ...u, _source: 'usda', _score: scoreRelevance(u.description, query) }));
+        const off = (offResults.products || []).map(o => {
+            let s = scoreRelevance(o.product_name, query);
+            // Fallback: the OFF engine matches on brand/category too, so a product
+            // named "Sausage Roll" by brand "Greggs" scores 0 against the query
+            // "greggs sausage roll". If every query word appears somewhere in
+            // name+brand, keep it with a modest score instead of filtering it out.
+            if (s <= 0) {
+                const hay = ((o.product_name || '') + ' ' + (o.brands || '')).toLowerCase();
+                const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+                if (tokens.length > 0 && tokens.every(t => hay.includes(t))) s = 150;
             }
+            return { ...o, _source: 'off', _score: s };
+        });
 
-            const usda = (usdaResults.foods || []).map(u => ({ ...u, _source: 'usda', _score: scoreRelevance(u.description, query) }));
-            const off = (offResults.products || []).map(o => ({ ...o, _source: 'off', _score: scoreRelevance(o.product_name, query) }));
+        // Penalize OpenFoodFacts entries with no nutrition data (often junk)
+        off.forEach(o => {
+            const n = o.nutriments || {};
+            if (!n['energy-kcal_100g'] && !n['energy-kcal_serving']) o._score -= 300;
+            if (!n.proteins_100g && !n.proteins_serving) o._score -= 100;
+        });
 
-            // Penalize OpenFoodFacts entries with no nutrition data (often junk)
-            off.forEach(o => {
-                const n = o.nutriments || {};
-                if (!n['energy-kcal_100g'] && !n['energy-kcal_serving']) o._score -= 300;
-                if (!n.proteins_100g && !n.proteins_serving) o._score -= 100;
-            });
-
-            // Dedupe by lowercased name, keeping the highest-scoring version
-            const byName = new Map();
-            [...localMatches, ...usda, ...off].forEach(item => {
-                const name = (item.name || item.product_name || item.description || '').toLowerCase().trim();
-                if (!name) return;
-                const existing = byName.get(name);
-                if (!existing || (item._score || 0) > (existing._score || 0)) {
-                    byName.set(name, item);
-                }
-            });
-
-            const merged = Array.from(byName.values())
-                .filter(x => (x._score || 0) > 0)
-                .sort((a, b) => (b._score || 0) - (a._score || 0));
-
-            // There are more pages if either external source reported more results
-            searchState.hasMore = !!(usdaResults.more || offResults.more);
-
-            loading.classList.add('hidden');
-
-            if (merged.length === 0) {
-                if (page > 1) {
-                    // Ran past the last useful page — go back one
-                    searchState.page = page - 1;
-                    resultsList.innerHTML = emptyState('search-x', 'No more results', 'You\'ve reached the end. Tap Previous to go back.');
-                    renderPagination();
-                } else {
-                    resultsList.innerHTML = emptyState('search-x', 'No results found',
-                        'Try a different search term or region, or add this food manually below.');
-                }
-                lucide.createIcons();
-                return;
+        // Dedupe by lowercased name, keeping the highest-scoring version
+        const byName = new Map();
+        [...localMatches, ...usda, ...off].forEach(item => {
+            const name = (item.name || item.product_name || item.description || '').toLowerCase().trim();
+            if (!name) return;
+            const existing = byName.get(name);
+            if (!existing || (item._score || 0) > (existing._score || 0)) {
+                byName.set(name, item);
             }
+        });
 
+        const merged = Array.from(byName.values())
+            .filter(x => (x._score || 0) > 0)
+            .sort((a, b) => (b._score || 0) - (a._score || 0));
+
+        // There are more pages if either external source reported more results
+        searchState.hasMore = !!(usdaResults.more || offResults.more);
+
+        loading.classList.add('hidden');
+
+        if (merged.length > 0) {
             renderResultCards(merged);
             renderPagination();
-        } catch (error) {
-            console.error('Search error:', error);
-            loading.classList.add('hidden');
-            resultsList.innerHTML = emptyState('wifi-off', 'Search failed', 'Check your connection and try again.');
-            lucide.createIcons();
+            return;
         }
+
+        // No results to show. Decide WHY so the message is accurate.
+        if (page > 1) {
+            searchState.page = page - 1;
+            resultsList.innerHTML = emptyState('search-x', 'No more results', 'You\'ve reached the end. Tap Previous to go back.');
+            renderPagination();
+        } else if (usdaErrored && offErrored) {
+            // Both online sources genuinely failed — this is the real "connection" case.
+            // But the user can still add manually, so make that the call to action.
+            resultsList.innerHTML = `
+                <div class="text-center py-10">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-amber-50 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="wifi-off" class="w-8 h-8 text-amber-500"></i>
+                    </div>
+                    <p class="font-bold text-slate-600 mb-1">Couldn't reach the food databases</p>
+                    <p class="text-xs text-slate-400 mb-4">The search servers may be busy. Try again in a moment,<br>switch region, or add the food manually.</p>
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="retryFoodSearch()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700">Try Again</button>
+                        <button onclick="openManualFoodEntry()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800">Add Manually</button>
+                    </div>
+                </div>`;
+        } else {
+            // Sources responded fine, there just aren't any matches for this term.
+            resultsList.innerHTML = emptyState('search-x', 'No results found',
+                'Try a different search term or region, or add this food manually below.');
+        }
+        lucide.createIcons();
+    }
+
+    function retryFoodSearch() {
+        if (searchState.query) searchFood(searchState.query, searchState.page || 1);
     }
 
     /**
@@ -4942,7 +5017,7 @@
     async function searchUSDA(query, page) {
         page = page || 1;
         const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=10&pageNumber=${page}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)`;
-        const r = await fetch(url);
+        const r = await fetchWithTimeout(url, 8000);
         if (!r.ok) return { foods: [], more: false };
         const data = await r.json();
         const foods = (data.foods || []).map(f => {
@@ -4966,29 +5041,83 @@
     }
 
     /**
-     * OpenFoodFacts — region-aware. Uses uk./us./world. subdomain based on the
-     * user's selected region so UK users get UK products and labels.
-     * Returns { products: [...], more: bool }.
+     * OpenFoodFacts free-text search — region-aware.
+     * PRIMARY: the legacy cgi/search.pl endpoint. It is the OFF endpoint that
+     * actually supports free-text `search_terms` queries. (The newer /api/v2/search
+     * only filters by exact tags and silently IGNORES text queries — using it
+     * made every search return unrelated "popular" products, which the relevance
+     * filter then discarded, so nothing ever showed.)
+     * FALLBACK: Search-a-licious (search.openfoodfacts.org), OFF's modern
+     * full-text search service.
+     * Returns { products: [...], more: bool }. Throws only if BOTH endpoints
+     * hard-fail, so the caller can distinguish "no matches" from "no connection".
      */
     async function searchOpenFoodFacts(query, store, page) {
         page = page || 1;
         const region = (state.foodRegion) || 'uk';
-        // Region → OpenFoodFacts subdomain. "world" searches everything.
         const subdomain = region === 'us' ? 'us' : region === 'world' ? 'world' : 'uk';
         const pageSize = 20;
 
-        let url = `https://${subdomain}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
-        if (store && store !== 'all') {
-            url += `&tagtype_0=stores&tag_contains_0=contains&tag_0=${encodeURIComponent(store)}`;
+        let primaryError = null;
+
+        // --- Primary: legacy full-text search on the region subdomain ---
+        try {
+            let url = `https://${subdomain}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
+            if (store && store !== 'all') {
+                url += `&tagtype_0=stores&tag_contains_0=contains&tag_0=${encodeURIComponent(store)}`;
+            }
+            const r = await fetchWithTimeout(url, 9000);
+            if (!r.ok) throw new Error('OFF legacy HTTP ' + r.status);
+            const data = await r.json();
+            const products = (data.products || []).filter(p => p.product_name);
+            if (products.length > 0 || page > 1) {
+                return { products, more: (page * pageSize) < (data.count || 0) };
+            }
+            // Zero results on page 1 — try the fallback search engine before
+            // concluding there are genuinely no matches.
+        } catch (e) {
+            console.warn('OFF legacy search failed:', e);
+            primaryError = e;
         }
-        const r = await fetch(url);
-        if (!r.ok) return { products: [], more: false };
+
+        // --- Fallback: Search-a-licious ---
+        try {
+            return await searchOpenFoodFactsSAL(query, page, pageSize, region);
+        } catch (e) {
+            console.warn('OFF Search-a-licious fallback failed:', e);
+            // Hard failure only if the primary ALSO errored (vs just finding nothing)
+            if (primaryError) throw e;
+            return { products: [], more: false };
+        }
+    }
+
+    /**
+     * Search-a-licious — OpenFoodFacts' modern full-text search service.
+     * Response shape: { hits: [...], count, page, page_count }.
+     * Region narrowing is done with a countries_tags filter inside the query;
+     * if the filtered query finds nothing, retries once unfiltered.
+     */
+    async function searchOpenFoodFactsSAL(query, page, pageSize, region) {
+        let q = query;
+        if (region === 'uk') q += ' countries_tags:"en:united-kingdom"';
+        else if (region === 'us') q += ' countries_tags:"en:united-states"';
+
+        const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=${pageSize}&page=${page}`;
+        const r = await fetchWithTimeout(url, 9000);
+        if (!r.ok) throw new Error('Search-a-licious HTTP ' + r.status);
         const data = await r.json();
-        const products = (data.products || []).filter(p => p.product_name);
-        // OpenFoodFacts returns count + page_size; more pages exist if count exceeds what we've seen
-        const count = data.count || 0;
-        const more = (page * pageSize) < count;
-        return { products, more };
+        let hits = (data.hits || []).filter(p => p.product_name);
+
+        // Region-filtered query found nothing → retry once without the filter (page 1 only)
+        if (hits.length === 0 && region !== 'world' && page === 1) {
+            const r2 = await fetchWithTimeout(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(query)}&page_size=${pageSize}&page=${page}`, 9000);
+            if (r2.ok) {
+                const d2 = await r2.json();
+                hits = (d2.hits || []).filter(p => p.product_name);
+                return { products: hits, more: (page * pageSize) < (d2.count || 0) };
+            }
+        }
+        return { products: hits, more: (page * pageSize) < (data.count || 0) };
     }
 
     /**
@@ -7587,10 +7716,57 @@
         recommendations.push(analyzeTrainingFrequency());
         recommendations.push(checkDeloadNeed());
         recommendations.push(checkPerformanceTrend());
+        recommendations.push(analyzeWeeklyVolume());
         recommendations.push(analyzeMuscleGroupBalance());
         recommendations.push(analyzeNutritionAdherence());
 
         return recommendations.filter(r => r !== null);
+    }
+
+    /**
+     * Weekly training-volume coaching. For intermediate/advanced lifters, checks
+     * each trained muscle against the 12-20 sets/week landmark and flags the most
+     * actionable issue — undertrained muscles (below 12) or junk volume (above 20).
+     * Primary movers count 1.0/set, secondary 0.5/set (via getWeeklyVolume).
+     */
+    function analyzeWeeklyVolume() {
+        const level = getExperienceLevel();
+        if (level !== 'Intermediate' && level !== 'Advanced') return null;
+
+        const volume = getWeeklyVolume();
+        const trained = Object.keys(volume);
+        if (trained.length === 0) return null;
+
+        // Find muscles below the minimum effective volume (12) and above the max (20)
+        const under = trained.filter(m => volume[m] < 12).sort((a, b) => volume[a] - volume[b]);
+        const over = trained.filter(m => volume[m] > 20).sort((a, b) => volume[b] - volume[a]);
+
+        const fmt = (v) => Number.isInteger(v) ? v : v.toFixed(1);
+
+        // Over-training (junk volume) is the higher priority warning
+        if (over.length > 0) {
+            const m = over[0];
+            return { icon: 'alert-triangle', color: 'text-rose-500',
+                text: `${m} is at ${fmt(volume[m])} sets in the last 7 days — above the ~20-set mark where extra volume tends to add fatigue without much extra growth. Consider trimming a little.` };
+        }
+
+        // Under-training — only nag if they've done a fair amount of training already,
+        // so we don't flag "Chest: 6 sets" early in the week.
+        const totalSets = trained.reduce((s, m) => s + volume[m], 0);
+        if (under.length > 0 && totalSets >= 10) {
+            const m = under[0];
+            const needed = fmt(12 - volume[m]);
+            return { icon: 'plus-circle', color: 'text-indigo-500',
+                text: `${m} is at ${fmt(volume[m])} sets over the last 7 days — about ${needed} short of the 12-set minimum for growth. Add a set or two in your next session.` };
+        }
+
+        // Everything on target — give positive reinforcement naming the best-covered muscle
+        const onTarget = trained.filter(m => volume[m] >= 12 && volume[m] <= 20);
+        if (onTarget.length >= 2) {
+            return { icon: 'check-circle', color: 'text-emerald-500',
+                text: `Volume looking good — ${onTarget.length} muscle groups in the 12-20 set sweet spot over the last 7 days.` };
+        }
+        return null;
     }
 
     function analyzeTrainingFrequency() {
