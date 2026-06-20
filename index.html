@@ -2469,6 +2469,7 @@
             renderSettings();
             setupMidnightSave();
             setupFoodSearch();
+            renderWorkoutEnvTabs();
 
             lucide.createIcons();
         } else {
@@ -3515,6 +3516,17 @@
 
     function setWorkoutEnv(env) {
         state.workoutEnv = env;
+        saveState();
+        renderWorkoutEnvTabs();
+    }
+
+    /**
+     * Sync the Gym/Home tab highlighting to the actual saved state.workoutEnv.
+     * Called on load and whenever the env changes, so the highlighted tab always
+     * matches the environment that AI Generate will actually use.
+     */
+    function renderWorkoutEnvTabs() {
+        const env = state.workoutEnv || 'gym';
         const gymTab = document.getElementById('env-tab-gym');
         const homeTab = document.getElementById('env-tab-home');
         if (gymTab) gymTab.className = `flex-1 py-2 text-[10px] font-black uppercase rounded-xl ${env === 'gym' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
@@ -3581,13 +3593,18 @@
             return;
         }
 
-        // Title is either the focus, the single muscle, or a list of muscles
+        // Title is either the focus, the single muscle, or a list of muscles.
+        // Prefix with the environment so it's always clear whether this is a
+        // Gym or Home workout, and that AI Generate used that environment.
+        const envForTitle = state.workoutEnv || 'gym';
+        const envLabel = envForTitle === 'home' ? '🏠 Home' : '🏋️ Gym';
         let title;
         if (isSpecific) {
             title = selectedMuscles.length === 1 ? selectedMuscles[0] : selectedMuscles.join(' + ');
         } else {
             title = focus;
         }
+        title = envLabel + ' · ' + title;
 
         document.getElementById('workout-setup').classList.add('hidden');
         document.getElementById('workout-active').classList.remove('hidden');
@@ -8567,6 +8584,9 @@
         // Wire up the food search input listener. Without this, typing in the
         // food search box does nothing because no input handler is attached.
         setupFoodSearch();
+
+        // Make sure the Gym/Home tabs match the saved environment on load.
+        renderWorkoutEnvTabs();
 
         lucide.createIcons();
     });
