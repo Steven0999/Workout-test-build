@@ -706,14 +706,10 @@
                         <p id="food-search-hint" class="text-xs text-slate-400 mt-2 px-1">Try "chicken breast" or "Hobnobs"</p>
                     </div>
 
-                    <!-- Region toggle — controls which food database region is searched -->
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-black uppercase text-slate-400 flex-shrink-0">Region</span>
-                        <div class="flex bg-slate-100 p-1 rounded-xl flex-1">
-                            <button onclick="setFoodRegion('uk')" id="region-uk" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🇬🇧 UK</button>
-                            <button onclick="setFoodRegion('us')" id="region-us" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🇺🇸 US</button>
-                            <button onclick="setFoodRegion('world')" id="region-world" class="flex-1 py-2 rounded-lg text-xs font-black uppercase">🌍 World</button>
-                        </div>
+                    <!-- Food data source — UK only -->
+                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                        <span class="text-[11px] font-bold text-slate-500">Showing 🇬🇧 UK food data from Open Food Facts</span>
                     </div>
 
                     <!-- Quick filter chips -->
@@ -1677,6 +1673,28 @@
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black">Copy from Previous Day</h3>
                 <button onclick="closeCopyPreviousDay()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl">×</button>
+            </div>
+
+            <!-- Search across all previously-logged foods -->
+            <div class="mb-5">
+                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Search Past Foods</label>
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none"></i>
+                    <input id="copy-search-input" type="text" placeholder="Find a food you've logged before..."
+                        oninput="searchPastFoods(this.value)"
+                        class="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-3.5 pl-12 pr-10 focus:bg-white focus:border-indigo-500 outline-none font-semibold"
+                        autocomplete="off">
+                    <button id="copy-search-clear" onclick="clearPastFoodSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center">
+                        <i data-lucide="x" class="w-4 h-4 text-slate-600"></i>
+                    </button>
+                </div>
+                <div id="past-food-results" class="space-y-2 mt-3"></div>
+            </div>
+
+            <div class="flex items-center gap-3 mb-5">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="text-[10px] font-black uppercase text-slate-400">or browse by date</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
             </div>
 
             <div class="mb-6">
@@ -4557,31 +4575,14 @@
      * Set the food search region (UK / US / Worldwide) and persist it.
      * Re-runs the active search so results update immediately.
      */
+    // Region is locked to UK — these remain as harmless no-ops in case any
+    // older code path still references them. The app searches UK data only.
     function setFoodRegion(region) {
-        state.foodRegion = region;
-        saveState();
-        renderRegionToggle();
-
-        // Re-run search if there's an active query
-        const input = document.getElementById('food-search-input');
-        if (input && input.value.trim().length >= 2) {
-            searchFood(input.value.trim(), 1);
-        }
-        const labels = { uk: 'UK', us: 'US', world: 'Worldwide' };
-        showToast('Food region: ' + labels[region]);
+        state.foodRegion = 'uk';
     }
 
     function renderRegionToggle() {
-        const region = state.foodRegion || 'uk';
-        ['uk', 'us', 'world'].forEach(r => {
-            const btn = document.getElementById('region-' + r);
-            if (!btn) return;
-            if (r === region) {
-                btn.className = 'flex-1 py-2 rounded-lg text-xs font-black uppercase bg-white text-indigo-600 shadow-sm';
-            } else {
-                btn.className = 'flex-1 py-2 rounded-lg text-xs font-black uppercase text-slate-400';
-            }
-        });
+        // No region toggle in the UI anymore — UK is the only source.
     }
 
     function setFoodFilter(filter) {
@@ -4874,15 +4875,15 @@
         resultsList.innerHTML = '';
         if (pagination) pagination.classList.add('hidden');
 
-        // Track whether each source actually errored (vs just returned nothing)
-        let usdaErrored = false;
+        // Track whether the source actually errored (vs just returned nothing)
+        let usdaErrored = false; // USDA is disabled — this app uses UK Open Food Facts data only
         let offErrored = false;
 
-        // Run external sources in parallel; each resolves to a result object even on failure
-        const [usdaResults, offResults] = await Promise.all([
-            searchUSDA(query, page).catch(err => { console.warn('USDA failed:', err); usdaErrored = true; return { foods: [], more: false }; }),
-            searchOpenFoodFacts(query, store, page).catch(err => { console.warn('OFF failed:', err); offErrored = true; return { products: [], more: false }; })
-        ]);
+        // Search Open Food Facts (UK) only. USDA is US-government data and has been
+        // intentionally disabled so all nutrition info comes from UK sources.
+        const offResults = await searchOpenFoodFacts(query, store, page)
+            .catch(err => { console.warn('OFF failed:', err); offErrored = true; return { products: [], more: false }; });
+        const usdaResults = { foods: [], more: false };
 
         // Custom + recent matches only make sense on page 1 (they're local, not paged)
         let localMatches = [];
@@ -4951,7 +4952,7 @@
             searchState.page = page - 1;
             resultsList.innerHTML = emptyState('search-x', 'No more results', 'You\'ve reached the end. Tap Previous to go back.');
             renderPagination();
-        } else if (usdaErrored && offErrored) {
+        } else if (offErrored) {
             // Both online sources genuinely failed — this is the real "connection" case.
             // But the user can still add manually, so make that the call to action.
             resultsList.innerHTML = `
@@ -4959,7 +4960,7 @@
                     <div class="w-16 h-16 mx-auto mb-4 bg-amber-50 rounded-2xl flex items-center justify-center">
                         <i data-lucide="wifi-off" class="w-8 h-8 text-amber-500"></i>
                     </div>
-                    <p class="font-bold text-slate-600 mb-1">Couldn't reach the food databases</p>
+                    <p class="font-bold text-slate-600 mb-1">Couldn't reach Open Food Facts</p>
                     <p class="text-xs text-slate-400 mb-4">The search servers may be busy. Try again in a moment,<br>switch region, or add the food manually.</p>
                     <div class="flex gap-2 justify-center">
                         <button onclick="retryFoodSearch()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700">Try Again</button>
@@ -5048,23 +5049,28 @@
      * made every search return unrelated "popular" products, which the relevance
      * filter then discarded, so nothing ever showed.)
      * FALLBACK: Search-a-licious (search.openfoodfacts.org), OFF's modern
-     * full-text search service.
+     * full-text search service, also constrained to UK products.
      * Returns { products: [...], more: bool }. Throws only if BOTH endpoints
      * hard-fail, so the caller can distinguish "no matches" from "no connection".
+     *
+     * UK-ONLY: this app searches UK food data exclusively. Both endpoints are
+     * pinned to the United Kingdom — the legacy one via the uk. subdomain plus a
+     * countries tag filter, the fallback via a countries_tags query filter.
      */
     async function searchOpenFoodFacts(query, store, page) {
         page = page || 1;
-        const region = (state.foodRegion) || 'uk';
-        const subdomain = region === 'us' ? 'us' : region === 'world' ? 'world' : 'uk';
         const pageSize = 20;
 
         let primaryError = null;
 
-        // --- Primary: legacy full-text search on the region subdomain ---
+        // --- Primary: legacy full-text search, pinned to the UK subdomain ---
+        // The uk. subdomain already scopes to UK products; we also add an explicit
+        // countries tag filter so results are UK-sold items with UK labelling.
         try {
-            let url = `https://${subdomain}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
+            let url = `https://uk.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
+            url += `&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
             if (store && store !== 'all') {
-                url += `&tagtype_0=stores&tag_contains_0=contains&tag_0=${encodeURIComponent(store)}`;
+                url += `&tagtype_1=stores&tag_contains_1=contains&tag_1=${encodeURIComponent(store)}`;
             }
             const r = await fetchWithTimeout(url, 9000);
             if (!r.ok) throw new Error('OFF legacy HTTP ' + r.status);
@@ -5080,9 +5086,9 @@
             primaryError = e;
         }
 
-        // --- Fallback: Search-a-licious ---
+        // --- Fallback: Search-a-licious, also UK-constrained ---
         try {
-            return await searchOpenFoodFactsSAL(query, page, pageSize, region);
+            return await searchOpenFoodFactsSAL(query, page, pageSize);
         } catch (e) {
             console.warn('OFF Search-a-licious fallback failed:', e);
             // Hard failure only if the primary ALSO errored (vs just finding nothing)
@@ -5094,29 +5100,15 @@
     /**
      * Search-a-licious — OpenFoodFacts' modern full-text search service.
      * Response shape: { hits: [...], count, page, page_count }.
-     * Region narrowing is done with a countries_tags filter inside the query;
-     * if the filtered query finds nothing, retries once unfiltered.
+     * Pinned to UK products via a countries_tags filter inside the query.
      */
-    async function searchOpenFoodFactsSAL(query, page, pageSize, region) {
-        let q = query;
-        if (region === 'uk') q += ' countries_tags:"en:united-kingdom"';
-        else if (region === 'us') q += ' countries_tags:"en:united-states"';
-
+    async function searchOpenFoodFactsSAL(query, page, pageSize) {
+        const q = query + ' countries_tags:"en:united-kingdom"';
         const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=${pageSize}&page=${page}`;
         const r = await fetchWithTimeout(url, 9000);
         if (!r.ok) throw new Error('Search-a-licious HTTP ' + r.status);
         const data = await r.json();
-        let hits = (data.hits || []).filter(p => p.product_name);
-
-        // Region-filtered query found nothing → retry once without the filter (page 1 only)
-        if (hits.length === 0 && region !== 'world' && page === 1) {
-            const r2 = await fetchWithTimeout(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(query)}&page_size=${pageSize}&page=${page}`, 9000);
-            if (r2.ok) {
-                const d2 = await r2.json();
-                hits = (d2.hits || []).filter(p => p.product_name);
-                return { products: hits, more: (page * pageSize) < (d2.count || 0) };
-            }
-        }
+        const hits = (data.hits || []).filter(p => p.product_name);
         return { products: hits, more: (page * pageSize) < (data.count || 0) };
     }
 
@@ -5537,7 +5529,7 @@
 
     async function searchIngredient(query) {
         try {
-            const r = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5`);
+            const r = await fetch(`https://uk.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`);
             const d = await r.json();
             const items = (d.products || []).filter(p => p.product_name && p.nutriments && p.nutriments['energy-kcal_100g']);
             document.getElementById('meal-search-results').innerHTML = items.map(p => `
@@ -5728,6 +5720,105 @@
     function closeCopyPreviousDay() {
         document.getElementById('copy-previous-day-modal').style.display = 'none';
         selectedPreviousMeals = [];
+        // Reset the search box
+        const input = document.getElementById('copy-search-input');
+        if (input) input.value = '';
+        const results = document.getElementById('past-food-results');
+        if (results) results.innerHTML = '';
+        const clearBtn = document.getElementById('copy-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
+    }
+
+    /**
+     * Build a deduplicated list of every food ever logged, newest first.
+     * Pulls from nutritionHistory (past days) + today's dailyMeals.
+     * Deduped by name (case-insensitive) so repeated foods appear once.
+     */
+    function getAllLoggedFoods() {
+        const all = [];
+        (state.dailyMeals || []).forEach(m => all.push({ meal: m, when: m.id || Date.now() }));
+        (state.nutritionHistory || []).forEach(day => {
+            (day.meals || []).forEach(m => all.push({ meal: m, when: day.date }));
+        });
+        all.sort((a, b) => String(b.when).localeCompare(String(a.when)));
+
+        const seen = new Set();
+        const out = [];
+        for (const item of all) {
+            const m = item.meal;
+            if (!m || !m.name) continue;
+            const key = m.name.toLowerCase().trim();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(m);
+        }
+        return out;
+    }
+
+    /**
+     * Search the user's previously-logged foods by name and show matches with
+     * checkboxes. Selecting one adds it to the same selectedPreviousMeals list
+     * that "Copy to Today" reads from.
+     */
+    function searchPastFoods(query) {
+        const results = document.getElementById('past-food-results');
+        const clearBtn = document.getElementById('copy-search-clear');
+        if (!results) return;
+
+        const q = query.trim().toLowerCase();
+        if (clearBtn) clearBtn.classList.toggle('hidden', q.length === 0);
+
+        if (q.length === 0) {
+            results.innerHTML = '';
+            return;
+        }
+
+        const matches = getAllLoggedFoods().filter(m => m.name.toLowerCase().includes(q)).slice(0, 25);
+
+        if (matches.length === 0) {
+            results.innerHTML = '<p class="text-center text-slate-400 italic py-3 text-sm">No matching foods in your history</p>';
+            return;
+        }
+
+        results.innerHTML = matches.map((m, i) => {
+            // Is this food already selected? (match by name since these are deduped)
+            const isSel = selectedPreviousMeals.some(s => (s.name || '').toLowerCase() === m.name.toLowerCase());
+            const safe = JSON.stringify(m).replace(/'/g, '&apos;');
+            return `
+                <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                    <input type="checkbox" ${isSel ? 'checked' : ''} onchange='togglePastFood(this, ${safe})' class="w-5 h-5 accent-indigo-600 flex-shrink-0">
+                    <div class="w-10 h-10 bg-white rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        ${m.image ? `<img src="${m.image}" class="w-full h-full object-contain" onerror="this.style.display='none'">` : '<i data-lucide="utensils" class="w-5 h-5 text-slate-300"></i>'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-sm truncate">${escapeHtml(m.name)}</p>
+                        <p class="text-xs text-slate-400">${Math.round(m.calories || 0)} kcal · ${(m.protein || 0).toFixed(0)}g protein</p>
+                    </div>
+                </label>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function togglePastFood(checkbox, meal) {
+        if (checkbox.checked) {
+            // Avoid duplicate entries by name
+            if (!selectedPreviousMeals.some(s => (s.name || '').toLowerCase() === (meal.name || '').toLowerCase())) {
+                // Give it a fresh id so it doesn't collide with an existing logged meal
+                selectedPreviousMeals.push({ ...meal, id: Date.now() + Math.floor(Math.random() * 1000) });
+            }
+            showToast('Added — tap "Copy to Today" to confirm');
+        } else {
+            selectedPreviousMeals = selectedPreviousMeals.filter(s => (s.name || '').toLowerCase() !== (meal.name || '').toLowerCase());
+        }
+    }
+
+    function clearPastFoodSearch() {
+        const input = document.getElementById('copy-search-input');
+        if (input) input.value = '';
+        const clearBtn = document.getElementById('copy-search-clear');
+        if (clearBtn) clearBtn.classList.add('hidden');
+        const results = document.getElementById('past-food-results');
+        if (results) results.innerHTML = '';
     }
 
     function loadPreviousDayMeals() {
