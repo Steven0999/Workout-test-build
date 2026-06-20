@@ -3174,10 +3174,23 @@
         const targetMuscles = EXERCISE_TO_MUSCLES[currentName];
         if (!targetMuscles || targetMuscles.length === 0) return null;
 
-        // Find every exercise that hits at least one of the same muscles
+        // Restrict the whole candidate pool to the ACTIVE environment so a gym
+        // swap never returns a home exercise and vice versa.
+        const env = (currentWorkoutContext && currentWorkoutContext.env) || state.workoutEnv || 'gym';
+        const envDb = EXERCISE_DB[env] || {};
+
+        // Set of every exercise that exists in the active environment
+        const envExercises = new Set();
+        Object.values(envDb).forEach(group => {
+            (group.compound || []).forEach(ex => envExercises.add(ex));
+            (group.isolation || []).forEach(ex => envExercises.add(ex));
+        });
+
+        // Candidates = same-muscle exercises that ALSO exist in this environment
         const candidates = new Set();
         Object.keys(EXERCISE_TO_MUSCLES).forEach(ex => {
             if (ex === currentName) return;
+            if (!envExercises.has(ex)) return; // not in this environment — skip
             const exMuscles = EXERCISE_TO_MUSCLES[ex];
             if (exMuscles.some(m => targetMuscles.indexOf(m) >= 0)) {
                 candidates.add(ex);
@@ -3190,22 +3203,7 @@
             if (v) candidates.delete(v);
         });
 
-        // Prefer alternatives available in the active env (gym vs home)
-        const env = (currentWorkoutContext && currentWorkoutContext.env) || state.workoutEnv || 'gym';
-        const inEnv = [];
-        const outOfEnv = [];
-        candidates.forEach(ex => {
-            // An exercise is "in env" if it appears in any muscle list of that env
-            const envDb = EXERCISE_DB[env] || {};
-            const found = SPECIFIC_MUSCLES.some(m => {
-                const e = envDb[m];
-                if (!e) return false;
-                return (e.compound || []).indexOf(ex) >= 0 || (e.isolation || []).indexOf(ex) >= 0;
-            });
-            (found ? inEnv : outOfEnv).push(ex);
-        });
-
-        const pool = inEnv.length > 0 ? inEnv : outOfEnv;
+        const pool = Array.from(candidates);
         if (pool.length === 0) return null;
         const sampled = weightedSample(pool, 1);
         return sampled[0] || null;
@@ -3614,20 +3612,13 @@
 
             const queued = [];
             const missingMuscles = [];
-            const fellBackMuscles = [];
-            const otherEnv = env === 'gym' ? 'home' : 'gym';
 
             muscleKeys.forEach(muscleKey => {
-                let exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
-                let usedEnv = env;
-                // Fallback: if the primary environment doesn't have this muscle, try the other.
-                // Better to give the user some exercises (and let them swap them out) than none.
+                // Strictly use the SELECTED environment's exercises only — no cross-over
+                // between gym and home, so a gym workout never shows home exercises
+                // and vice versa.
+                const exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
                 if (!exercises || ((exercises.compound || []).length + (exercises.isolation || []).length === 0)) {
-                    exercises = EXERCISE_DB[otherEnv] && EXERCISE_DB[otherEnv][muscleKey];
-                    usedEnv = otherEnv;
-                    if (exercises) fellBackMuscles.push(muscleKey);
-                }
-                if (!exercises) {
                     missingMuscles.push(muscleKey);
                     return;
                 }
@@ -3647,17 +3638,13 @@
             });
 
             if (finalList.length === 0) {
-                // This should now be very rare since fallback covers most cases.
-                // Show the user *why* it failed so we can diagnose any remaining edge case.
-                const debugInfo = `env=${env}, muscles=[${muscleKeys.join(',')}], missing=[${missingMuscles.join(',')}]`;
-                console.error('AI workout produced 0 exercises:', debugInfo);
-                showToast('No exercises generated — ' + debugInfo, 8000);
+                const envLabel = env === 'home' ? 'Home' : 'Gym';
+                showToast(`No ${envLabel} exercises for ${muscleKeys.join(', ')}. Try the other environment or different muscles.`, 5000);
             } else {
-                // Warn about partial misses so the user knows some muscles got skipped
+                // Warn about any muscles with no exercises in THIS environment
                 if (missingMuscles.length > 0) {
-                    showToast('Skipped (no exercises anywhere): ' + missingMuscles.join(', '), 4000);
-                } else if (fellBackMuscles.length > 0) {
-                    showToast('Used ' + otherEnv + ' exercises for: ' + fellBackMuscles.join(', '), 4000);
+                    const envLabel = env === 'home' ? 'Home' : 'Gym';
+                    showToast(`No ${envLabel} exercises for: ${missingMuscles.join(', ')}`, 4000);
                 }
                 let delay = 0;
                 finalList.forEach(ex => {
@@ -3704,26 +3691,15 @@
     function getExercisesForCurrentFocus() {
         if (!currentWorkoutContext) return ALL_EXERCISES;
         const ctx = currentWorkoutContext;
+        const env = ctx.env || 'gym';
+        const envDb = EXERCISE_DB[env] || {};
 
-        // Specific muscle workout: union of exercises that target any selected muscle
+        // Specific muscle workout: exercises that target any selected muscle,
+        // drawn ONLY from the active environment (gym stays gym, home stays home).
         if (ctx.muscles && ctx.muscles.length > 0) {
             const set = new Set();
             ctx.muscles.forEach(muscle => {
-                Object.values(EXERCISE_DB).forEach(envDb => {
-                    const e = envDb[muscle];
-                    if (!e) return;
-                    (e.compound || []).forEach(ex => set.add(ex));
-                    (e.isolation || []).forEach(ex => set.add(ex));
-                });
-            });
-            return Array.from(set).sort();
-        }
-
-        // Focus-group workout: take from that group in the active env (with the other env as backup)
-        if (ctx.focus) {
-            const set = new Set();
-            [ctx.env, ctx.env === 'gym' ? 'home' : 'gym'].forEach(env => {
-                const e = EXERCISE_DB[env] && EXERCISE_DB[env][ctx.focus];
+                const e = envDb[muscle];
                 if (!e) return;
                 (e.compound || []).forEach(ex => set.add(ex));
                 (e.isolation || []).forEach(ex => set.add(ex));
@@ -3731,7 +3707,24 @@
             if (set.size > 0) return Array.from(set).sort();
         }
 
-        return ALL_EXERCISES;
+        // Focus-group workout: take from that group in the active env ONLY.
+        if (ctx.focus) {
+            const set = new Set();
+            const e = envDb[ctx.focus];
+            if (e) {
+                (e.compound || []).forEach(ex => set.add(ex));
+                (e.isolation || []).forEach(ex => set.add(ex));
+            }
+            if (set.size > 0) return Array.from(set).sort();
+        }
+
+        // Last resort: every exercise in the active environment (still no cross-over).
+        const envSet = new Set();
+        Object.values(envDb).forEach(group => {
+            (group.compound || []).forEach(ex => envSet.add(ex));
+            (group.isolation || []).forEach(ex => envSet.add(ex));
+        });
+        return envSet.size > 0 ? Array.from(envSet).sort() : ALL_EXERCISES;
     }
 
     function updateWorkoutTimer() {
@@ -5053,63 +5046,60 @@
      * Returns { products: [...], more: bool }. Throws only if BOTH endpoints
      * hard-fail, so the caller can distinguish "no matches" from "no connection".
      *
-     * UK-ONLY: this app searches UK food data exclusively. Both endpoints are
-     * pinned to the United Kingdom — the legacy one via the uk. subdomain plus a
-     * countries tag filter, the fallback via a countries_tags query filter.
+     * UK-focused: results are filtered to United Kingdom products where possible.
+     * If the UK-filtered query returns nothing, it retries unfiltered so you still
+     * get results rather than an empty screen.
      */
     async function searchOpenFoodFacts(query, store, page) {
         page = page || 1;
         const pageSize = 20;
 
-        let primaryError = null;
+        // --- PRIMARY: Search-a-licious (OFF's modern search API) ---
+        // This is fast and CORS-friendly, unlike the old cgi/search.pl endpoint
+        // which frequently fails from browsers. Try UK-filtered first, then a
+        // plain query if that finds nothing.
+        try {
+            const ukQuery = query + ' countries_tags:"en:united-kingdom"';
+            let res = await searchSAL(ukQuery, page, pageSize);
+            if (res.products.length === 0 && page === 1) {
+                // UK filter too strict for this term — retry without it
+                res = await searchSAL(query, page, pageSize);
+            }
+            if (res.products.length > 0 || page > 1) return res;
+        } catch (e) {
+            console.warn('Search-a-licious failed, trying legacy:', e);
+        }
 
-        // --- Primary: legacy full-text search, pinned to the UK subdomain ---
-        // The uk. subdomain already scopes to UK products; we also add an explicit
-        // countries tag filter so results are UK-sold items with UK labelling.
+        // --- FALLBACK: legacy cgi/search.pl on the UK subdomain ---
         try {
             let url = `https://uk.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}&page=${page}`;
-            url += `&tagtype_0=countries&tag_contains_0=contains&tag_0=united-kingdom`;
             if (store && store !== 'all') {
-                url += `&tagtype_1=stores&tag_contains_1=contains&tag_1=${encodeURIComponent(store)}`;
+                url += `&tagtype_0=stores&tag_contains_0=contains&tag_0=${encodeURIComponent(store)}`;
             }
             const r = await fetchWithTimeout(url, 9000);
             if (!r.ok) throw new Error('OFF legacy HTTP ' + r.status);
             const data = await r.json();
             const products = (data.products || []).filter(p => p.product_name);
-            if (products.length > 0 || page > 1) {
-                return { products, more: (page * pageSize) < (data.count || 0) };
-            }
-            // Zero results on page 1 — try the fallback search engine before
-            // concluding there are genuinely no matches.
+            return { products, more: (page * pageSize) < (data.count || 0) };
         } catch (e) {
-            console.warn('OFF legacy search failed:', e);
-            primaryError = e;
-        }
-
-        // --- Fallback: Search-a-licious, also UK-constrained ---
-        try {
-            return await searchOpenFoodFactsSAL(query, page, pageSize);
-        } catch (e) {
-            console.warn('OFF Search-a-licious fallback failed:', e);
-            // Hard failure only if the primary ALSO errored (vs just finding nothing)
-            if (primaryError) throw e;
-            return { products: [], more: false };
+            console.warn('OFF legacy search also failed:', e);
+            // Both endpoints failed — signal a genuine connection problem to the caller
+            throw e;
         }
     }
 
     /**
-     * Search-a-licious — OpenFoodFacts' modern full-text search service.
+     * Search-a-licious helper. Requests only the fields we use.
      * Response shape: { hits: [...], count, page, page_count }.
-     * Pinned to UK products via a countries_tags filter inside the query.
      */
-    async function searchOpenFoodFactsSAL(query, page, pageSize) {
-        const q = query + ' countries_tags:"en:united-kingdom"';
-        const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&page_size=${pageSize}&page=${page}`;
+    async function searchSAL(q, page, pageSize) {
+        const fields = 'product_name,brands,stores,image_url,image_front_small_url,nutriments,serving_size,code';
+        const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(q)}&fields=${fields}&page_size=${pageSize}&page=${page}`;
         const r = await fetchWithTimeout(url, 9000);
         if (!r.ok) throw new Error('Search-a-licious HTTP ' + r.status);
         const data = await r.json();
-        const hits = (data.hits || []).filter(p => p.product_name);
-        return { products: hits, more: (page * pageSize) < (data.count || 0) };
+        const products = (data.hits || []).filter(p => p.product_name);
+        return { products, more: (page * pageSize) < (data.count || 0) };
     }
 
     /**
