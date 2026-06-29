@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="FitTrack Pro - Complete fitness tracking app with cloud sync">
-    <meta name="theme-color" content="#4f46e5">
-    <title>Vaughan Fitness App</title>
+    <meta name="description" content="VFIT - Complete fitness tracking app with cloud sync">
+    <meta name="theme-color" content="#1f2937">
+    <title>VFIT</title>
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 
@@ -204,6 +204,158 @@
 
         header { padding: 1rem 1.25rem; }
         @media (max-width: 640px) { header { padding: 0.875rem 1rem; } }
+
+        /* ============================================================
+           VFIT THEME — orange text · dark-grey background · black panels
+           A global override that remaps the app's Tailwind colour classes
+           to the new scheme while keeping all layout the same. Orange shades
+           are chosen for strong contrast against black/dark-grey so text
+           stays easily readable.
+           ============================================================ */
+
+        :root {
+            --vfit-bg: #1f2937;        /* dark grey — page background */
+            --vfit-panel: #000000;     /* black — cards / middle panels */
+            --vfit-panel-2: #0a0a0a;   /* near-black — nested panels */
+            --vfit-orange: #f97316;    /* primary orange — main text */
+            --vfit-orange-bright: #fb923c; /* brighter orange — headings/emphasis */
+            --vfit-orange-soft: #fdba74;   /* soft orange — secondary/muted text */
+            --vfit-border: #2d2d2d;    /* subtle border on black panels */
+        }
+
+        /* Page background */
+        body { background-color: var(--vfit-bg) !important; color: var(--vfit-orange) !important; }
+        main, section, #app-screen, #dashboard, .tab-content { background-color: transparent !important; }
+
+        /* Panels / cards → black. Covers white, glass, and the dark slate cards. */
+        .glass-card,
+        .bg-white,
+        .bg-slate-900, .bg-slate-800, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100,
+        .bg-indigo-50, .bg-emerald-50, .bg-amber-50, .bg-rose-50, .bg-red-50, .bg-purple-50, .bg-blue-50 {
+            background-color: var(--vfit-panel) !important;
+            backdrop-filter: none !important;
+            border-color: var(--vfit-border) !important;
+        }
+
+        /* Nested / inset elements get a very-slightly-lifted black so they're distinguishable */
+        .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100 {
+            background-color: var(--vfit-panel-2) !important;
+        }
+
+        /* Text colours → orange family. Map every slate/gray text shade. */
+        .text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600,
+        .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600,
+        .text-black {
+            color: var(--vfit-orange) !important;
+        }
+        .text-slate-500, .text-slate-400, .text-slate-300,
+        .text-gray-500, .text-gray-400, .text-gray-300 {
+            color: var(--vfit-orange-soft) !important;  /* muted but still readable */
+        }
+        /* White text sits on coloured buttons that become black — make it orange */
+        .text-white { color: var(--vfit-orange-bright) !important; }
+
+        /* Headings a touch brighter for hierarchy */
+        h1, h2, h3, h4, h5, h6 { color: var(--vfit-orange-bright) !important; }
+
+        /* Coloured accent text → keep orange so nothing turns invisible on black */
+        .text-indigo-600, .text-indigo-500, .text-indigo-700,
+        .text-emerald-600, .text-emerald-500, .text-emerald-700,
+        .text-rose-500, .text-rose-600, .text-red-500, .text-red-600,
+        .text-amber-600, .text-amber-700, .text-amber-500,
+        .text-purple-600, .text-purple-700, .text-blue-600 {
+            color: var(--vfit-orange-bright) !important;
+        }
+
+        /* Buttons that were coloured fills → black with an orange border + orange text */
+        .bg-indigo-600, .bg-indigo-700, .bg-indigo-500,
+        .bg-emerald-600, .bg-emerald-700, .bg-emerald-500,
+        .bg-purple-600, .bg-purple-700,
+        .bg-slate-900, .bg-slate-800, .bg-rose-500, .bg-rose-600,
+        .bg-red-600, .bg-blue-600 {
+            background-color: var(--vfit-panel) !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+            color: var(--vfit-orange-bright) !important;
+        }
+        .bg-indigo-600 *, .bg-emerald-600 *, .bg-purple-600 *,
+        .bg-slate-900 *, .bg-rose-500 *, .bg-red-600 * {
+            color: var(--vfit-orange-bright) !important;
+        }
+
+        /* Hover states for those buttons */
+        .hover\:bg-indigo-700:hover, .hover\:bg-indigo-600:hover,
+        .hover\:bg-emerald-700:hover, .hover\:bg-purple-700:hover,
+        .hover\:bg-slate-800:hover, .hover\:bg-slate-700:hover,
+        .hover\:bg-red-100:hover, .hover\:bg-slate-200:hover, .hover\:bg-slate-100:hover {
+            background-color: #1a1a1a !important;
+        }
+
+        /* Inputs / selects → black field, orange text, visible orange-ish border */
+        input, select, textarea {
+            background-color: var(--vfit-panel-2) !important;
+            color: var(--vfit-orange) !important;
+            border-color: var(--vfit-border) !important;
+        }
+        input::placeholder, textarea::placeholder { color: #9a6a3a !important; }
+        select option { background-color: #000 !important; color: var(--vfit-orange) !important; }
+
+        /* Borders that were light → dark so they don't glow white on black */
+        .border-slate-200, .border-slate-100, .border-slate-300,
+        .border-gray-200, .border-gray-100, .border-transparent,
+        .border-indigo-100, .border-emerald-100, .border-amber-100 {
+            border-color: var(--vfit-border) !important;
+        }
+        /* Keep the focus accents orange */
+        .focus\:border-indigo-500:focus, .focus\:border-emerald-500:focus,
+        .focus\:border-amber-400:focus {
+            border-color: var(--vfit-orange) !important;
+        }
+
+        /* Dividers */
+        .bg-slate-200, .divide-slate-200 > *, .bg-gray-200 { background-color: var(--vfit-border) !important; }
+
+        /* Toast stays high-contrast: black bg, orange text */
+        .toast { background: #000 !important; color: var(--vfit-orange-bright) !important; border: 1px solid var(--vfit-orange); }
+
+        /* Modal panels are caught by .bg-white above; darken the overlay a touch more */
+        .modal-overlay { background: rgba(0,0,0,0.75) !important; }
+
+        /* Progress bars / coloured fills inside volume tracker etc. — keep them orange
+           so they're visible, with varying brightness handled inline where needed */
+        .bg-amber-400, .bg-emerald-500, .bg-red-400, .bg-indigo-600 { /* covered above; bars use inline width */ }
+
+        /* Auth screen gradient → dark grey to black, with orange text */
+        #auth-screen { background: linear-gradient(135deg, #1f2937 0%, #000000 100%) !important; }
+
+        /* Muscle chip selected state in the new theme */
+        .muscle-chip.selected { background-color: #000 !important; color: var(--vfit-orange-bright) !important; border-color: var(--vfit-orange) !important; }
+
+        /* SVG icons (Lucide) inherit currentColor — ensure they read as orange */
+        svg { color: inherit; }
+
+        /* Accent colour for checkboxes/range */
+        input[type="checkbox"], input[type="range"] { accent-color: var(--vfit-orange) !important; }
+
+        /* Coach mode: hide the member-only bottom nav / tab bar since coaches
+           use their own dashboard overlay. */
+        body.is-coach #bottom-nav,
+        body.is-coach .bottom-nav,
+        body.is-coach nav.fixed { display: none !important; }
+
+        /* Gradient cards/buttons → solid black so they match the theme and keep text readable.
+           Tailwind builds gradients from --tw-gradient-stops; clearing the image + stops
+           and forcing a black background flattens them to plain black panels. */
+        [class*="bg-gradient-"] {
+            background-image: none !important;
+            background-color: var(--vfit-panel) !important;
+            border: 1.5px solid var(--vfit-border) !important;
+        }
+        [class*="from-"], [class*="via-"], [class*="to-"] {
+            --tw-gradient-from: transparent !important;
+            --tw-gradient-via: transparent !important;
+            --tw-gradient-to: transparent !important;
+            --tw-gradient-stops: transparent !important;
+        }
     </style>
 </head>
 <body>
@@ -218,7 +370,7 @@
             <div class="bg-white rounded-[3rem] p-8 shadow-2xl">
                 <div class="text-center mb-8">
                     <div class="text-6xl mb-4">💪</div>
-                    <h1 class="text-3xl font-black text-indigo-600 mb-2">VFit<span class="text-slate-600">Pro</span></h1>
+                    <h1 class="text-4xl font-black text-indigo-600 mb-2 tracking-[0.2em]">VFIT</h1>
                     <p class="text-slate-500 text-sm">Your complete fitness companion</p>
                 </div>
 
@@ -251,6 +403,30 @@
                 <div id="register-form" class="hidden">
                     <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
                     <div class="space-y-4">
+                        <!-- Role selection: Coach or Member -->
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">I am a...</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" onclick="setRegisterRole('member')" id="role-btn-member" class="role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1">
+                                    <i data-lucide="user" class="w-6 h-6"></i>
+                                    <span>Member</span>
+                                </button>
+                                <button type="button" onclick="setRegisterRole('coach')" id="role-btn-coach" class="role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1">
+                                    <i data-lucide="dumbbell" class="w-6 h-6"></i>
+                                    <span>Coach</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Coach access code — only shown when Coach is selected -->
+                        <div id="coach-code-wrap" class="hidden">
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Coach Access Code</label>
+                            <div class="input-group">
+                                <i data-lucide="key" class="w-5 h-5"></i>
+                                <input type="text" id="register-coach-code" placeholder="Enter your coach code" autocomplete="off" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-2">Coach accounts require an access code. Don't have one? Contact the app owner.</p>
+                        </div>
                         <div class="input-group">
                             <i data-lucide="user" class="w-5 h-5"></i>
                             <input type="text" id="register-name" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
@@ -312,7 +488,7 @@
                 <i data-lucide="menu" class="w-6 h-6 text-slate-700"></i>
             </button>
             <div class="text-center">
-                <h1 class="text-xl font-extrabold tracking-tight text-indigo-600">FitTrack<span class="text-slate-600">Pro</span></h1>
+                <h1 class="text-2xl font-extrabold tracking-[0.2em] text-indigo-600">VFIT</h1>
                 <div class="flex items-center gap-2 justify-center">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
@@ -505,6 +681,17 @@
                     <button onclick="logoutUser()" class="w-full mt-3 bg-red-500 text-white p-4 rounded-2xl font-bold hover:bg-red-600">
                         Sign Out
                     </button>
+                </div>
+
+                <!-- My Coach (members only) -->
+                <div class="glass-card p-6 rounded-[2.5rem]">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="dumbbell" class="w-5 h-5 text-indigo-600"></i>
+                        <h3 class="font-black text-lg">My Coach</h3>
+                    </div>
+                    <div id="member-coach-section">
+                        <p class="text-sm text-slate-400">Loading...</p>
+                    </div>
                 </div>
 
                 <div class="glass-card p-6 rounded-2xl">
@@ -1429,6 +1616,26 @@
 
     <!-- CARDIO LOGGING MODAL -->
     <!-- RATE EXERCISES MODAL -->
+    <!-- MEMBER ↔ COACH NOTES MODAL -->
+    <div id="member-notes-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h3 class="text-xl font-black">Training Notes</h3>
+                    <p class="text-xs text-slate-400">with <span id="member-notes-coach-name">Coach</span></p>
+                </div>
+                <button onclick="closeMemberNotes()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <div id="member-notes-thread" class="flex-1 space-y-3 my-4 overflow-y-auto min-h-[200px] max-h-[50vh]">
+                <p class="text-sm text-slate-400 text-center py-3">Loading notes...</p>
+            </div>
+            <div class="flex gap-2">
+                <input id="member-note-input" type="text" placeholder="Write a note to your coach..." class="flex-1 p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium" onkeydown="if(event.key==='Enter')postMemberNote()">
+                <button onclick="postMemberNote()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700">Send</button>
+            </div>
+        </div>
+    </div>
+
     <div id="rate-exercises-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div class="mb-5">
@@ -2283,6 +2490,8 @@
 
     let currentUser = null;
     let firebaseUserData = {};
+    let currentUserRole = 'member'; // resolved from Firestore on login: 'coach' | 'member'
+    let viewingClientData = null;   // when a coach is viewing a client, holds {uid, name, data}
 
     // ==========================================================================
     // AUTH FORM HELPERS
@@ -2310,33 +2519,104 @@
     // AUTH FUNCTIONS
     // ==========================================================================
 
+    let selectedRegisterRole = 'member'; // 'member' | 'coach' — chosen on the signup form
+
+    function setRegisterRole(role) {
+        selectedRegisterRole = role;
+        const memberBtn = document.getElementById('role-btn-member');
+        const coachBtn = document.getElementById('role-btn-coach');
+        const codeWrap = document.getElementById('coach-code-wrap');
+        if (role === 'member') {
+            memberBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1';
+            coachBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1';
+            if (codeWrap) codeWrap.classList.add('hidden');
+        } else {
+            coachBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1';
+            memberBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1';
+            if (codeWrap) codeWrap.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Validate a coach access code against the Firestore config document.
+     * The valid code lives at config/coachAccess (field: code), editable only by
+     * you in the Firebase console. Returns true if the entered code matches.
+     */
+    async function validateCoachCode(entered) {
+        if (!entered) return false;
+        try {
+            const doc = await db.collection('config').doc('coachAccess').get();
+            if (!doc.exists) {
+                console.warn('No coachAccess config doc found');
+                return false;
+            }
+            const data = doc.data() || {};
+            // Support either a single `code` string or an array of `codes`.
+            const single = (data.code || '').toString().trim();
+            const list = Array.isArray(data.codes) ? data.codes.map(c => c.toString().trim()) : [];
+            const candidate = entered.trim();
+            // Case-insensitive match
+            if (single && candidate.toLowerCase() === single.toLowerCase()) return true;
+            if (list.some(c => candidate.toLowerCase() === c.toLowerCase())) return true;
+            return false;
+        } catch (error) {
+            console.error('Error validating coach code:', error);
+            return false;
+        }
+    }
+
     async function registerUser() {
         const name = document.getElementById('register-name').value.trim();
         const email = document.getElementById('register-email').value.trim();
         const password = document.getElementById('register-password').value;
         const confirm = document.getElementById('register-confirm').value;
+        const role = selectedRegisterRole || 'member';
 
         if (!name) { showToast('Please enter your name'); return; }
         if (!email || !password) { showToast('Please fill all fields'); return; }
         if (password.length < 6) { showToast('Password must be at least 6 characters'); return; }
         if (password !== confirm) { showToast('Passwords do not match'); return; }
 
+        // Coach accounts require a valid access code. Validate it BEFORE creating
+        // the auth account so we don't leave an orphaned login if the code is wrong.
+        let coachCodeUsed = null;
+        if (role === 'coach') {
+            const enteredCode = document.getElementById('register-coach-code').value.trim();
+            if (!enteredCode) { showToast('Enter your coach access code'); return; }
+            showToast('Checking coach code...');
+            const ok = await validateCoachCode(enteredCode);
+            if (!ok) { showToast('Invalid coach access code'); return; }
+            coachCodeUsed = enteredCode;
+        }
+
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             await user.updateProfile({ displayName: name });
 
-            await db.collection('users').doc(user.uid).set({
+            const userDoc = {
                 name: name,
                 email: email,
+                role: role, // 'coach' or 'member' — fixed for the lifetime of the account
+                emailLower: email.toLowerCase(), // for case-insensitive lookup when linking
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 calorieGoal: 2500,
                 workouts: [],
                 meals: [],
-                metrics: []
-            });
+                metrics: [],
+                coachUid: null,        // members: the uid of their linked coach
+                coachName: null,
+                clientUids: [],        // coaches: array of linked client uids
+                pendingRequests: []    // coaches: incoming link requests {fromUid, fromName, fromEmail}
+            };
+            // Record the code used (only for coaches). This lets the Firestore
+            // rules optionally enforce that a coach account matches your config
+            // code server-side, not just in the UI.
+            if (coachCodeUsed) userDoc.coachCodeUsed = coachCodeUsed;
 
-            showToast('Account created successfully! 🎉');
+            await db.collection('users').doc(user.uid).set(userDoc);
+
+            showToast(role === 'coach' ? 'Coach account created! 🎉' : 'Account created successfully! 🎉');
         } catch (error) {
             console.error('Registration error:', error);
             if (error.code === 'auth/email-already-in-use') {
@@ -2399,18 +2679,26 @@
             const doc = await db.collection('users').doc(currentUser.uid).get();
             if (doc.exists) {
                 firebaseUserData = doc.data();
+                currentUserRole = firebaseUserData.role || 'member';
                 if (firebaseUserData.calorieGoal) {
                     state.goals.calories = firebaseUserData.calorieGoal;
                 }
             } else {
+                currentUserRole = 'member';
                 await db.collection('users').doc(currentUser.uid).set({
                     name: currentUser.displayName || 'User',
                     email: currentUser.email,
+                    role: 'member',
+                    emailLower: (currentUser.email || '').toLowerCase(),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     calorieGoal: state.goals.calories || 2500,
                     workouts: [],
                     meals: [],
-                    metrics: []
+                    metrics: [],
+                    coachUid: null,
+                    coachName: null,
+                    clientUids: [],
+                    pendingRequests: []
                 });
             }
         } catch (error) {
@@ -2440,6 +2728,532 @@
     }
 
     // ==========================================================================
+    // COACH / MEMBER SYSTEM
+    // ==========================================================================
+    // Roles are fixed at signup. Members push a snapshot of their training/nutrition
+    // data to their Firestore user doc so a linked coach can read it (read-only).
+    // Linking is consent-based: a coach sends a request by email, the member approves.
+    // Notes are a two-way conversation. For a coach to READ a member's doc, your
+    // Firestore security rules must permit it (rules provided separately).
+
+    async function pushMemberDataToCloud() {
+        if (!currentUser || currentUserRole !== 'member') return;
+        try {
+            const snapshot = {
+                workoutHistory: (state.workoutHistory || []).slice(0, 100),
+                nutritionHistory: (state.nutritionHistory || []).slice(0, 60),
+                dailyMeals: state.dailyMeals || [],
+                metricsHistory: (state.metricsHistory || []).map(m => {
+                    const copy = { ...m };
+                    delete copy.photos; // photos are large; don't sync them
+                    return copy;
+                }),
+                goals: state.goals || {},
+                userProfile: state.userProfile || {},
+                exerciseRatings: state.exerciseRatings || {},
+                updatedAt: new Date().toISOString()
+            };
+            await db.collection('users').doc(currentUser.uid).update({
+                dataSnapshot: snapshot,
+                snapshotUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.warn('Could not push member data to cloud:', error);
+        }
+    }
+
+    // ---------- COACH MODE ----------
+
+    function showCoachMode() {
+        const main = document.querySelector('main');
+        if (main) main.style.display = 'none';
+
+        let coachView = document.getElementById('coach-view');
+        if (!coachView) {
+            coachView = document.createElement('div');
+            coachView.id = 'coach-view';
+            coachView.className = 'max-w-xl mx-auto p-4 sm:p-6 space-y-6';
+            document.getElementById('app-screen').appendChild(coachView);
+        }
+        coachView.style.display = 'block';
+        renderCoachDashboard();
+    }
+
+    async function renderCoachDashboard() {
+        const coachView = document.getElementById('coach-view');
+        if (!coachView) return;
+
+        coachView.innerHTML = `
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <h2 class="text-2xl font-black">Coach Dashboard</h2>
+                        <p class="text-sm text-slate-400">${escapeHtml(firebaseUserData.name || 'Coach')}</p>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="dumbbell" class="w-6 h-6 text-indigo-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-3">Add a Client</h3>
+                <p class="text-xs text-slate-400 mb-3">Enter your client's email to send a connection request. They approve it in their app.</p>
+                <div class="flex gap-2">
+                    <input id="add-client-email" type="email" placeholder="client@email.com" class="flex-1 p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium">
+                    <button onclick="sendClientRequest()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700">Send</button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-4">My Clients</h3>
+                <div id="coach-client-list" class="space-y-3">
+                    <p class="text-sm text-slate-400 text-center py-4">Loading clients...</p>
+                </div>
+            </div>
+
+            <button onclick="logoutUser()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">Sign Out</button>
+        `;
+        lucide.createIcons();
+        await loadCoachClients();
+    }
+
+    async function loadCoachClients() {
+        const listEl = document.getElementById('coach-client-list');
+        if (!listEl) return;
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            const me = meDoc.data() || {};
+            const clientUids = me.clientUids || [];
+
+            if (clientUids.length === 0) {
+                listEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No clients yet. Add one above by email.</p>';
+                return;
+            }
+
+            const cards = [];
+            for (const uid of clientUids) {
+                try {
+                    const cDoc = await db.collection('users').doc(uid).get();
+                    if (!cDoc.exists) continue;
+                    const c = cDoc.data();
+                    const updated = c.dataSnapshot && c.dataSnapshot.updatedAt
+                        ? new Date(c.dataSnapshot.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                        : 'no data yet';
+                    cards.push(`
+                        <div onclick="openClientDetail('${uid}')" class="bg-slate-50 p-4 rounded-2xl cursor-pointer hover:bg-slate-100 flex items-center gap-3">
+                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black flex-shrink-0">
+                                ${escapeHtml((c.name || 'U').charAt(0).toUpperCase())}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold truncate">${escapeHtml(c.name || 'Unknown')}</p>
+                                <p class="text-xs text-slate-400 truncate">${escapeHtml(c.email || '')}</p>
+                                <p class="text-[10px] text-slate-400">Updated: ${updated}</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                        </div>`);
+                } catch (e) {
+                    console.warn('Could not load client', uid, e);
+                }
+            }
+            listEl.innerHTML = cards.length ? cards.join('') : '<p class="text-sm text-slate-400 text-center py-4">Could not load client data. Check your Firestore rules.</p>';
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Error loading clients:', error);
+            listEl.innerHTML = '<p class="text-sm text-rose-500 text-center py-4">Error loading clients.</p>';
+        }
+    }
+
+    async function sendClientRequest() {
+        const emailInput = document.getElementById('add-client-email');
+        const email = (emailInput.value || '').trim().toLowerCase();
+        if (!email) { showToast('Enter a client email'); return; }
+        if (email === (currentUser.email || '').toLowerCase()) { showToast("You can't add yourself"); return; }
+        try {
+            const snap = await db.collection('users').where('emailLower', '==', email).limit(1).get();
+            if (snap.empty) { showToast('No member found with that email'); return; }
+            const memberDoc = snap.docs[0];
+            const member = memberDoc.data();
+            if (member.role === 'coach') { showToast('That account is a coach, not a member'); return; }
+            if (member.coachUid === currentUser.uid) { showToast('Already your client'); return; }
+            const existing = (member.pendingRequests || []).some(r => r.fromUid === currentUser.uid);
+            if (existing) { showToast('Request already sent'); return; }
+            await db.collection('users').doc(memberDoc.id).update({
+                pendingRequests: firebase.firestore.FieldValue.arrayUnion({
+                    fromUid: currentUser.uid,
+                    fromName: firebaseUserData.name || 'Coach',
+                    fromEmail: currentUser.email
+                })
+            });
+            showToast('Request sent to ' + (member.name || email) + ' ✓');
+            emailInput.value = '';
+        } catch (error) {
+            console.error('Error sending request:', error);
+            showToast('Could not send request — check connection/rules');
+        }
+    }
+
+    async function openClientDetail(uid) {
+        try {
+            const cDoc = await db.collection('users').doc(uid).get();
+            if (!cDoc.exists) { showToast('Client not found'); return; }
+            const c = cDoc.data();
+            viewingClientData = { uid, name: c.name || 'Client', data: c.dataSnapshot || {}, email: c.email };
+            renderClientDetail();
+        } catch (error) {
+            console.error('Error opening client:', error);
+            showToast('Could not load client data (check Firestore rules)');
+        }
+    }
+
+    function renderClientDetail() {
+        const coachView = document.getElementById('coach-view');
+        if (!coachView || !viewingClientData) return;
+        const { name, data, email } = viewingClientData;
+        const snapshot = data || {};
+        const workouts = snapshot.workoutHistory || [];
+        const nutrition = snapshot.nutritionHistory || [];
+        const metrics = snapshot.metricsHistory || [];
+        const profile = snapshot.userProfile || {};
+        const goals = snapshot.goals || {};
+
+        const recentWorkouts = workouts.slice(0, 8).map(w => {
+            const exCount = (w.exercises || []).length;
+            const setCount = (w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0);
+            return `<div class="bg-slate-50 p-3 rounded-xl">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-sm">${escapeHtml(w.focus || 'Workout')}</span>
+                    <span class="text-xs text-slate-400">${escapeHtml(w.date || '')}</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets · ${escapeHtml(w.duration || '')}</p>
+            </div>`;
+        }).join('') || '<p class="text-sm text-slate-400 text-center py-3">No workouts logged</p>';
+
+        const latestMetric = metrics[0] || {};
+        const metricRows = [];
+        if (latestMetric.weight) metricRows.push(`<div class="flex justify-between"><span class="text-slate-400">Weight</span><span class="font-bold">${latestMetric.weight} kg</span></div>`);
+        if (latestMetric.bodyFat) metricRows.push(`<div class="flex justify-between"><span class="text-slate-400">Body Fat</span><span class="font-bold">${latestMetric.bodyFat}%</span></div>`);
+        if (latestMetric.chest) metricRows.push(`<div class="flex justify-between"><span class="text-slate-400">Chest</span><span class="font-bold">${latestMetric.chest} cm</span></div>`);
+        if (latestMetric.waist) metricRows.push(`<div class="flex justify-between"><span class="text-slate-400">Waist</span><span class="font-bold">${latestMetric.waist} cm</span></div>`);
+        if (latestMetric.arms) metricRows.push(`<div class="flex justify-between"><span class="text-slate-400">Arms</span><span class="font-bold">${latestMetric.arms} cm</span></div>`);
+
+        const recentNutrition = nutrition.slice(0, 7).map(d => {
+            return `<div class="bg-slate-50 p-3 rounded-xl flex justify-between items-center">
+                <span class="text-xs text-slate-400">${escapeHtml(d.date || '')}</span>
+                <span class="font-bold text-sm">${Math.round(d.totalCalories || d.calories || 0)} kcal</span>
+            </div>`;
+        }).join('') || '<p class="text-sm text-slate-400 text-center py-3">No nutrition logged</p>';
+
+        const lastUpdated = snapshot.updatedAt ? new Date(snapshot.updatedAt).toLocaleString('en-GB') : 'never';
+
+        coachView.innerHTML = `
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <button onclick="backToCoachDashboard()" class="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-4">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to clients
+                </button>
+                <div class="flex items-center gap-3">
+                    <div class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xl">
+                        ${escapeHtml((name || 'U').charAt(0).toUpperCase())}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl font-black truncate">${escapeHtml(name)}</h2>
+                        <p class="text-xs text-slate-400 truncate">${escapeHtml(email || '')}</p>
+                    </div>
+                </div>
+                <div class="mt-3 inline-flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg">
+                    <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Read-only · synced ${lastUpdated}</span>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-3">Profile & Goals</h3>
+                <div class="space-y-2 text-sm">
+                    ${profile.gender ? `<div class="flex justify-between"><span class="text-slate-400">Gender</span><span class="font-bold">${escapeHtml(profile.gender)}</span></div>` : ''}
+                    ${profile.age ? `<div class="flex justify-between"><span class="text-slate-400">Age</span><span class="font-bold">${profile.age}</span></div>` : ''}
+                    ${profile.heightCm ? `<div class="flex justify-between"><span class="text-slate-400">Height</span><span class="font-bold">${profile.heightCm} cm</span></div>` : ''}
+                    ${(profile.yearsTraining !== undefined && profile.yearsTraining !== null) ? `<div class="flex justify-between"><span class="text-slate-400">Training</span><span class="font-bold">${profile.yearsTraining} yrs</span></div>` : ''}
+                    ${goals.calories ? `<div class="flex justify-between"><span class="text-slate-400">Calorie Goal</span><span class="font-bold">${goals.calories} kcal</span></div>` : ''}
+                    ${goals.protein ? `<div class="flex justify-between"><span class="text-slate-400">Protein Goal</span><span class="font-bold">${goals.protein} g</span></div>` : ''}
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-3">Latest Measurements</h3>
+                <div class="space-y-2 text-sm">
+                    ${metricRows.length ? metricRows.join('') : '<p class="text-sm text-slate-400 text-center py-3">No measurements logged</p>'}
+                </div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-3">Recent Training (${workouts.length})</h3>
+                <div class="space-y-2">${recentWorkouts}</div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-3">Recent Nutrition</h3>
+                <div class="space-y-2">${recentNutrition}</div>
+            </div>
+
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-1">Personal Training Notes</h3>
+                <p class="text-xs text-slate-400 mb-4">A shared conversation between you and ${escapeHtml(name)}.</p>
+                <div id="notes-thread" class="space-y-3 mb-4 max-h-80 overflow-y-auto">
+                    <p class="text-sm text-slate-400 text-center py-3">Loading notes...</p>
+                </div>
+                <div class="flex gap-2">
+                    <input id="note-input" type="text" placeholder="Write a note..." class="flex-1 p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium" onkeydown="if(event.key==='Enter')postNote()">
+                    <button onclick="postNote()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700">Send</button>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+        loadNotesThread();
+    }
+
+    function backToCoachDashboard() {
+        viewingClientData = null;
+        renderCoachDashboard();
+    }
+
+    // ---------- NOTES (two-way conversation) ----------
+
+    function notesDocId(coachUid, memberUid) {
+        return coachUid + '_' + memberUid;
+    }
+
+    async function loadNotesThread() {
+        const threadEl = document.getElementById('notes-thread');
+        if (!threadEl) return;
+        let coachUid, memberUid;
+        if (currentUserRole === 'coach' && viewingClientData) {
+            coachUid = currentUser.uid;
+            memberUid = viewingClientData.uid;
+        } else if (currentUserRole === 'member') {
+            coachUid = firebaseUserData.coachUid;
+            memberUid = currentUser.uid;
+        }
+        if (!coachUid || !memberUid) {
+            threadEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-3">No notes yet.</p>';
+            return;
+        }
+        try {
+            const noteDoc = await db.collection('notes').doc(notesDocId(coachUid, memberUid)).get();
+            const notes = (noteDoc.exists && noteDoc.data().messages) ? noteDoc.data().messages : [];
+            if (notes.length === 0) {
+                threadEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-3">No notes yet. Start the conversation below.</p>';
+                return;
+            }
+            threadEl.innerHTML = renderNoteMessages(notes);
+            threadEl.scrollTop = threadEl.scrollHeight;
+        } catch (error) {
+            console.error('Error loading notes:', error);
+            threadEl.innerHTML = '<p class="text-sm text-rose-500 text-center py-3">Could not load notes (check Firestore rules).</p>';
+        }
+    }
+
+    function renderNoteMessages(notes) {
+        return notes.map(n => {
+            const isMine = n.fromUid === currentUser.uid;
+            const time = n.at ? new Date(n.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            return `
+                <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[80%] ${isMine ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'} px-4 py-2.5 rounded-2xl">
+                        <p class="text-[10px] font-bold opacity-70 mb-0.5">${escapeHtml(n.fromName || '')}${n.fromRole === 'coach' ? ' · Coach' : ''}</p>
+                        <p class="text-sm">${escapeHtml(n.text)}</p>
+                        <p class="text-[9px] opacity-60 mt-1 text-right">${time}</p>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    async function appendNote(coachUid, memberUid, message) {
+        const ref = db.collection('notes').doc(notesDocId(coachUid, memberUid));
+        const existing = await ref.get();
+        if (existing.exists) {
+            await ref.update({ messages: firebase.firestore.FieldValue.arrayUnion(message) });
+        } else {
+            await ref.set({ coachUid: coachUid, memberUid: memberUid, messages: [message] });
+        }
+    }
+
+    async function postNote() {
+        const input = document.getElementById('note-input');
+        const text = (input.value || '').trim();
+        if (!text) return;
+        let coachUid, memberUid;
+        if (currentUserRole === 'coach' && viewingClientData) {
+            coachUid = currentUser.uid;
+            memberUid = viewingClientData.uid;
+        } else if (currentUserRole === 'member') {
+            coachUid = firebaseUserData.coachUid;
+            memberUid = currentUser.uid;
+        }
+        if (!coachUid || !memberUid) { showToast('No coach/client link found'); return; }
+        const message = {
+            fromUid: currentUser.uid,
+            fromName: firebaseUserData.name || (currentUser.displayName) || 'User',
+            fromRole: currentUserRole,
+            text: text,
+            at: new Date().toISOString()
+        };
+        try {
+            await appendNote(coachUid, memberUid, message);
+            input.value = '';
+            loadNotesThread();
+        } catch (error) {
+            console.error('Error posting note:', error);
+            showToast('Could not send note — check connection/rules');
+        }
+    }
+
+    // ---------- MEMBER SIDE: coach link + requests ----------
+
+    async function renderMemberCoachSection() {
+        const container = document.getElementById('member-coach-section');
+        if (!container) return;
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            const me = meDoc.data() || {};
+            const pending = me.pendingRequests || [];
+            const coachUid = me.coachUid;
+            const coachName = me.coachName;
+            firebaseUserData.coachUid = coachUid;
+            firebaseUserData.coachName = coachName;
+
+            let html = '';
+            if (pending.length > 0) {
+                html += '<h4 class="text-sm font-black mb-2">Connection Requests</h4>';
+                html += pending.map(r => `
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-2">
+                        <p class="font-bold text-sm">${escapeHtml(r.fromName || 'A coach')}</p>
+                        <p class="text-xs text-slate-500 mb-2">${escapeHtml(r.fromEmail || '')} wants to be your coach</p>
+                        <div class="flex gap-2">
+                            <button onclick="approveCoach('${r.fromUid}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm">Approve</button>
+                            <button onclick="declineCoach('${r.fromUid}')" class="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold text-sm">Decline</button>
+                        </div>
+                    </div>`).join('');
+            }
+            if (coachUid) {
+                html += `
+                    <div class="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+                        <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">
+                            ${escapeHtml((coachName || 'C').charAt(0).toUpperCase())}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Your Coach</p>
+                            <p class="font-bold truncate">${escapeHtml(coachName || 'Coach')}</p>
+                        </div>
+                        <button onclick="openMemberNotes()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Notes</button>
+                    </div>`;
+            } else if (pending.length === 0) {
+                html += '<p class="text-sm text-slate-400">No coach connected. When a coach sends a request, it\'ll appear here to approve.</p>';
+            }
+            container.innerHTML = html;
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Error rendering coach section:', error);
+            container.innerHTML = '<p class="text-sm text-rose-500">Could not load coach info.</p>';
+        }
+    }
+
+    async function approveCoach(coachUid) {
+        try {
+            const coachDoc = await db.collection('users').doc(coachUid).get();
+            if (!coachDoc.exists) { showToast('Coach no longer exists'); return; }
+            const coach = coachDoc.data();
+            await db.collection('users').doc(currentUser.uid).update({
+                coachUid: coachUid,
+                coachName: coach.name || 'Coach',
+                pendingRequests: []
+            });
+            await db.collection('users').doc(coachUid).update({
+                clientUids: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+            firebaseUserData.coachUid = coachUid;
+            firebaseUserData.coachName = coach.name || 'Coach';
+            showToast('Connected with ' + (coach.name || 'your coach') + ' ✓');
+            renderMemberCoachSection();
+        } catch (error) {
+            console.error('Error approving coach:', error);
+            showToast('Could not approve — check connection/rules');
+        }
+    }
+
+    async function declineCoach(coachUid) {
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            const pending = (meDoc.data().pendingRequests || []).filter(r => r.fromUid !== coachUid);
+            await db.collection('users').doc(currentUser.uid).update({ pendingRequests: pending });
+            showToast('Request declined');
+            renderMemberCoachSection();
+        } catch (error) {
+            console.error('Error declining:', error);
+            showToast('Could not decline request');
+        }
+    }
+
+    function openMemberNotes() {
+        if (!firebaseUserData.coachUid) { showToast('No coach connected'); return; }
+        const modal = document.getElementById('member-notes-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.getElementById('member-notes-coach-name').textContent = firebaseUserData.coachName || 'Coach';
+            loadMemberNotesThread();
+        }
+    }
+
+    function closeMemberNotes() {
+        const modal = document.getElementById('member-notes-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function loadMemberNotesThread() {
+        const threadEl = document.getElementById('member-notes-thread');
+        if (!threadEl) return;
+        const coachUid = firebaseUserData.coachUid;
+        const memberUid = currentUser.uid;
+        if (!coachUid) { threadEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-3">No coach connected.</p>'; return; }
+        try {
+            const noteDoc = await db.collection('notes').doc(notesDocId(coachUid, memberUid)).get();
+            const notes = (noteDoc.exists && noteDoc.data().messages) ? noteDoc.data().messages : [];
+            if (notes.length === 0) {
+                threadEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-3">No notes yet. Start the conversation below.</p>';
+                return;
+            }
+            threadEl.innerHTML = renderNoteMessages(notes);
+            threadEl.scrollTop = threadEl.scrollHeight;
+        } catch (error) {
+            console.error('Error loading member notes:', error);
+            threadEl.innerHTML = '<p class="text-sm text-rose-500 text-center py-3">Could not load notes (check Firestore rules).</p>';
+        }
+    }
+
+    async function postMemberNote() {
+        const input = document.getElementById('member-note-input');
+        const text = (input.value || '').trim();
+        if (!text) return;
+        const coachUid = firebaseUserData.coachUid;
+        const memberUid = currentUser.uid;
+        if (!coachUid) { showToast('No coach connected'); return; }
+        const message = {
+            fromUid: currentUser.uid,
+            fromName: firebaseUserData.name || (currentUser.displayName) || 'You',
+            fromRole: 'member',
+            text: text,
+            at: new Date().toISOString()
+        };
+        try {
+            await appendNote(coachUid, memberUid, message);
+            input.value = '';
+            loadMemberNotesThread();
+        } catch (error) {
+            console.error('Error posting member note:', error);
+            showToast('Could not send note — check connection/rules');
+        }
+    }
+
+    // ==========================================================================
     // AUTH STATE OBSERVER
     // ==========================================================================
 
@@ -2463,10 +3277,28 @@
             const sidebarEmail = document.getElementById('sidebar-user-email');
             if (sidebarEmail) sidebarEmail.textContent = user.email;
 
-            renderProfile();
-            renderDashboard();
-            renderDiary();
-            renderSettings();
+            // Route based on role. Coaches get the coach dashboard; members get the
+            // normal app. The coach UI is an overlay shown on top of the app shell.
+            if (currentUserRole === 'coach') {
+                document.body.classList.add('is-coach');
+                showCoachMode();
+            } else {
+                document.body.classList.remove('is-coach');
+                // Make sure any leftover coach view is hidden and the normal app shows
+                const coachView = document.getElementById('coach-view');
+                if (coachView) coachView.style.display = 'none';
+                const main = document.querySelector('main');
+                if (main) main.style.display = '';
+                // Members: push their latest data to the cloud so a linked coach can read it,
+                // and pull any coach notes.
+                await pushMemberDataToCloud();
+                renderProfile();
+                renderDashboard();
+                renderDiary();
+                renderSettings();
+                renderMemberCoachSection();
+            }
+
             setupMidnightSave();
             setupFoodSearch();
             renderWorkoutEnvTabs();
@@ -4277,6 +5109,7 @@
         window._pendingRatings = null;
 
         saveState();
+        pushMemberDataToCloud(); // keep the coach's view up to date
         document.getElementById('rate-exercises-modal').style.display = 'none';
         document.getElementById('workout-setup').classList.remove('hidden');
         document.getElementById('workout-active').classList.add('hidden');
