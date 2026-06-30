@@ -403,30 +403,6 @@
                 <div id="register-form" class="hidden">
                     <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
                     <div class="space-y-4">
-                        <!-- Role selection: Coach or Member -->
-                        <div>
-                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">I am a...</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button type="button" onclick="setRegisterRole('member')" id="role-btn-member" class="role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1">
-                                    <i data-lucide="user" class="w-6 h-6"></i>
-                                    <span>Member</span>
-                                </button>
-                                <button type="button" onclick="setRegisterRole('coach')" id="role-btn-coach" class="role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1">
-                                    <i data-lucide="dumbbell" class="w-6 h-6"></i>
-                                    <span>Coach</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Coach access code — only shown when Coach is selected -->
-                        <div id="coach-code-wrap" class="hidden">
-                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Coach Access Code</label>
-                            <div class="input-group">
-                                <i data-lucide="key" class="w-5 h-5"></i>
-                                <input type="text" id="register-coach-code" placeholder="Enter your coach code" autocomplete="off" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-2">Coach accounts require an access code. Don't have one? Contact the app owner.</p>
-                        </div>
                         <div class="input-group">
                             <i data-lucide="user" class="w-5 h-5"></i>
                             <input type="text" id="register-name" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-medium">
@@ -693,6 +669,9 @@
                         <p class="text-sm text-slate-400">Loading...</p>
                     </div>
                 </div>
+
+                <!-- Coach Access Admin (owner account only; hidden for everyone else) -->
+                <div id="owner-admin-section" class="glass-card p-6 rounded-[2.5rem]" style="display:none;"></div>
 
                 <div class="glass-card p-6 rounded-2xl">
                     <h3 class="font-bold mb-4">App Settings</h3>
@@ -2490,8 +2469,128 @@
 
     let currentUser = null;
     let firebaseUserData = {};
-    let currentUserRole = 'member'; // resolved from Firestore on login: 'coach' | 'member'
-    let viewingClientData = null;   // when a coach is viewing a client, holds {uid, name, data}
+    let currentUserRole = 'member'; // resolved each login from the coach-email allowlist
+    let viewingClientData = null;
+
+    // The single super-admin who manages the coach allowlist. Only this account
+    // can see/use the Coach Access Admin space and write the approved-email list.
+    const OWNER_EMAIL = 'steven.vaughanrr@hotmail.co.uk';
+
+    function isOwner() {
+        return currentUser && (currentUser.email || '').trim().toLowerCase() === OWNER_EMAIL;
+    }
+
+    /**
+     * Coach status is determined by an allowlist of approved emails the owner
+     * manages, stored at config/coachEmails (field: emails = array of strings).
+     * Returns true if the given email is on the list (case-insensitive).
+     */
+    async function isApprovedCoach(email) {
+        if (!email) return false;
+        try {
+            const doc = await db.collection('config').doc('coachEmails').get();
+            if (!doc.exists) return false;
+            const data = doc.data() || {};
+            const list = Array.isArray(data.emails) ? data.emails.map(e => e.toString().trim().toLowerCase()) : [];
+            return list.includes(email.trim().toLowerCase());
+        } catch (e) {
+            console.error('Error checking coach allowlist:', e);
+            return false;
+        }
+    }
+
+    // ---------- OWNER ADMIN: manage the coach-email allowlist ----------
+
+    /**
+     * Build the admin card HTML. Parametrised by element ids so it can be shown
+     * in more than one place (member profile and coach dashboard).
+     */
+    function ownerAdminHTML(inputId, listId) {
+        return `
+            <div class="flex items-center gap-2 mb-3">
+                <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600"></i>
+                <h3 class="text-lg font-black">Coach Access Admin</h3>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Approve which emails can log in as coaches. A change takes effect the next time that person signs in. Remove an email to drop them back to a member.</p>
+            <div class="flex gap-2 mb-3">
+                <input id="${inputId}" type="email" placeholder="email@example.com" autocomplete="off" class="flex-1 p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium" onkeydown="if(event.key==='Enter')addCoachEmail('${inputId}','${listId}')">
+                <button onclick="addCoachEmail('${inputId}','${listId}')" class="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700">Add</button>
+            </div>
+            <div id="${listId}" class="space-y-2">
+                <p class="text-sm text-slate-400 text-center py-2">Loading...</p>
+            </div>`;
+    }
+
+    /**
+     * Render the admin space into the member-profile container, but ONLY for the
+     * owner account. Everyone else sees nothing.
+     */
+    async function renderOwnerAdmin() {
+        const container = document.getElementById('owner-admin-section');
+        if (!container) return;
+        if (!isOwner()) { container.style.display = 'none'; container.innerHTML = ''; return; }
+        container.style.display = 'block';
+        container.innerHTML = ownerAdminHTML('admin-email-profile', 'admin-list-profile');
+        lucide.createIcons();
+        await loadCoachEmailList('admin-list-profile');
+    }
+
+    async function loadCoachEmailList(listId) {
+        const el = document.getElementById(listId);
+        if (!el) return;
+        try {
+            const doc = await db.collection('config').doc('coachEmails').get();
+            const emails = (doc.exists && Array.isArray(doc.data().emails)) ? doc.data().emails : [];
+            if (emails.length === 0) {
+                el.innerHTML = '<p class="text-sm text-slate-400 text-center py-2">No coach emails approved yet. Add one above.</p>';
+                return;
+            }
+            el.innerHTML = emails.map(e => {
+                const safe = escapeHtml(e);
+                const arg = e.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
+                        <span class="text-sm font-medium truncate">${safe}</span>
+                        <button onclick="removeCoachEmail('${arg}','${listId}')" class="text-rose-500 text-xs font-bold hover:text-rose-600 flex-shrink-0 ml-2">Remove</button>
+                    </div>`;
+            }).join('');
+            lucide.createIcons();
+        } catch (e) {
+            console.error('Error loading coach email list:', e);
+            el.innerHTML = '<p class="text-sm text-rose-500 text-center py-2">Could not load list — check you are the owner and rules are published.</p>';
+        }
+    }
+
+    async function addCoachEmail(inputId, listId) {
+        const input = document.getElementById(inputId);
+        const email = (input.value || '').trim().toLowerCase();
+        if (!email || email.indexOf('@') < 1) { showToast('Enter a valid email'); return; }
+        try {
+            // set+merge with arrayUnion creates the doc if it doesn't exist yet
+            await db.collection('config').doc('coachEmails').set({
+                emails: firebase.firestore.FieldValue.arrayUnion(email)
+            }, { merge: true });
+            input.value = '';
+            showToast('Approved ' + email + ' as a coach ✓');
+            await loadCoachEmailList(listId);
+        } catch (e) {
+            console.error('Error adding coach email:', e);
+            showToast('Could not add — only the owner can edit this (check rules)');
+        }
+    }
+
+    async function removeCoachEmail(email, listId) {
+        try {
+            await db.collection('config').doc('coachEmails').update({
+                emails: firebase.firestore.FieldValue.arrayRemove(email)
+            });
+            showToast('Removed ' + email);
+            await loadCoachEmailList(listId);
+        } catch (e) {
+            console.error('Error removing coach email:', e);
+            showToast('Could not remove — check rules');
+        }
+    }
 
     // ==========================================================================
     // AUTH FORM HELPERS
@@ -2519,104 +2618,42 @@
     // AUTH FUNCTIONS
     // ==========================================================================
 
-    let selectedRegisterRole = 'member'; // 'member' | 'coach' — chosen on the signup form
-
-    function setRegisterRole(role) {
-        selectedRegisterRole = role;
-        const memberBtn = document.getElementById('role-btn-member');
-        const coachBtn = document.getElementById('role-btn-coach');
-        const codeWrap = document.getElementById('coach-code-wrap');
-        if (role === 'member') {
-            memberBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1';
-            coachBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1';
-            if (codeWrap) codeWrap.classList.add('hidden');
-        } else {
-            coachBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold flex flex-col items-center gap-1';
-            memberBtn.className = 'role-select-btn py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold flex flex-col items-center gap-1';
-            if (codeWrap) codeWrap.classList.remove('hidden');
-        }
-    }
-
-    /**
-     * Validate a coach access code against the Firestore config document.
-     * The valid code lives at config/coachAccess (field: code), editable only by
-     * you in the Firebase console. Returns true if the entered code matches.
-     */
-    async function validateCoachCode(entered) {
-        if (!entered) return false;
-        try {
-            const doc = await db.collection('config').doc('coachAccess').get();
-            if (!doc.exists) {
-                console.warn('No coachAccess config doc found');
-                return false;
-            }
-            const data = doc.data() || {};
-            // Support either a single `code` string or an array of `codes`.
-            const single = (data.code || '').toString().trim();
-            const list = Array.isArray(data.codes) ? data.codes.map(c => c.toString().trim()) : [];
-            const candidate = entered.trim();
-            // Case-insensitive match
-            if (single && candidate.toLowerCase() === single.toLowerCase()) return true;
-            if (list.some(c => candidate.toLowerCase() === c.toLowerCase())) return true;
-            return false;
-        } catch (error) {
-            console.error('Error validating coach code:', error);
-            return false;
-        }
-    }
-
     async function registerUser() {
         const name = document.getElementById('register-name').value.trim();
         const email = document.getElementById('register-email').value.trim();
         const password = document.getElementById('register-password').value;
         const confirm = document.getElementById('register-confirm').value;
-        const role = selectedRegisterRole || 'member';
 
         if (!name) { showToast('Please enter your name'); return; }
         if (!email || !password) { showToast('Please fill all fields'); return; }
         if (password.length < 6) { showToast('Password must be at least 6 characters'); return; }
         if (password !== confirm) { showToast('Passwords do not match'); return; }
 
-        // Coach accounts require a valid access code. Validate it BEFORE creating
-        // the auth account so we don't leave an orphaned login if the code is wrong.
-        let coachCodeUsed = null;
-        if (role === 'coach') {
-            const enteredCode = document.getElementById('register-coach-code').value.trim();
-            if (!enteredCode) { showToast('Enter your coach access code'); return; }
-            showToast('Checking coach code...');
-            const ok = await validateCoachCode(enteredCode);
-            if (!ok) { showToast('Invalid coach access code'); return; }
-            coachCodeUsed = enteredCode;
-        }
-
+        // Everyone signs up as a member. Coach status is granted by the owner's
+        // email allowlist and applied automatically on login — so if this email
+        // is approved, the account becomes a coach the moment they sign in.
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             await user.updateProfile({ displayName: name });
 
-            const userDoc = {
+            await db.collection('users').doc(user.uid).set({
                 name: name,
                 email: email,
-                role: role, // 'coach' or 'member' — fixed for the lifetime of the account
+                role: 'member',
                 emailLower: email.toLowerCase(), // for case-insensitive lookup when linking
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 calorieGoal: 2500,
                 workouts: [],
                 meals: [],
                 metrics: [],
-                coachUid: null,        // members: the uid of their linked coach
+                coachUid: null,
                 coachName: null,
-                clientUids: [],        // coaches: array of linked client uids
-                pendingRequests: []    // coaches: incoming link requests {fromUid, fromName, fromEmail}
-            };
-            // Record the code used (only for coaches). This lets the Firestore
-            // rules optionally enforce that a coach account matches your config
-            // code server-side, not just in the UI.
-            if (coachCodeUsed) userDoc.coachCodeUsed = coachCodeUsed;
+                clientUids: [],
+                pendingRequests: []
+            });
 
-            await db.collection('users').doc(user.uid).set(userDoc);
-
-            showToast(role === 'coach' ? 'Coach account created! 🎉' : 'Account created successfully! 🎉');
+            showToast('Account created successfully! 🎉');
         } catch (error) {
             console.error('Registration error:', error);
             if (error.code === 'auth/email-already-in-use') {
@@ -2679,12 +2716,10 @@
             const doc = await db.collection('users').doc(currentUser.uid).get();
             if (doc.exists) {
                 firebaseUserData = doc.data();
-                currentUserRole = firebaseUserData.role || 'member';
                 if (firebaseUserData.calorieGoal) {
                     state.goals.calories = firebaseUserData.calorieGoal;
                 }
             } else {
-                currentUserRole = 'member';
                 await db.collection('users').doc(currentUser.uid).set({
                     name: currentUser.displayName || 'User',
                     email: currentUser.email,
@@ -2700,6 +2735,21 @@
                     clientUids: [],
                     pendingRequests: []
                 });
+                firebaseUserData = { role: 'member', name: currentUser.displayName || 'User', email: currentUser.email };
+            }
+
+            // Role is DYNAMIC: determined by the coach-email allowlist every login,
+            // not fixed at signup. If the email is approved → coach, else member.
+            // Keep the stored role in sync so the rest of the app reads it correctly.
+            const approved = await isApprovedCoach(currentUser.email);
+            currentUserRole = approved ? 'coach' : 'member';
+            if (firebaseUserData.role !== currentUserRole) {
+                try {
+                    await db.collection('users').doc(currentUser.uid).update({ role: currentUserRole });
+                    firebaseUserData.role = currentUserRole;
+                } catch (e) {
+                    console.warn('Could not sync role field:', e);
+                }
             }
         } catch (error) {
             console.error('Error loading Firebase user data:', error);
@@ -2812,10 +2862,24 @@
                 </div>
             </div>
 
+            <!-- Coach Access Admin (owner only) -->
+            <div id="owner-admin-section-coach" class="glass-card rounded-[2.5rem] p-6" style="display:none;"></div>
+
             <button onclick="logoutUser()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">Sign Out</button>
         `;
         lucide.createIcons();
         await loadCoachClients();
+
+        // If the owner is themselves a coach, surface the admin space here too.
+        if (isOwner()) {
+            const adminBox = document.getElementById('owner-admin-section-coach');
+            if (adminBox) {
+                adminBox.style.display = 'block';
+                adminBox.innerHTML = ownerAdminHTML('admin-email-coach', 'admin-list-coach');
+                lucide.createIcons();
+                await loadCoachEmailList('admin-list-coach');
+            }
+        }
     }
 
     async function loadCoachClients() {
@@ -3297,6 +3361,7 @@
                 renderDiary();
                 renderSettings();
                 renderMemberCoachSection();
+                renderOwnerAdmin(); // shows the admin space only if this is the owner account
             }
 
             setupMidnightSave();
