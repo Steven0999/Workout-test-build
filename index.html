@@ -2911,45 +2911,42 @@
         const listEl = document.getElementById('coach-client-list');
         if (!listEl) return;
         try {
-            const meDoc = await db.collection('users').doc(currentUser.uid).get();
-            const me = meDoc.data() || {};
-            const clientUids = me.clientUids || [];
+            // Find every member who has THIS coach set as their coachUid. This is
+            // the source of truth for the client list — members set their own
+            // coachUid when they approve, and each user only ever writes their own
+            // doc, so nothing is blocked by the security rules.
+            const snap = await db.collection('users').where('coachUid', '==', currentUser.uid).get();
 
-            if (clientUids.length === 0) {
-                listEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No clients yet. Add one above by email.</p>';
+            if (snap.empty) {
+                listEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No clients yet. Add one above by email — once they approve, they\'ll appear here.</p>';
                 return;
             }
 
             const cards = [];
-            for (const uid of clientUids) {
-                try {
-                    const cDoc = await db.collection('users').doc(uid).get();
-                    if (!cDoc.exists) continue;
-                    const c = cDoc.data();
-                    const updated = c.dataSnapshot && c.dataSnapshot.updatedAt
-                        ? new Date(c.dataSnapshot.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                        : 'no data yet';
-                    cards.push(`
-                        <div onclick="openClientDetail('${uid}')" class="bg-slate-50 p-4 rounded-2xl cursor-pointer hover:bg-slate-100 flex items-center gap-3">
-                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black flex-shrink-0">
-                                ${escapeHtml((c.name || 'U').charAt(0).toUpperCase())}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-bold truncate">${escapeHtml(c.name || 'Unknown')}</p>
-                                <p class="text-xs text-slate-400 truncate">${escapeHtml(c.email || '')}</p>
-                                <p class="text-[10px] text-slate-400">Updated: ${updated}</p>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
-                        </div>`);
-                } catch (e) {
-                    console.warn('Could not load client', uid, e);
-                }
-            }
-            listEl.innerHTML = cards.length ? cards.join('') : '<p class="text-sm text-slate-400 text-center py-4">Could not load client data. Check your Firestore rules.</p>';
+            snap.forEach(cDoc => {
+                const c = cDoc.data();
+                const uid = cDoc.id;
+                const updated = c.dataSnapshot && c.dataSnapshot.updatedAt
+                    ? new Date(c.dataSnapshot.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                    : 'no data yet';
+                cards.push(`
+                    <div onclick="openClientDetail('${uid}')" class="bg-slate-50 p-4 rounded-2xl cursor-pointer hover:bg-slate-100 flex items-center gap-3">
+                        <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black flex-shrink-0">
+                            ${escapeHtml((c.name || 'U').charAt(0).toUpperCase())}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold truncate">${escapeHtml(c.name || 'Unknown')}</p>
+                            <p class="text-xs text-slate-400 truncate">${escapeHtml(c.email || '')}</p>
+                            <p class="text-[10px] text-slate-400">Updated: ${updated}</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                    </div>`);
+            });
+            listEl.innerHTML = cards.join('');
             lucide.createIcons();
         } catch (error) {
             console.error('Error loading clients:', error);
-            listEl.innerHTML = '<p class="text-sm text-rose-500 text-center py-4">Error loading clients.</p>';
+            listEl.innerHTML = '<p class="text-sm text-rose-500 text-center py-4">Could not load clients. Check your Firestore rules are published.</p>';
         }
     }
 
@@ -3253,13 +3250,15 @@
             const coachDoc = await db.collection('users').doc(coachUid).get();
             if (!coachDoc.exists) { showToast('Coach no longer exists'); return; }
             const coach = coachDoc.data();
+            // The member only writes their OWN doc (sets their coach + clears requests).
+            // We do NOT write to the coach's doc here — the Firestore rules only let a
+            // non-owner touch another user's `pendingRequests`, so writing clientUids
+            // would be denied. Instead the coach finds clients by querying for members
+            // whose coachUid points at them (see loadCoachClients).
             await db.collection('users').doc(currentUser.uid).update({
                 coachUid: coachUid,
                 coachName: coach.name || 'Coach',
                 pendingRequests: []
-            });
-            await db.collection('users').doc(coachUid).update({
-                clientUids: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
             });
             firebaseUserData.coachUid = coachUid;
             firebaseUserData.coachName = coach.name || 'Coach';
