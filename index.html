@@ -336,12 +336,6 @@
         /* Accent colour for checkboxes/range */
         input[type="checkbox"], input[type="range"] { accent-color: var(--vfit-orange) !important; }
 
-        /* Coach mode: hide the member-only bottom nav / tab bar since coaches
-           use their own dashboard overlay. */
-        body.is-coach #bottom-nav,
-        body.is-coach .bottom-nav,
-        body.is-coach nav.fixed { display: none !important; }
-
         /* Gradient cards/buttons → solid black so they match the theme and keep text readable.
            Tailwind builds gradients from --tw-gradient-stops; clearing the image + stops
            and forcing a black background flattens them to plain black panels. */
@@ -1258,6 +1252,14 @@
                             <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-600"></i>
                         </div>
                         <span class="font-bold text-slate-700">Dashboard</span>
+                    </button>
+
+                    <!-- Coach Section — only shown to coaches (toggled via #coach-menu-entry) -->
+                    <button id="coach-menu-entry" onclick="openCoachSection(); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group" style="display:none;">
+                        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="users" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="font-bold text-indigo-600">Coach Section</span>
                     </button>
                     <button onclick="switchTab('training'); toggleSidebar();" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-indigo-50 transition-colors group">
                         <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200">
@@ -2812,21 +2814,41 @@
         }
     }
 
-    // ---------- COACH MODE ----------
+    // ---------- COACH SECTION (burger-menu overlay) ----------
 
-    function showCoachMode() {
-        const main = document.querySelector('main');
-        if (main) main.style.display = 'none';
+    /**
+     * Show/hide the "Coach Section" entry in the burger menu based on role.
+     * Only coaches see it; members never do.
+     */
+    function renderCoachMenuEntry() {
+        const entry = document.getElementById('coach-menu-entry');
+        if (!entry) return;
+        entry.style.display = (currentUserRole === 'coach') ? 'flex' : 'none';
+    }
 
+    /**
+     * Open the coach section as a full-screen overlay on top of the normal app,
+     * so a coach can manage clients + messages without leaving member features.
+     */
+    function openCoachSection() {
+        if (currentUserRole !== 'coach') { showToast('Coach access only'); return; }
         let coachView = document.getElementById('coach-view');
         if (!coachView) {
             coachView = document.createElement('div');
             coachView.id = 'coach-view';
-            coachView.className = 'max-w-xl mx-auto p-4 sm:p-6 space-y-6';
-            document.getElementById('app-screen').appendChild(coachView);
+            document.body.appendChild(coachView);
         }
+        // Full-screen scrollable overlay
+        coachView.className = 'fixed inset-0 z-[120] bg-slate-50 overflow-y-auto';
         coachView.style.display = 'block';
+        viewingClientData = null;
         renderCoachDashboard();
+    }
+
+    function closeCoachSection() {
+        const coachView = document.getElementById('coach-view');
+        if (coachView) coachView.style.display = 'none';
+        viewingClientData = null;
     }
 
     async function renderCoachDashboard() {
@@ -2834,16 +2856,20 @@
         if (!coachView) return;
 
         coachView.innerHTML = `
+            <div class="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
             <div class="glass-card rounded-[2.5rem] p-6">
                 <div class="flex items-center justify-between mb-2">
                     <div>
-                        <h2 class="text-2xl font-black">Coach Dashboard</h2>
+                        <h2 class="text-2xl font-black">Coach Section</h2>
                         <p class="text-sm text-slate-400">${escapeHtml(firebaseUserData.name || 'Coach')}</p>
                     </div>
-                    <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                        <i data-lucide="dumbbell" class="w-6 h-6 text-indigo-600"></i>
-                    </div>
+                    <button onclick="closeCoachSection()" class="w-11 h-11 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200" aria-label="Close">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
                 </div>
+                <button onclick="closeCoachSection()" class="mt-2 flex items-center gap-2 text-indigo-600 font-bold text-sm">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to my app
+                </button>
             </div>
 
             <div class="glass-card rounded-[2.5rem] p-6">
@@ -2864,8 +2890,7 @@
 
             <!-- Coach Access Admin (owner only) -->
             <div id="owner-admin-section-coach" class="glass-card rounded-[2.5rem] p-6" style="display:none;"></div>
-
-            <button onclick="logoutUser()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold">Sign Out</button>
+            </div>
         `;
         lucide.createIcons();
         await loadCoachClients();
@@ -3011,6 +3036,7 @@
         const lastUpdated = snapshot.updatedAt ? new Date(snapshot.updatedAt).toLocaleString('en-GB') : 'never';
 
         coachView.innerHTML = `
+            <div class="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
             <div class="glass-card rounded-[2.5rem] p-6">
                 <button onclick="backToCoachDashboard()" class="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-4">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to clients
@@ -3069,6 +3095,7 @@
                     <input id="note-input" type="text" placeholder="Write a note..." class="flex-1 p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium" onkeydown="if(event.key==='Enter')postNote()">
                     <button onclick="postNote()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-indigo-700">Send</button>
                 </div>
+            </div>
             </div>
         `;
         lucide.createIcons();
@@ -3341,28 +3368,31 @@
             const sidebarEmail = document.getElementById('sidebar-user-email');
             if (sidebarEmail) sidebarEmail.textContent = user.email;
 
-            // Route based on role. Coaches get the coach dashboard; members get the
-            // normal app. The coach UI is an overlay shown on top of the app shell.
+            // EVERYONE — members and coaches — uses the full app. Coaches simply
+            // get an extra "Coach Section" entry in the burger menu (an overlay)
+            // for managing clients and messages. We no longer route coaches into a
+            // separate exclusive mode.
             if (currentUserRole === 'coach') {
                 document.body.classList.add('is-coach');
-                showCoachMode();
             } else {
                 document.body.classList.remove('is-coach');
-                // Make sure any leftover coach view is hidden and the normal app shows
-                const coachView = document.getElementById('coach-view');
-                if (coachView) coachView.style.display = 'none';
-                const main = document.querySelector('main');
-                if (main) main.style.display = '';
-                // Members: push their latest data to the cloud so a linked coach can read it,
-                // and pull any coach notes.
-                await pushMemberDataToCloud();
-                renderProfile();
-                renderDashboard();
-                renderDiary();
-                renderSettings();
-                renderMemberCoachSection();
-                renderOwnerAdmin(); // shows the admin space only if this is the owner account
             }
+
+            // Always show the normal app and hide any open coach overlay.
+            const coachView = document.getElementById('coach-view');
+            if (coachView) coachView.style.display = 'none';
+            const main = document.querySelector('main');
+            if (main) main.style.display = '';
+
+            // Members push their data so a linked coach can read it (no-op for coaches).
+            await pushMemberDataToCloud();
+            renderProfile();
+            renderDashboard();
+            renderDiary();
+            renderSettings();
+            renderMemberCoachSection();
+            renderOwnerAdmin();      // admin space shows only for the owner account
+            renderCoachMenuEntry();  // show/hide the burger "Coach Section" entry by role
 
             setupMidnightSave();
             setupFoodSearch();
