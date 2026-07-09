@@ -2967,15 +2967,15 @@
             await db.collection('users').doc(memberDoc.id).update({
                 pendingRequests: firebase.firestore.FieldValue.arrayUnion({
                     fromUid: currentUser.uid,
-                    fromName: firebaseUserData.name || 'Coach',
-                    fromEmail: currentUser.email
+                    fromName: firebaseUserData.name || currentUser.displayName || 'Coach',
+                    fromEmail: currentUser.email || ''
                 })
             });
             showToast('Request sent to ' + (member.name || email) + ' ✓');
             emailInput.value = '';
         } catch (error) {
             console.error('Error sending request:', error);
-            showToast('Could not send request — check connection/rules');
+            showToast('Send failed: ' + (error.code || error.message || 'unknown'), 6000);
         }
     }
 
@@ -3266,7 +3266,7 @@
             renderMemberCoachSection();
         } catch (error) {
             console.error('Error approving coach:', error);
-            showToast('Could not approve — check connection/rules');
+            showToast('Approve failed: ' + (error.code || error.message || 'unknown'), 6000);
         }
     }
 
@@ -3492,7 +3492,8 @@
     let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
     let workoutTimer = null;
-    let workoutStartTime = null;
+    let workoutStartTime = null;      // timestamp of the current running segment
+    let workoutAccumulatedSeconds = 0; // banked seconds from previous segments (Option 2: frozen while away)
     let currentWorkoutContext = null; // {env, focus, muscles} — set when a workout starts
     let showAllExercisesInPicker = false; // toggled by the "Show all" link in the dropdown
     let currentFoodItem = null;
@@ -3888,6 +3889,68 @@
     // aggregations, not muscle groups.
     // ==========================================================================
     const SPECIFIC_MUSCLES = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Quads', 'Hamstrings', 'Glutes', 'Calves'];
+
+    // Order muscle groups from MOST demanding (trained first) to least. The big,
+    // taxing muscles — quads, hamstrings, glutes, and back (lats/upper back) —
+    // come first while you're freshest; the smaller muscles — biceps, triceps,
+    // calves — come last. Chest and shoulders sit in the middle.
+    const MUSCLE_PRIORITY_ORDER = ['Quads', 'Hamstrings', 'Glutes', 'Back', 'Chest', 'Shoulders', 'Biceps', 'Triceps', 'Calves'];
+
+    /**
+     * Reorder a list of exercises so that:
+     *   1. Exercises are grouped by the muscle they primarily target, with the
+     *      most demanding muscle groups first (per MUSCLE_PRIORITY_ORDER).
+     *   2. Within each muscle group the more demanding COMPOUND lifts come before
+     *      the isolation work.
+     *   3. Each muscle group is finished before the next begins.
+     * Cardio/core/unknown exercises fall to the end.
+     */
+    function orderWorkoutExercises(list, env) {
+        const envDb = EXERCISE_DB[env] || {};
+        const priorityIndex = {};
+        MUSCLE_PRIORITY_ORDER.forEach((m, i) => { priorityIndex[m] = i; });
+        const DEFAULT_PRIO = MUSCLE_PRIORITY_ORDER.length + 1;
+
+        // Map each exercise to its primary muscle using the DB's own buckets.
+        // Iterate muscles in priority order so an exercise appearing under more
+        // than one muscle is assigned to the higher-priority one.
+        const primaryMuscle = {};
+        const compoundSet = new Set();
+        MUSCLE_PRIORITY_ORDER.forEach(muscle => {
+            const bucket = envDb[muscle];
+            if (!bucket) return;
+            (bucket.compound || []).forEach(ex => { if (!(ex in primaryMuscle)) primaryMuscle[ex] = muscle; compoundSet.add(ex); });
+            (bucket.isolation || []).forEach(ex => { if (!(ex in primaryMuscle)) primaryMuscle[ex] = muscle; });
+        });
+        // Also mark compounds that live only in focus-group buckets (Full Body, etc.)
+        Object.values(envDb).forEach(bucket => {
+            (bucket.compound || []).forEach(ex => compoundSet.add(ex));
+        });
+
+        function muscleOf(ex) {
+            if (primaryMuscle[ex]) return primaryMuscle[ex];
+            // Fallback: use the reverse index, picking the highest-priority muscle.
+            const muscles = EXERCISE_TO_MUSCLES[ex] || [];
+            let best = null, bestP = Infinity;
+            muscles.forEach(m => {
+                const p = (priorityIndex[m] !== undefined) ? priorityIndex[m] : DEFAULT_PRIO;
+                if (p < bestP) { bestP = p; best = m; }
+            });
+            return best;
+        }
+
+        // Decorate with original index so the sort stays stable for equal keys.
+        return list.map((ex, i) => ({ ex, i })).sort((A, B) => {
+            const ma = muscleOf(A.ex), mb = muscleOf(B.ex);
+            const pa = (ma && priorityIndex[ma] !== undefined) ? priorityIndex[ma] : DEFAULT_PRIO;
+            const pb = (mb && priorityIndex[mb] !== undefined) ? priorityIndex[mb] : DEFAULT_PRIO;
+            if (pa !== pb) return pa - pb;                    // 1. demanding muscle group first
+            const ca = compoundSet.has(A.ex) ? 0 : 1;
+            const cb = compoundSet.has(B.ex) ? 0 : 1;
+            if (ca !== cb) return ca - cb;                    // 2. compound before isolation
+            return A.i - B.i;                                 // 3. otherwise keep original order
+        }).map(o => o.ex);
+    }
 
     // Supplementary muscle mappings for exercises whose names differ between the
     // focus-group lists and the per-muscle lists (so they still get volume credit).
@@ -4574,11 +4637,15 @@
 
             // De-duplicate (e.g. Bench Press could appear under both Chest and Triceps)
             const seen = new Set();
-            const finalList = queued.filter(ex => {
+            const dedupedList = queued.filter(ex => {
                 if (seen.has(ex)) return false;
                 seen.add(ex);
                 return true;
             });
+
+            // Order by muscle demand: hardest muscle groups first, compound lifts
+            // before isolation within each group, finishing one muscle before the next.
+            const finalList = orderWorkoutExercises(dedupedList, env);
 
             if (finalList.length === 0) {
                 const envLabel = env === 'home' ? 'Home' : 'Gym';
@@ -4622,7 +4689,9 @@
         };
 
         workoutStartTime = Date.now();
+        workoutAccumulatedSeconds = 0; // fresh workout — no banked time yet
         workoutTimer = setInterval(updateWorkoutTimer, 1000);
+        persistActiveWorkout(); // save the freshly-started workout so a refresh keeps it
     }
 
     /**
@@ -4670,8 +4739,145 @@
         return envSet.size > 0 ? Array.from(envSet).sort() : ALL_EXERCISES;
     }
 
+    function currentWorkoutElapsed() {
+        // Total elapsed = banked seconds + the segment currently running.
+        const segment = workoutStartTime ? Math.floor((Date.now() - workoutStartTime) / 1000) : 0;
+        return workoutAccumulatedSeconds + segment;
+    }
+
+    // ==========================================================================
+    // ACTIVE WORKOUT PERSISTENCE
+    // ==========================================================================
+    // Keeps an in-progress workout alive across refreshes, tab closes, and
+    // accidental navigation. Only Finish or Cancel/Back clears it.
+    // Timer uses Option 2: it freezes while you're away and resumes on return.
+
+    /**
+     * Read the currently-displayed workout (exercises, typed sets, title, context,
+     * elapsed time) into a plain object suitable for saving to state.
+     * Returns null if there's no active workout on screen.
+     */
+    function snapshotActiveWorkout() {
+        const active = document.getElementById('workout-active');
+        if (!active || active.classList.contains('hidden')) return null;
+
+        const exercises = [];
+        document.querySelectorAll('#exercise-list > div').forEach(card => {
+            const nameInput = card.querySelector('input[type="text"]');
+            const name = nameInput ? nameInput.value : '';
+            const sets = [];
+            card.querySelectorAll('.set-row').forEach(row => {
+                const repsEl = row.querySelector('.set-reps');
+                const weightEl = row.querySelector('.set-weight');
+                const rirEl = row.querySelector('.set-rir');
+                // Capture partially-filled sets too (so nothing typed is lost)
+                sets.push({
+                    reps: repsEl ? repsEl.value : '',
+                    weight: weightEl ? weightEl.value : '',
+                    rir: rirEl ? rirEl.value : ''
+                });
+            });
+            // Keep the exercise even if empty, so the card structure is preserved
+            exercises.push({ name: name, sets: sets });
+        });
+
+        const titleEl = document.getElementById('active-workout-title');
+        return {
+            title: titleEl ? titleEl.innerText : 'Workout',
+            context: currentWorkoutContext,
+            elapsedSeconds: currentWorkoutElapsed(),
+            workoutDate: window.selectedWorkoutDate || (document.getElementById('workout-date-picker') || {}).value || new Date().toISOString().split('T')[0],
+            exercises: exercises,
+            savedAt: Date.now()
+        };
+    }
+
+    /**
+     * Snapshot the active workout into state and persist to localStorage.
+     * Called whenever the workout changes (set added, value typed, exercise
+     * added/removed/renamed) and when the user leaves the page.
+     */
+    function persistActiveWorkout() {
+        const snap = snapshotActiveWorkout();
+        if (snap) {
+            state.activeWorkout = snap;
+        } else {
+            delete state.activeWorkout;
+        }
+        saveState();
+    }
+
+    /**
+     * Clear any saved in-progress workout. Called on Finish and Cancel/Back.
+     */
+    function clearActiveWorkout() {
+        delete state.activeWorkout;
+        saveState();
+    }
+
+    /**
+     * On page load, if a workout was in progress, rebuild it exactly and drop the
+     * user straight back into it. Returns true if a workout was restored.
+     */
+    function restoreActiveWorkout() {
+        const saved = state.activeWorkout;
+        if (!saved || !Array.isArray(saved.exercises)) return false;
+
+        // Restore context + timer state. Option 2: banked elapsed is frozen; the
+        // clock resumes counting forward from here.
+        currentWorkoutContext = saved.context || null;
+        workoutAccumulatedSeconds = saved.elapsedSeconds || 0;
+        workoutStartTime = Date.now();
+
+        // Make sure we're on the Training tab and showing the active workout view
+        if (typeof switchTab === 'function') switchTab('workout');
+        const setupEl = document.getElementById('workout-setup');
+        const activeEl = document.getElementById('workout-active');
+        if (setupEl) setupEl.classList.add('hidden');
+        if (activeEl) activeEl.classList.remove('hidden');
+
+        const titleEl = document.getElementById('active-workout-title');
+        if (titleEl) titleEl.innerText = saved.title || 'Workout';
+
+        // Rebuild exercise cards and their sets using the normal builders
+        const list = document.getElementById('exercise-list');
+        if (list) list.innerHTML = '';
+        saved.exercises.forEach(ex => {
+            addExercise(ex.name || '');
+            // The card just added is the last one; find its id from the sets container
+            const cards = document.querySelectorAll('#exercise-list > div');
+            const card = cards[cards.length - 1];
+            if (!card) return;
+            const setsContainer = card.querySelector('[id^="sets-"]');
+            const exId = setsContainer ? setsContainer.id.replace('sets-', '') : null;
+            (ex.sets || []).forEach(s => {
+                if (exId) addSetToExercise(exId, ex.name ? getPersonalRecord(ex.name) : null, ex.name || '');
+                // Fill the values we saved
+                const rows = card.querySelectorAll('.set-row');
+                const row = rows[rows.length - 1];
+                if (row) {
+                    const r = row.querySelector('.set-reps');
+                    const w = row.querySelector('.set-weight');
+                    const rir = row.querySelector('.set-rir');
+                    if (r) r.value = s.reps || '';
+                    if (w) w.value = s.weight || '';
+                    if (rir) rir.value = s.rir || '';
+                }
+            });
+        });
+
+        // Resume the ticking clock
+        clearInterval(workoutTimer);
+        updateWorkoutTimer();
+        workoutTimer = setInterval(updateWorkoutTimer, 1000);
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        showToast('Resumed your workout in progress');
+        return true;
+    }
+
     function updateWorkoutTimer() {
-        const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
+        const elapsed = currentWorkoutElapsed();
         const h = Math.floor(elapsed / 3600).toString().padStart(2, '0');
         const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
         const s = (elapsed % 60).toString().padStart(2, '0');
@@ -4728,6 +4934,7 @@
             }
             nameInput.value = replacement;
             showToast(`Swapped ${current} → ${replacement}`);
+            persistActiveWorkout();
         });
 
         const dropdown = document.createElement('div');
@@ -4768,13 +4975,13 @@
         addSetBtn.className = "w-full py-3 sm:py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm sm:text-base hover:bg-indigo-700 active:bg-indigo-800";
         addSetBtn.textContent = "+ Add Set";
         // Read the exercise name live so suggestions/labels reflect any rename or swap
-        addSetBtn.addEventListener('click', () => addSetToExercise(id, getPersonalRecord(nameInput.value.trim()), nameInput.value.trim()));
+        addSetBtn.addEventListener('click', () => { addSetToExercise(id, getPersonalRecord(nameInput.value.trim()), nameInput.value.trim()); persistActiveWorkout(); });
 
         const deleteExBtn = document.createElement('button');
         deleteExBtn.type = "button";
         deleteExBtn.className = "w-full py-2 sm:py-2.5 mt-2 bg-red-50 text-red-600 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-100";
         deleteExBtn.textContent = "Delete Exercise";
-        deleteExBtn.addEventListener('click', () => card.remove());
+        deleteExBtn.addEventListener('click', () => { card.remove(); persistActiveWorkout(); });
 
         card.appendChild(nameContainer);
         card.appendChild(setsContainer);
@@ -4954,7 +5161,7 @@
         deleteBtn.type = "button";
         deleteBtn.className = "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-100 font-bold text-lg sm:text-xl flex-shrink-0";
         deleteBtn.textContent = "×";
-        deleteBtn.addEventListener('click', () => setRow.remove());
+        deleteBtn.addEventListener('click', () => { setRow.remove(); persistActiveWorkout(); });
 
         setRow.appendChild(repsInput);
         setRow.appendChild(weightDiv);
@@ -5203,6 +5410,9 @@
         window._pendingRatings = null;
 
         saveState();
+        clearActiveWorkout(); // workout is done — remove the in-progress save
+        workoutAccumulatedSeconds = 0;
+        workoutStartTime = null;
         pushMemberDataToCloud(); // keep the coach's view up to date
         document.getElementById('rate-exercises-modal').style.display = 'none';
         document.getElementById('workout-setup').classList.remove('hidden');
@@ -5216,6 +5426,9 @@
     function cancelWorkout() {
         if (confirm('Discard workout?')) {
             clearInterval(workoutTimer);
+            clearActiveWorkout(); // remove the in-progress save
+            workoutAccumulatedSeconds = 0;
+            workoutStartTime = null;
             document.getElementById('workout-setup').classList.remove('hidden');
             document.getElementById('workout-active').classList.add('hidden');
             currentWorkoutContext = null;
@@ -9514,6 +9727,48 @@
 
         // Make sure the Gym/Home tabs match the saved environment on load.
         renderWorkoutEnvTabs();
+
+        // ---- ACTIVE WORKOUT PERSISTENCE HOOKS ----
+        // Save the in-progress workout whenever the user types in it (debounced),
+        // so a refresh or accidental close never loses reps/weights.
+        let workoutPersistTimer = null;
+        const exListEl = document.getElementById('exercise-list');
+        if (exListEl) {
+            const schedulePersist = () => {
+                clearTimeout(workoutPersistTimer);
+                workoutPersistTimer = setTimeout(persistActiveWorkout, 400);
+            };
+            exListEl.addEventListener('input', schedulePersist);
+            exListEl.addEventListener('change', schedulePersist);
+        }
+
+        // When the page is hidden or about to unload, bank the running timer
+        // segment (Option 2: clock freezes while away) and persist immediately.
+        function bankAndPersist() {
+            const activeEl = document.getElementById('workout-active');
+            if (activeEl && !activeEl.classList.contains('hidden')) {
+                if (workoutStartTime) {
+                    workoutAccumulatedSeconds += Math.floor((Date.now() - workoutStartTime) / 1000);
+                    workoutStartTime = Date.now();
+                }
+                persistActiveWorkout();
+            }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') bankAndPersist();
+            else if (document.visibilityState === 'visible') {
+                // Resume: restart the segment clock without counting the away time
+                const activeEl = document.getElementById('workout-active');
+                if (activeEl && !activeEl.classList.contains('hidden')) {
+                    workoutStartTime = Date.now();
+                    updateWorkoutTimer();
+                }
+            }
+        });
+        window.addEventListener('beforeunload', bankAndPersist);
+
+        // If a workout was in progress last time, drop straight back into it.
+        restoreActiveWorkout();
 
         lucide.createIcons();
     });
