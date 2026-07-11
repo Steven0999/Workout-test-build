@@ -766,8 +766,8 @@
                         <button onclick="cancelWorkout()" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl text-xl font-bold">×</button>
                     </div>
                     <div id="exercise-list" class="space-y-4 mb-6"></div>
-                    <button onclick="addExercise()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs mb-4 hover:border-indigo-400 hover:text-indigo-500">+ Add Exercise</button>
-                    <button onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold hover:bg-slate-800">Finish Workout</button>
+                    <button id="add-exercise-btn" onclick="addExercise()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs mb-4 hover:border-indigo-400 hover:text-indigo-500">+ Add Exercise</button>
+                    <button id="finish-workout-btn" onclick="saveWorkout()" class="w-full bg-slate-900 text-white p-5 rounded-[1.5rem] font-bold hover:bg-slate-800">Finish Workout</button>
                 </div>
             </section>
 
@@ -4676,6 +4676,11 @@
                     setTimeout(() => addExercise(core2), delay);
                 }
                 showToast('AI workout generated! 💪');
+                // Specific Muscle workouts step through one exercise at a time,
+                // whether built manually or by AI Generate.
+                if (isSpecific) {
+                    setTimeout(() => enterWizardMode(), 140);
+                }
             }
         }
 
@@ -4691,7 +4696,137 @@
         workoutStartTime = Date.now();
         workoutAccumulatedSeconds = 0; // fresh workout — no banked time yet
         workoutTimer = setInterval(updateWorkoutTimer, 1000);
+
+        // SPECIFIC MUSCLE → step through one exercise at a time (wizard mode).
+        // We build the ordered exercise list for the chosen muscles, create all the
+        // cards (so sets/PB/persistence work as normal), then show them one-by-one.
+        if (isSpecific && mode !== 'ai') {
+            const env = state.workoutEnv || 'gym';
+            const perMuscle = selectedMuscles.length === 1 ? { compound: 2, isolation: 3 }
+                : selectedMuscles.length === 2 ? { compound: 2, isolation: 2 }
+                : selectedMuscles.length === 3 ? { compound: 1, isolation: 2 }
+                : { compound: 1, isolation: 1 };
+            const queued = [];
+            selectedMuscles.forEach(muscleKey => {
+                const ex = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                if (!ex) return;
+                queued.push(...weightedSample(ex.compound || [], perMuscle.compound));
+                queued.push(...weightedSample(ex.isolation || [], perMuscle.isolation));
+            });
+            const seen = new Set();
+            const deduped = queued.filter(e => { if (seen.has(e)) return false; seen.add(e); return true; });
+            const ordered = orderWorkoutExercises(deduped, env);
+
+            document.getElementById('exercise-list').innerHTML = '';
+            if (ordered.length === 0) {
+                const envLabel = env === 'home' ? 'Home' : 'Gym';
+                showToast(`No ${envLabel} exercises for ${selectedMuscles.join(', ')}.`, 5000);
+            } else {
+                ordered.forEach(ex => addExercise(ex));
+                // Enter wizard mode once the cards exist
+                setTimeout(() => enterWizardMode(), 120);
+            }
+        }
+
         persistActiveWorkout(); // save the freshly-started workout so a refresh keeps it
+    }
+
+    // ==========================================================================
+    // SPECIFIC-MUSCLE WIZARD — one exercise at a time
+    // ==========================================================================
+    let wizardActive = false;
+    let wizardIndex = 0;
+
+    /**
+     * Turn the active workout into a step-by-step wizard: show one exercise card
+     * at a time with Back / Next controls. The cards already exist in #exercise-list;
+     * we just show one and hide the rest, and add a nav bar.
+     */
+    function enterWizardMode() {
+        const cards = document.querySelectorAll('#exercise-list > div');
+        if (cards.length === 0) return;
+        wizardActive = true;
+        wizardIndex = 0;
+        // The wizard's "Next → Finish" replaces the bottom Finish button.
+        const finishBtn = document.getElementById('finish-workout-btn');
+        if (finishBtn) finishBtn.style.display = 'none';
+        ensureWizardNav();
+        showWizardStep(0);
+        persistActiveWorkout();
+    }
+
+    function ensureWizardNav() {
+        if (document.getElementById('wizard-nav')) return;
+        const activeView = document.getElementById('workout-active');
+        if (!activeView) return;
+        const nav = document.createElement('div');
+        nav.id = 'wizard-nav';
+        nav.className = 'flex items-center gap-3 mt-4';
+        nav.innerHTML = `
+            <button onclick="wizardBack()" id="wizard-back-btn" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold disabled:opacity-40">← Back</button>
+            <div id="wizard-progress" class="text-xs font-bold text-slate-400 flex-shrink-0 px-2"></div>
+            <button onclick="wizardNext()" id="wizard-next-btn" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">Next →</button>`;
+        // Insert the nav right after the exercise list
+        const list = document.getElementById('exercise-list');
+        if (list && list.parentNode) {
+            list.parentNode.insertBefore(nav, list.nextSibling);
+        } else {
+            activeView.appendChild(nav);
+        }
+    }
+
+    function showWizardStep(index) {
+        const cards = document.querySelectorAll('#exercise-list > div');
+        if (cards.length === 0) return;
+        wizardIndex = Math.max(0, Math.min(index, cards.length - 1));
+        cards.forEach((card, i) => {
+            card.style.display = (i === wizardIndex) ? '' : 'none';
+        });
+
+        // Update progress + button labels
+        const progress = document.getElementById('wizard-progress');
+        if (progress) progress.textContent = `${wizardIndex + 1} / ${cards.length}`;
+        const backBtn = document.getElementById('wizard-back-btn');
+        if (backBtn) backBtn.disabled = (wizardIndex === 0);
+        const nextBtn = document.getElementById('wizard-next-btn');
+        if (nextBtn) nextBtn.textContent = (wizardIndex === cards.length - 1) ? 'Finish ✓' : 'Next →';
+
+        // Scroll the shown card into view
+        const shown = cards[wizardIndex];
+        if (shown && shown.scrollIntoView) shown.scrollIntoView({ block: 'nearest' });
+    }
+
+    function wizardNext() {
+        const cards = document.querySelectorAll('#exercise-list > div');
+        // Bank progress each time you advance (persists the whole in-progress workout)
+        persistActiveWorkout();
+        if (wizardIndex >= cards.length - 1) {
+            // Last exercise → finish the workout (same as the normal Finish button)
+            saveWorkout();
+            return;
+        }
+        showWizardStep(wizardIndex + 1);
+        persistActiveWorkout();
+    }
+
+    function wizardBack() {
+        if (wizardIndex === 0) return;
+        showWizardStep(wizardIndex - 1); // reloads the previous exercise with its entered sets intact
+        persistActiveWorkout();
+    }
+
+    /**
+     * Remove wizard mode (used on finish/cancel) so all cards are visible again
+     * and the nav bar is cleared, returning the workout view to its normal state.
+     */
+    function exitWizardMode() {
+        wizardActive = false;
+        wizardIndex = 0;
+        const nav = document.getElementById('wizard-nav');
+        if (nav) nav.remove();
+        const finishBtn = document.getElementById('finish-workout-btn');
+        if (finishBtn) finishBtn.style.display = '';
+        document.querySelectorAll('#exercise-list > div').forEach(card => { card.style.display = ''; });
     }
 
     /**
@@ -4788,6 +4923,8 @@
             elapsedSeconds: currentWorkoutElapsed(),
             workoutDate: window.selectedWorkoutDate || (document.getElementById('workout-date-picker') || {}).value || new Date().toISOString().split('T')[0],
             exercises: exercises,
+            wizard: wizardActive,
+            wizardIndex: wizardIndex,
             savedAt: Date.now()
         };
     }
@@ -4871,6 +5008,16 @@
         updateWorkoutTimer();
         workoutTimer = setInterval(updateWorkoutTimer, 1000);
 
+        // If the workout was in one-exercise-at-a-time wizard mode, restore that too,
+        // dropping the user back onto the exact exercise step they were on.
+        if (saved.wizard) {
+            const finishBtn = document.getElementById('finish-workout-btn');
+            if (finishBtn) finishBtn.style.display = 'none';
+            wizardActive = true;
+            ensureWizardNav();
+            showWizardStep(saved.wizardIndex || 0);
+        }
+
         if (typeof lucide !== 'undefined') lucide.createIcons();
         showToast('Resumed your workout in progress');
         return true;
@@ -4934,6 +5081,10 @@
             }
             nameInput.value = replacement;
             showToast(`Swapped ${current} → ${replacement}`);
+            const hdr2 = document.getElementById(`weight-header-${id}`);
+            if (hdr2) hdr2.textContent = isAssistanceExercise(replacement) ? 'Assist (kg)' : 'Weight (kg)';
+            refreshExercisePB(id);
+            refreshSetBadges(id, replacement);
             persistActiveWorkout();
         });
 
@@ -4950,6 +5101,14 @@
         nameContainer.appendChild(inputWrapper);
         nameContainer.appendChild(dropdown);
 
+        // Live PB / suggestion line — updates dynamically to match whatever exercise
+        // is currently in the name field (typed, selected, or swapped), rather than
+        // sticking to the exercise the card started with.
+        const pbLine = document.createElement('div');
+        pbLine.id = `pb-line-${id}`;
+        pbLine.className = "text-xs font-bold mt-2 min-h-[16px]";
+        nameContainer.appendChild(pbLine);
+
         const setsContainer = document.createElement('div');
         setsContainer.id = `sets-${id}`;
         setsContainer.className = "bg-slate-50 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4 min-h-[100px] w-full";
@@ -4964,11 +5123,14 @@
             <div class="w-9 sm:w-10"></div>`;
         setsContainer.appendChild(header);
 
-        // When the exercise name changes, update the weight header label (Assist vs Weight)
+        // When the exercise name changes, update the weight header label (Assist vs
+        // Weight) AND the live PB line, so both track the current exercise.
         nameInput.addEventListener('change', () => {
             const hdr = document.getElementById(`weight-header-${id}`);
             if (hdr) hdr.textContent = isAssistanceExercise(nameInput.value) ? 'Assist (kg)' : 'Weight (kg)';
+            refreshExercisePB(id);
         });
+        nameInput.addEventListener('input', () => refreshExercisePB(id));
 
         const addSetBtn = document.createElement('button');
         addSetBtn.type = "button";
@@ -4992,6 +5154,14 @@
         if (exerciseList) exerciseList.appendChild(card);
 
         setTimeout(() => addSetToExercise(id, pr, name), 60);
+        if (name) refreshExercisePB(id); // show PB for a card that starts with a name
+        // If we're in wizard mode and the user manually added an exercise, jump to it.
+        if (wizardActive && !name) {
+            setTimeout(() => {
+                const cards = document.querySelectorAll('#exercise-list > div');
+                showWizardStep(cards.length - 1);
+            }, 80);
+        }
         lucide.createIcons();
     }
 
@@ -5091,9 +5261,63 @@
         if (input) input.value = exerciseName;
         if (dropdown) dropdown.classList.add('hidden');
 
-        const pr = getPersonalRecord(exerciseName);
-        if (pr) showToast(`PR for ${exerciseName}: ${pr}kg`);
+        // Update the weight header label and the live PB line for the new exercise
+        const hdr = document.getElementById(`weight-header-${id}`);
+        if (hdr) hdr.textContent = isAssistanceExercise(exerciseName) ? 'Assist (kg)' : 'Weight (kg)';
+        refreshExercisePB(id);
+        refreshSetBadges(id, exerciseName);
+        persistActiveWorkout();
     }
+
+    /**
+     * Update the live PB / suggested-weight line for an exercise card to match the
+     * exercise currently in its name field. Called on type, select, and swap so the
+     * PB is always for the *current* exercise, never the one the card started with.
+     */
+    function refreshExercisePB(id) {
+        const input = document.getElementById(`ex-name-${id}`);
+        const line = document.getElementById(`pb-line-${id}`);
+        if (!input || !line) return;
+        const name = input.value.trim();
+        if (!name) { line.textContent = ''; return; }
+
+        const pr = getPersonalRecord(name);
+        const isAssist = isAssistanceExercise(name);
+        const suggestion = getSuggestedWeight(name);
+
+        let html = '';
+        if (pr) {
+            html += `<span class="text-emerald-600">${isAssist ? 'Best ' + pr + 'kg assist' : 'PB ' + pr + 'kg'}</span>`;
+        } else {
+            html += `<span class="text-slate-400">No PB yet — first time logging this</span>`;
+        }
+        if (suggestion && suggestion.suggested) {
+            html += ` <span class="text-slate-300">·</span> <span class="${suggestion.bumped ? 'text-emerald-600' : 'text-indigo-600'}">Try ${suggestion.suggested}kg${isAssist ? ' assist' : ''}</span>`;
+        }
+        line.innerHTML = html;
+    }
+
+    /**
+     * Refresh the PB badges on any already-added set rows for this exercise, so
+     * changing the exercise updates those too (they show the current exercise's PB).
+     */
+    function refreshSetBadges(id, exerciseName) {
+        const container = document.getElementById(`sets-${exerciseId(id)}`) || document.getElementById(`sets-${id}`);
+        if (!container) return;
+        const pr = exerciseName ? getPersonalRecord(exerciseName) : null;
+        const isAssist = isAssistanceExercise(exerciseName || '');
+        container.querySelectorAll('.pb-badge').forEach(badge => {
+            if (pr) {
+                badge.textContent = isAssist ? `Best ${pr}kg assist` : `PB ${pr}kg`;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    }
+
+    // Helper so refreshSetBadges works whether given the raw id or not
+    function exerciseId(id) { return id; }
 
     function addSetToExercise(exerciseId, pr, exerciseName) {
         const container = document.getElementById(`sets-${exerciseId}`);
@@ -5150,12 +5374,16 @@
         rirInput.title = "Reps In Reserve — how many more reps you could have done";
         rirInput.className = "set-rir w-16 sm:w-20 p-3 sm:p-4 bg-amber-50 rounded-lg text-center font-bold text-base sm:text-lg border-2 border-transparent focus:border-amber-400";
 
+        // Always create the PB badge (with a stable class) so it can be updated
+        // live when the exercise changes; hide it when there's no PB.
+        const pbBadge = document.createElement('span');
+        pbBadge.className = "pb-badge absolute -top-2 -right-2 text-[9px] sm:text-[10px] font-black text-white bg-emerald-500 px-2 py-1 rounded-full shadow-md whitespace-nowrap z-10";
         if (pr) {
-            const pbBadge = document.createElement('span');
-            pbBadge.className = "absolute -top-2 -right-2 text-[9px] sm:text-[10px] font-black text-white bg-emerald-500 px-2 py-1 rounded-full shadow-md whitespace-nowrap z-10";
             pbBadge.textContent = isAssist ? `Best ${pr}kg assist` : `PB ${pr}kg`;
-            weightDiv.appendChild(pbBadge);
+        } else {
+            pbBadge.style.display = 'none';
         }
+        weightDiv.appendChild(pbBadge);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = "button";
@@ -5411,6 +5639,7 @@
 
         saveState();
         clearActiveWorkout(); // workout is done — remove the in-progress save
+        exitWizardMode();
         workoutAccumulatedSeconds = 0;
         workoutStartTime = null;
         pushMemberDataToCloud(); // keep the coach's view up to date
@@ -5427,6 +5656,7 @@
         if (confirm('Discard workout?')) {
             clearInterval(workoutTimer);
             clearActiveWorkout(); // remove the in-progress save
+            exitWizardMode();
             workoutAccumulatedSeconds = 0;
             workoutStartTime = null;
             document.getElementById('workout-setup').classList.remove('hidden');
