@@ -350,6 +350,139 @@
             --tw-gradient-to: transparent !important;
             --tw-gradient-stops: transparent !important;
         }
+
+        /* ============================================================
+           WORKOUT SECTION — grey panel · black fields · orange text
+           Also sizes the exercise card so it always fits fully on screen
+           (no cut-off) with the wizard nav always reachable.
+           ============================================================ */
+
+        /* The workout panel itself is grey so it stands apart from the black fields */
+        #workout-active {
+            background-color: #2b2f36 !important;   /* grey workout section */
+            border: 1.5px solid var(--vfit-orange) !important;
+            color: var(--vfit-orange) !important;
+            padding: 1rem !important;               /* tighter so more fits on screen */
+        }
+        #workout-active h3,
+        #workout-active #workout-timer,
+        #workout-active label,
+        #workout-active span,
+        #workout-active p {
+            color: var(--vfit-orange) !important;
+        }
+
+        /* Exercise card sits on the grey panel — keep it grey, orange-outlined */
+        #exercise-list > div {
+            background-color: #2b2f36 !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+            color: var(--vfit-orange) !important;
+        }
+
+        /* Sets container: BLACK background behind the numbers */
+        #exercise-list [id^="sets-"] {
+            background-color: #000000 !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+        }
+
+        /* Each set row: black, orange outline */
+        #exercise-list .set-row {
+            background-color: #000000 !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+        }
+
+        /* All input fields in the workout (exercise name, reps, weight, RIR):
+           black background, orange text, orange outline. */
+        #workout-active input,
+        #workout-active select,
+        #exercise-list input,
+        #exercise-list .set-reps,
+        #exercise-list .set-weight,
+        #exercise-list .set-rir {
+            background-color: #000000 !important;
+            color: var(--vfit-orange) !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+            -webkit-text-fill-color: var(--vfit-orange) !important; /* iOS override */
+        }
+        #workout-active input::placeholder,
+        #exercise-list input::placeholder {
+            color: #a86b32 !important;   /* dimmer orange so placeholders read as hints */
+            opacity: 1;
+        }
+        #workout-active input:focus,
+        #exercise-list input:focus {
+            border-color: var(--vfit-orange-bright) !important;
+            outline: none !important;
+        }
+
+        /* Column headers above the sets (REPS / WEIGHT / RIR) → orange */
+        #exercise-list [id^="weight-header-"],
+        #exercise-list [id^="sets-"] span {
+            color: var(--vfit-orange-bright) !important;
+        }
+
+        /* Buttons inside the workout: black with orange border + orange text */
+        #workout-active button,
+        #wizard-nav button {
+            background-color: #000000 !important;
+            color: var(--vfit-orange-bright) !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+        }
+        #wizard-nav button:disabled { opacity: 0.35 !important; }
+        #wizard-progress { color: var(--vfit-orange-bright) !important; }
+
+        /* The live PB line + PB badge stay readable on black */
+        #exercise-list [id^="pb-line-"] span { color: var(--vfit-orange-bright) !important; }
+        #exercise-list .pb-badge {
+            background-color: #000000 !important;
+            color: var(--vfit-orange-bright) !important;
+            border: 1px solid var(--vfit-orange) !important;
+        }
+
+        /* Exercise dropdown (search list) — black with orange text */
+        #exercise-list [id^="dropdown-"] {
+            background-color: #000000 !important;
+            border: 1.5px solid var(--vfit-orange) !important;
+        }
+        #exercise-list [id^="dropdown-"] * { color: var(--vfit-orange) !important; }
+
+        /* ---- FIT THE EXERCISE FULLY ON SCREEN ----
+           Make the exercise list a scrollable region sized to the viewport, so a
+           long exercise card can be seen in full and the Back/Next bar is always
+           visible underneath rather than pushed off the bottom. */
+        #exercise-list {
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
+            padding-right: 2px;                  /* stop the scrollbar clipping borders */
+        }
+        /* Slimmer padding inside the card so more fits without scrolling at all */
+        #exercise-list > div { padding: 0.85rem !important; }
+        #exercise-list [id^="sets-"] { padding: 0.6rem !important; min-height: 0 !important; }
+        #exercise-list .set-row { padding: 0.4rem !important; margin-bottom: 0.4rem !important; }
+        /* Slightly smaller number inputs so a full set row fits comfortably */
+        #exercise-list .set-reps,
+        #exercise-list .set-weight,
+        #exercise-list .set-rir {
+            padding: 0.55rem !important;
+            font-size: 1rem !important;
+        }
+        /* Keep the wizard nav pinned in view at the bottom of the panel */
+        #wizard-nav { position: sticky; bottom: 0; background-color: #2b2f36; padding-top: 0.5rem; z-index: 5; }
+
+        /* On short screens, give the list a bit more room */
+        @media (max-height: 700px) {
+            #exercise-list { max-height: calc(100vh - 280px); }
+        }
+
+        /* Remove the browser's number spinners — they clip the orange border and
+           waste horizontal space in the reps/weight/RIR fields. */
+        #exercise-list input[type="number"]::-webkit-outer-spin-button,
+        #exercise-list input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #exercise-list input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     </style>
 </head>
 <body>
@@ -4676,11 +4809,10 @@
                     setTimeout(() => addExercise(core2), delay);
                 }
                 showToast('AI workout generated! 💪');
-                // Specific Muscle workouts step through one exercise at a time,
-                // whether built manually or by AI Generate.
-                if (isSpecific) {
-                    setTimeout(() => enterWizardMode(), 140);
-                }
+                // ALL focuses step through one exercise at a time. `delay` accounts
+                // for every card queued above (including cardio/core), so we wait
+                // until they all exist before entering the wizard.
+                setTimeout(() => enterWizardMode(), delay + 120);
             }
         }
 
@@ -4697,42 +4829,49 @@
         workoutAccumulatedSeconds = 0; // fresh workout — no banked time yet
         workoutTimer = setInterval(updateWorkoutTimer, 1000);
 
-        // SPECIFIC MUSCLE → step through one exercise at a time (wizard mode).
-        // We build the ordered exercise list for the chosen muscles, create all the
-        // cards (so sets/PB/persistence work as normal), then show them one-by-one.
-        if (isSpecific && mode !== 'ai') {
+        // MANUAL ENTRY → also steps through one exercise at a time.
+        // For Specific Muscle we pre-build the exercise list from the chosen muscles.
+        // For every other focus, Manual means "I'll pick my own", so we start with a
+        // single blank card and let the user add more as they step through.
+        if (mode !== 'ai') {
             const env = state.workoutEnv || 'gym';
-            const perMuscle = selectedMuscles.length === 1 ? { compound: 2, isolation: 3 }
-                : selectedMuscles.length === 2 ? { compound: 2, isolation: 2 }
-                : selectedMuscles.length === 3 ? { compound: 1, isolation: 2 }
-                : { compound: 1, isolation: 1 };
-            const queued = [];
-            selectedMuscles.forEach(muscleKey => {
-                const ex = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
-                if (!ex) return;
-                queued.push(...weightedSample(ex.compound || [], perMuscle.compound));
-                queued.push(...weightedSample(ex.isolation || [], perMuscle.isolation));
-            });
-            const seen = new Set();
-            const deduped = queued.filter(e => { if (seen.has(e)) return false; seen.add(e); return true; });
-            const ordered = orderWorkoutExercises(deduped, env);
-
             document.getElementById('exercise-list').innerHTML = '';
-            if (ordered.length === 0) {
-                const envLabel = env === 'home' ? 'Home' : 'Gym';
-                showToast(`No ${envLabel} exercises for ${selectedMuscles.join(', ')}.`, 5000);
+
+            if (isSpecific) {
+                const perMuscle = selectedMuscles.length === 1 ? { compound: 2, isolation: 3 }
+                    : selectedMuscles.length === 2 ? { compound: 2, isolation: 2 }
+                    : selectedMuscles.length === 3 ? { compound: 1, isolation: 2 }
+                    : { compound: 1, isolation: 1 };
+                const queued = [];
+                selectedMuscles.forEach(muscleKey => {
+                    const ex = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                    if (!ex) return;
+                    queued.push(...weightedSample(ex.compound || [], perMuscle.compound));
+                    queued.push(...weightedSample(ex.isolation || [], perMuscle.isolation));
+                });
+                const seen = new Set();
+                const deduped = queued.filter(e => { if (seen.has(e)) return false; seen.add(e); return true; });
+                const ordered = orderWorkoutExercises(deduped, env);
+
+                if (ordered.length === 0) {
+                    const envLabel = env === 'home' ? 'Home' : 'Gym';
+                    showToast(`No ${envLabel} exercises for ${selectedMuscles.join(', ')}.`, 5000);
+                    addExercise(); // fall back to a blank card so the wizard still works
+                } else {
+                    ordered.forEach(ex => addExercise(ex));
+                }
             } else {
-                ordered.forEach(ex => addExercise(ex));
-                // Enter wizard mode once the cards exist
-                setTimeout(() => enterWizardMode(), 120);
+                // Non-specific focus, manual: begin with one blank exercise to fill in.
+                addExercise();
             }
+            setTimeout(() => enterWizardMode(), 120);
         }
 
         persistActiveWorkout(); // save the freshly-started workout so a refresh keeps it
     }
 
     // ==========================================================================
-    // SPECIFIC-MUSCLE WIZARD — one exercise at a time
+    // WORKOUT WIZARD — one exercise at a time (all focuses)
     // ==========================================================================
     let wizardActive = false;
     let wizardIndex = 0;
@@ -4750,6 +4889,8 @@
         // The wizard's "Next → Finish" replaces the bottom Finish button.
         const finishBtn = document.getElementById('finish-workout-btn');
         if (finishBtn) finishBtn.style.display = 'none';
+        const addBtn = document.getElementById('add-exercise-btn');
+        if (addBtn) addBtn.style.display = 'none'; // wizard nav has its own add button
         ensureWizardNav();
         showWizardStep(0);
         persistActiveWorkout();
@@ -4761,11 +4902,14 @@
         if (!activeView) return;
         const nav = document.createElement('div');
         nav.id = 'wizard-nav';
-        nav.className = 'flex items-center gap-3 mt-4';
+        nav.className = 'mt-4 space-y-3';
         nav.innerHTML = `
-            <button onclick="wizardBack()" id="wizard-back-btn" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold disabled:opacity-40">← Back</button>
-            <div id="wizard-progress" class="text-xs font-bold text-slate-400 flex-shrink-0 px-2"></div>
-            <button onclick="wizardNext()" id="wizard-next-btn" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">Next →</button>`;
+            <div class="flex items-center gap-3">
+                <button onclick="wizardBack()" id="wizard-back-btn" class="flex-1 bg-slate-200 text-slate-700 p-4 rounded-xl font-bold disabled:opacity-40">← Back</button>
+                <div id="wizard-progress" class="text-xs font-bold text-slate-400 flex-shrink-0 px-2"></div>
+                <button onclick="wizardNext()" id="wizard-next-btn" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">Next →</button>
+            </div>
+            <button onclick="wizardAddExercise()" id="wizard-add-btn" class="w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-indigo-400 hover:text-indigo-500">+ Add Another Exercise</button>`;
         // Insert the nav right after the exercise list
         const list = document.getElementById('exercise-list');
         if (list && list.parentNode) {
@@ -4773,6 +4917,15 @@
         } else {
             activeView.appendChild(nav);
         }
+    }
+
+    /**
+     * Add a new blank exercise as a step at the end of the wizard and jump to it.
+     * (addExercise auto-navigates to the new card while wizardActive is true.)
+     */
+    function wizardAddExercise() {
+        addExercise();
+        persistActiveWorkout();
     }
 
     function showWizardStep(index) {
@@ -4791,8 +4944,10 @@
         const nextBtn = document.getElementById('wizard-next-btn');
         if (nextBtn) nextBtn.textContent = (wizardIndex === cards.length - 1) ? 'Finish ✓' : 'Next →';
 
-        // Scroll the shown card into view
+        // Scroll so the shown exercise starts at the top and is fully visible
         const shown = cards[wizardIndex];
+        const listEl = document.getElementById('exercise-list');
+        if (listEl) listEl.scrollTop = 0;
         if (shown && shown.scrollIntoView) shown.scrollIntoView({ block: 'nearest' });
     }
 
@@ -4826,6 +4981,8 @@
         if (nav) nav.remove();
         const finishBtn = document.getElementById('finish-workout-btn');
         if (finishBtn) finishBtn.style.display = '';
+        const addBtn = document.getElementById('add-exercise-btn');
+        if (addBtn) addBtn.style.display = '';
         document.querySelectorAll('#exercise-list > div').forEach(card => { card.style.display = ''; });
     }
 
@@ -5013,6 +5170,8 @@
         if (saved.wizard) {
             const finishBtn = document.getElementById('finish-workout-btn');
             if (finishBtn) finishBtn.style.display = 'none';
+            const addBtn = document.getElementById('add-exercise-btn');
+            if (addBtn) addBtn.style.display = 'none';
             wizardActive = true;
             ensureWizardNav();
             showWizardStep(saved.wizardIndex || 0);
