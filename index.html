@@ -1262,6 +1262,13 @@
                         <h4 class="font-bold text-sm mb-1">Compare Photos</h4>
                         <p class="text-xs text-slate-400">Side by side</p>
                     </button>
+                    <button onclick="openCompareProgress()" class="glass-card p-6 rounded-2xl text-center hover:shadow-lg transition-all active:scale-95 col-span-2">
+                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-amber-600"></i>
+                        </div>
+                        <h4 class="font-bold text-sm mb-1">Compare Progress</h4>
+                        <p class="text-xs text-slate-400">Body, weight &amp; lifts — shareable</p>
+                    </button>
                 </div>
 
                 <!-- HISTORY LIST -->
@@ -2723,9 +2730,94 @@
                     <img id="compare-img-2" src="" class="w-full aspect-[3/4] object-cover rounded-3xl bg-slate-100 border-4 border-white shadow-xl" alt="After">
                 </div>
             </div>
+
+            <!-- Save Comparison — builds a shareable side-by-side image -->
+            <button id="save-comparison-btn" onclick="buildComparisonImage()" class="hidden w-full mt-6 bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2">
+                <i data-lucide="download" class="w-5 h-5"></i> Save Comparison
+            </button>
+
             <div id="no-comparison-message" class="text-center py-12 text-slate-400">
                 <i data-lucide="images" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
                 <p class="font-bold">Select two dates to compare</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPARE PROGRESS — body metrics & lifts -->
+    <div id="compare-progress-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Compare Progress</h3>
+                <button onclick="closeCompareProgress()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <!-- What to compare -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-5">
+                <button onclick="setCompareMode('body')" id="cmp-mode-body" class="flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase bg-white text-indigo-600 shadow-sm">Body</button>
+                <button onclick="setCompareMode('lifts')" id="cmp-mode-lifts" class="flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase text-slate-400">Lifts</button>
+                <button onclick="setCompareMode('trend')" id="cmp-mode-trend" class="flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase text-slate-400">Trend</button>
+            </div>
+
+            <!-- TREND MODE: pick one thing to chart over time -->
+            <div id="cmp-trend-controls" class="hidden mb-5">
+                <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">Track over time</label>
+                <select id="cmp-trend-pick" onchange="loadProgressComparison()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none mb-3">
+                    <option value="">Choose what to track...</option>
+                </select>
+                <div class="flex bg-slate-100 p-1 rounded-xl">
+                    <button onclick="setTrendRange('90')" id="cmp-range-90" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase bg-white text-indigo-600 shadow-sm">3 Months</button>
+                    <button onclick="setTrendRange('180')" id="cmp-range-180" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase text-slate-400">6 Months</button>
+                    <button onclick="setTrendRange('all')" id="cmp-range-all" class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase text-slate-400">All Time</button>
+                </div>
+            </div>
+
+            <!-- DATE PICKERS: only for the two-date modes -->
+            <div id="cmp-date-controls" class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">From</label>
+                    <select id="cmp-date-1" onchange="loadProgressComparison()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                        <option value="">Select date...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] font-black uppercase text-slate-400 block mb-2">To</label>
+                    <select id="cmp-date-2" onchange="loadProgressComparison()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                        <option value="">Select date...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Live trend preview -->
+            <canvas id="cmp-trend-canvas" class="hidden w-full rounded-2xl mb-3" style="max-height:280px;"></canvas>
+
+            <div id="cmp-results" class="space-y-2"></div>
+
+            <button id="cmp-save-btn" onclick="buildProgressImage()" class="hidden w-full mt-6 bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2">
+                <i data-lucide="download" class="w-5 h-5"></i> Save Comparison
+            </button>
+        </div>
+    </div>
+
+    <!-- FULL-SCREEN COMPARISON RESULT — shareable image -->
+    <div id="comparison-result-modal" class="modal-overlay" style="z-index:210; background:rgba(0,0,0,0.92);">
+        <div class="w-full h-full flex flex-col items-center justify-center p-4">
+            <div class="w-full max-w-3xl flex justify-between items-center mb-3">
+                <h3 class="text-lg font-black" style="color:#fb923c;">Your Progress</h3>
+                <button onclick="closeComparisonResult()" class="w-10 h-10 rounded-full text-2xl leading-none" style="background:#000; color:#fb923c; border:1.5px solid #f97316;">×</button>
+            </div>
+
+            <!-- The generated image is rendered here -->
+            <div class="flex-1 w-full max-w-3xl overflow-auto flex items-center justify-center">
+                <img id="comparison-result-img" src="" alt="Progress comparison" class="max-w-full max-h-full rounded-2xl" style="border:2px solid #f97316;">
+            </div>
+
+            <div class="w-full max-w-3xl grid grid-cols-2 gap-3 mt-4">
+                <button onclick="downloadComparisonImage()" class="p-4 rounded-2xl font-bold flex items-center justify-center gap-2" style="background:#000; color:#fb923c; border:1.5px solid #f97316;">
+                    <i data-lucide="download" class="w-5 h-5"></i> Save
+                </button>
+                <button onclick="shareComparisonImage()" class="p-4 rounded-2xl font-bold flex items-center justify-center gap-2" style="background:#000; color:#fb923c; border:1.5px solid #f97316;">
+                    <i data-lucide="share-2" class="w-5 h-5"></i> Share
+                </button>
             </div>
         </div>
     </div>
@@ -9115,6 +9207,8 @@
                 <p class="font-bold">Select two dates to compare</p>`;
             noMsg.classList.remove('hidden');
             view.classList.add('hidden');
+            const sBtnA = document.getElementById('save-comparison-btn');
+            if (sBtnA) sBtnA.classList.add('hidden');
             lucide.createIcons();
             return;
         }
@@ -9150,17 +9244,875 @@
                 <p class="text-xs leading-relaxed">${helpText}</p>`;
             noMsg.classList.remove('hidden');
             view.classList.add('hidden');
+            const sBtnB = document.getElementById('save-comparison-btn');
+            if (sBtnB) sBtnB.classList.add('hidden');
             lucide.createIcons();
             return;
         }
 
         noMsg.classList.add('hidden');
         view.classList.remove('hidden');
+        // A valid pair is showing — allow saving the comparison image
+        const sBtn = document.getElementById('save-comparison-btn');
+        if (sBtn) { sBtn.classList.remove('hidden'); lucide.createIcons(); }
 
         document.getElementById('compare-img-1').src = photo1;
         document.getElementById('compare-img-2').src = photo2;
         document.getElementById('compare-label-1').textContent = new Date(date1).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         document.getElementById('compare-label-2').textContent = new Date(date2).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ==========================================================================
+    // SAVE COMPARISON — build a shareable side-by-side image
+    // ==========================================================================
+    // Draws both photos onto a canvas with a black background, an orange dividing
+    // line, date labels, and a "VFIT App" watermark in the bottom-right corner.
+    // Produces a real image file (not a screenshot) that can be saved or shared.
+
+    let comparisonBlob = null; // the generated image, kept for save/share
+
+    function loadImg(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Could not load photo'));
+            img.src = src;
+        });
+    }
+
+    async function buildComparisonImage() {
+        const src1 = document.getElementById('compare-img-1').src;
+        const src2 = document.getElementById('compare-img-2').src;
+        const label1 = document.getElementById('compare-label-1').textContent;
+        const label2 = document.getElementById('compare-label-2').textContent;
+        if (!src1 || !src2) { showToast('Load two photos first'); return; }
+
+        showToast('Building your comparison...');
+
+        try {
+            const [img1, img2] = await Promise.all([loadImg(src1), loadImg(src2)]);
+
+            // Each half is a 3:4 portrait panel. Size from the larger source so we
+            // don't upscale and lose quality.
+            const panelW = Math.max(img1.width, img2.width, 800);
+            const panelH = Math.round(panelW * 4 / 3);
+            const divider = Math.max(6, Math.round(panelW * 0.012)); // orange divider width
+            const pad = Math.round(panelW * 0.04);                   // black border around everything
+            const footer = Math.round(panelW * 0.13);                // space for the watermark
+
+            const canvas = document.createElement('canvas');
+            canvas.width = pad * 2 + panelW * 2 + divider;
+            canvas.height = pad * 2 + panelH + footer;
+            const ctx = canvas.getContext('2d');
+
+            // --- Slight black background ---
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // --- Draw each photo, cover-cropped into its panel ---
+            function drawCover(img, dx, dy, dw, dh) {
+                const scale = Math.max(dw / img.width, dh / img.height);
+                const sw = dw / scale;
+                const sh = dh / scale;
+                const sx = (img.width - sw) / 2;
+                const sy = (img.height - sh) / 2;
+                ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+            }
+            const y = pad;
+            drawCover(img1, pad, y, panelW, panelH);
+            drawCover(img2, pad + panelW + divider, y, panelW, panelH);
+
+            // --- Orange dividing line down the middle ---
+            ctx.fillStyle = '#f97316';
+            ctx.fillRect(pad + panelW, y, divider, panelH);
+
+            // --- Orange outline around the whole photo strip ---
+            ctx.strokeStyle = '#f97316';
+            ctx.lineWidth = Math.max(3, Math.round(panelW * 0.006));
+            ctx.strokeRect(pad, y, panelW * 2 + divider, panelH);
+
+            // --- Date labels (black pill, orange text) ---
+            const fontSize = Math.round(panelW * 0.055);
+            ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+            ctx.textBaseline = 'middle';
+
+            function drawLabel(text, cx, cy) {
+                const tw = ctx.measureText(text).width;
+                const bx = Math.round(fontSize * 0.6);
+                const by = Math.round(fontSize * 0.45);
+                const bw = tw + bx * 2;
+                const bh = fontSize + by * 2;
+                const lx = cx;
+                const ly = cy;
+                ctx.fillStyle = 'rgba(0,0,0,0.82)';
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(lx, ly, bw, bh, Math.round(fontSize * 0.35));
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(lx, ly, bw, bh);
+                }
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 2;
+                if (ctx.roundRect) ctx.stroke();
+                ctx.fillStyle = '#fb923c';
+                ctx.fillText(text, lx + bx, ly + bh / 2);
+            }
+            const lblY = y + Math.round(panelW * 0.04);
+            drawLabel(label1, pad + Math.round(panelW * 0.04), lblY);
+            drawLabel(label2, pad + panelW + divider + Math.round(panelW * 0.04), lblY);
+
+            // --- WATERMARK: "VFIT App" bottom-right corner ---
+            const wmSize = Math.round(panelW * 0.07);
+            ctx.font = `900 ${wmSize}px system-ui, -apple-system, sans-serif`;
+            ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'right';
+            const wmX = canvas.width - pad;
+            const wmY = canvas.height - Math.round(footer * 0.32);
+            // subtle shadow so it reads on any photo
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#f97316';
+            ctx.fillText('VFIT App', wmX, wmY);
+            ctx.shadowBlur = 0;
+            ctx.textAlign = 'left';
+
+            // --- Render to a blob and show full-screen ---
+            canvas.toBlob((blob) => {
+                if (!blob) { showToast('Could not build the image'); return; }
+                comparisonBlob = blob;
+                const url = URL.createObjectURL(blob);
+                const resultImg = document.getElementById('comparison-result-img');
+                if (resultImg) resultImg.src = url;
+                document.getElementById('comparison-result-modal').style.display = 'flex';
+                lucide.createIcons();
+            }, 'image/jpeg', 0.92);
+
+        } catch (err) {
+            console.error('Comparison image error:', err);
+            showToast('Could not build the comparison image');
+        }
+    }
+
+    // ==========================================================================
+    // COMPARE PROGRESS — body metrics, weight, and weight lifted
+    // ==========================================================================
+    // Same idea as the photo comparison: pick two dates, see the before/after,
+    // then build a shareable image with the orange divider and VFIT watermark.
+
+    let compareMode = 'body';        // 'body' | 'lifts'
+    let progressRows = [];           // the rows currently being compared (for the image)
+    let progressHeadline = null;     // the standout stat, drawn large on the image
+
+    const BODY_FIELDS = [
+        { key: 'weight',    label: 'Weight',    unit: 'kg', lowerIsBetter: true },
+        { key: 'chest',     label: 'Chest',     unit: 'cm', lowerIsBetter: false },
+        { key: 'shoulders', label: 'Shoulders', unit: 'cm', lowerIsBetter: false },
+        { key: 'arms',      label: 'Arms',      unit: 'cm', lowerIsBetter: false },
+        { key: 'waist',     label: 'Waist',     unit: 'cm', lowerIsBetter: true },
+        { key: 'legs',      label: 'Legs',      unit: 'cm', lowerIsBetter: false },
+        { key: 'glutes',    label: 'Glutes',    unit: 'cm', lowerIsBetter: false }
+    ];
+
+    function openCompareProgress() {
+        compareMode = 'body';
+        setCompareMode('body');
+        document.getElementById('compare-progress-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeCompareProgress() {
+        document.getElementById('compare-progress-modal').style.display = 'none';
+    }
+
+    let trendRange = '90';   // '90' | '180' | 'all'
+    let trendSeries = [];    // [{date, value}] for the chosen metric/lift
+    let trendMeta = null;    // { label, unit, good }
+
+    function setCompareMode(mode) {
+        compareMode = mode;
+        const on = 'flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase bg-white text-indigo-600 shadow-sm';
+        const off = 'flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase text-slate-400';
+        const b = document.getElementById('cmp-mode-body');
+        const l = document.getElementById('cmp-mode-lifts');
+        const t = document.getElementById('cmp-mode-trend');
+        if (b) b.className = (mode === 'body') ? on : off;
+        if (l) l.className = (mode === 'lifts') ? on : off;
+        if (t) t.className = (mode === 'trend') ? on : off;
+
+        // Trend mode swaps the two date pickers for a single "what to track" picker
+        const dateCtrls = document.getElementById('cmp-date-controls');
+        const trendCtrls = document.getElementById('cmp-trend-controls');
+        const canvas = document.getElementById('cmp-trend-canvas');
+        if (mode === 'trend') {
+            if (dateCtrls) dateCtrls.classList.add('hidden');
+            if (trendCtrls) trendCtrls.classList.remove('hidden');
+            populateTrendPicker();
+        } else {
+            if (dateCtrls) dateCtrls.classList.remove('hidden');
+            if (trendCtrls) trendCtrls.classList.add('hidden');
+            if (canvas) canvas.classList.add('hidden');
+            populateCompareDates();
+        }
+        loadProgressComparison();
+    }
+
+    function setTrendRange(range) {
+        trendRange = range;
+        const on = 'flex-1 py-2 rounded-lg text-[10px] font-black uppercase bg-white text-indigo-600 shadow-sm';
+        const off = 'flex-1 py-2 rounded-lg text-[10px] font-black uppercase text-slate-400';
+        ['90', '180', 'all'].forEach(r => {
+            const el = document.getElementById('cmp-range-' + r);
+            if (el) el.className = (r === range) ? on : off;
+        });
+        loadProgressComparison();
+    }
+
+    /** Populate the trend picker with every measurement and every logged lift. */
+    function populateTrendPicker() {
+        const sel = document.getElementById('cmp-trend-pick');
+        if (!sel) return;
+        const prev = sel.value;
+
+        // Measurements that actually have data
+        const bodyOpts = BODY_FIELDS.filter(f =>
+            (state.metricsHistory || []).some(m => m[f.key] !== undefined && m[f.key] !== null && m[f.key] !== '')
+        ).map(f => `<option value="body:${f.key}">${f.label}</option>`).join('');
+
+        // Every exercise ever logged with a weight
+        const lifts = new Set();
+        (state.workoutHistory || []).forEach(w => {
+            (w.exercises || []).forEach(ex => {
+                const hasWeight = (ex.sets || []).some(s => !isNaN(parseFloat(s.weight)));
+                if (ex.name && hasWeight) lifts.add(ex.name);
+            });
+        });
+        const liftOpts = Array.from(lifts).sort()
+            .map(n => `<option value="lift:${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+
+        sel.innerHTML = '<option value="">Choose what to track...</option>'
+            + (bodyOpts ? `<optgroup label="Body">${bodyOpts}</optgroup>` : '')
+            + (liftOpts ? `<optgroup label="Lifts">${liftOpts}</optgroup>` : '');
+
+        if (prev) sel.value = prev;
+        // Default to Weight if nothing chosen yet
+        if (!sel.value && bodyOpts) sel.value = 'body:weight';
+    }
+
+    /** Build the time series for whatever is selected in the trend picker. */
+    function buildTrendSeries() {
+        const sel = document.getElementById('cmp-trend-pick');
+        const pick = sel ? sel.value : '';
+        trendSeries = [];
+        trendMeta = null;
+        if (!pick) return;
+
+        // Cut-off for the selected range
+        let cutoff = null;
+        if (trendRange !== 'all') {
+            const days = parseInt(trendRange, 10);
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - days);
+            cutoff = d.toISOString().split('T')[0];
+        }
+
+        if (pick.startsWith('body:')) {
+            const key = pick.slice(5);
+            const field = BODY_FIELDS.find(f => f.key === key);
+            if (!field) return;
+            trendMeta = { label: field.label, unit: field.unit, lowerIsBetter: field.lowerIsBetter };
+            (state.metricsHistory || []).forEach(m => {
+                if (!m.date) return;
+                if (cutoff && m.date < cutoff) return;
+                const v = parseFloat(m[key]);
+                if (isNaN(v)) return;
+                trendSeries.push({ date: m.date, value: v });
+            });
+        } else if (pick.startsWith('lift:')) {
+            const name = pick.slice(5);
+            trendMeta = { label: name, unit: 'kg', lowerIsBetter: false };
+            (state.workoutHistory || []).forEach(w => {
+                if (!w.date) return;
+                if (cutoff && w.date < cutoff) return;
+                let best = 0;
+                (w.exercises || []).forEach(ex => {
+                    if (ex.name !== name) return;
+                    (ex.sets || []).forEach(s => {
+                        const kg = parseFloat(s.weight);
+                        if (!isNaN(kg) && kg > best) best = kg;
+                    });
+                });
+                if (best > 0) trendSeries.push({ date: w.date, value: best });
+            });
+        }
+        trendSeries.sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    /**
+     * Draw the trend line onto a canvas. Used for both the on-screen preview and
+     * the shareable image (same renderer, different size), so what you see is what
+     * you share.
+     */
+    function drawTrendChart(canvas, opts) {
+        opts = opts || {};
+        const forShare = !!opts.forShare;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+
+        const padL = forShare ? 110 : 46;
+        const padR = forShare ? 60 : 16;
+        const padT = forShare ? (opts.topOffset || 60) : 18;
+        const padB = forShare ? 90 : 34;
+
+        // Background
+        ctx.fillStyle = forShare ? '#0a0a0a' : '#000000';
+        ctx.fillRect(0, 0, W, H);
+
+        if (trendSeries.length < 2) {
+            ctx.fillStyle = '#9a6a3a';
+            ctx.font = `bold ${forShare ? 32 : 14}px system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Not enough data to chart', W / 2, H / 2);
+            ctx.textAlign = 'left';
+            return;
+        }
+
+        const values = trendSeries.map(p => p.value);
+        let min = Math.min(...values), max = Math.max(...values);
+        if (min === max) { min -= 1; max += 1; }           // flat line — give it room
+        const span = max - min;
+        min -= span * 0.12;
+        max += span * 0.12;
+
+        const plotW = W - padL - padR;
+        const plotH = H - padT - padB;
+        const xAt = i => padL + (i / (trendSeries.length - 1)) * plotW;
+        const yAt = v => padT + plotH - ((v - min) / (max - min)) * plotH;
+
+        // Grid lines + Y labels
+        ctx.strokeStyle = 'rgba(249,115,22,0.18)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#9a6a3a';
+        ctx.font = `${forShare ? 24 : 10}px system-ui, sans-serif`;
+        ctx.textAlign = 'right';
+        for (let g = 0; g <= 4; g++) {
+            const v = min + (max - min) * (g / 4);
+            const y = yAt(v);
+            ctx.beginPath();
+            ctx.moveTo(padL, y);
+            ctx.lineTo(W - padR, y);
+            ctx.stroke();
+            ctx.fillText(v.toFixed(1), padL - (forShare ? 16 : 6), y + (forShare ? 8 : 3));
+        }
+        ctx.textAlign = 'left';
+
+        // Area fill under the line
+        const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+        grad.addColorStop(0, 'rgba(249,115,22,0.35)');
+        grad.addColorStop(1, 'rgba(249,115,22,0.02)');
+        ctx.beginPath();
+        ctx.moveTo(xAt(0), padT + plotH);
+        trendSeries.forEach((p, i) => ctx.lineTo(xAt(i), yAt(p.value)));
+        ctx.lineTo(xAt(trendSeries.length - 1), padT + plotH);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // The orange line
+        ctx.beginPath();
+        trendSeries.forEach((p, i) => {
+            const x = xAt(i), y = yAt(p.value);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = forShare ? 7 : 3;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Points
+        trendSeries.forEach((p, i) => {
+            const x = xAt(i), y = yAt(p.value);
+            ctx.beginPath();
+            ctx.arc(x, y, forShare ? 9 : 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fb923c';
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = forShare ? 3 : 1.5;
+            ctx.stroke();
+        });
+
+        // First/last date labels
+        ctx.fillStyle = '#9a6a3a';
+        ctx.font = `${forShare ? 24 : 10}px system-ui, sans-serif`;
+        const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        ctx.textAlign = 'left';
+        ctx.fillText(fmt(trendSeries[0].date), padL, H - padB + (forShare ? 40 : 18));
+        ctx.textAlign = 'right';
+        ctx.fillText(fmt(trendSeries[trendSeries.length - 1].date), W - padR, H - padB + (forShare ? 40 : 18));
+        ctx.textAlign = 'left';
+    }
+
+    /** Dates that have data for the current mode. */
+    function getComparableDates() {
+        if (compareMode === 'body') {
+            return (state.metricsHistory || [])
+                .filter(m => BODY_FIELDS.some(f => m[f.key] !== undefined && m[f.key] !== null && m[f.key] !== ''))
+                .map(m => m.date)
+                .filter(Boolean);
+        }
+        // lifts: dates where a workout was logged
+        const set = new Set();
+        (state.workoutHistory || []).forEach(w => { if (w.date) set.add(w.date); });
+        return Array.from(set);
+    }
+
+    function populateCompareDates() {
+        const dates = getComparableDates().slice().sort((a, b) => (b || '').localeCompare(a || ''));
+        const s1 = document.getElementById('cmp-date-1');
+        const s2 = document.getElementById('cmp-date-2');
+        if (!s1 || !s2) return;
+
+        const opts = dates.map(d => {
+            const label = new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `<option value="${d}">${label}</option>`;
+        }).join('');
+        s1.innerHTML = '<option value="">Select date...</option>' + opts;
+        s2.innerHTML = '<option value="">Select date...</option>' + opts;
+
+        // Auto-pick the oldest and newest so there's something to see straight away
+        if (dates.length >= 2) {
+            s1.value = dates[dates.length - 1]; // oldest
+            s2.value = dates[0];                // newest
+        }
+    }
+
+    /** Best (heaviest) set for an exercise on or before a given date. */
+    function bestLiftUpTo(exerciseName, date) {
+        let best = 0;
+        (state.workoutHistory || []).forEach(w => {
+            if (!w.date || w.date > date) return;
+            (w.exercises || []).forEach(ex => {
+                if (ex.name !== exerciseName) return;
+                (ex.sets || []).forEach(s => {
+                    const kg = parseFloat(s.weight);
+                    if (!isNaN(kg) && kg > best) best = kg;
+                });
+            });
+        });
+        return best;
+    }
+
+    function loadProgressComparison() {
+        const box = document.getElementById('cmp-results');
+        const saveBtn = document.getElementById('cmp-save-btn');
+        const canvas = document.getElementById('cmp-trend-canvas');
+        if (!box) return;
+
+        // ---- TREND MODE: chart one thing over time ----
+        if (compareMode === 'trend') {
+            buildTrendSeries();
+            if (!trendMeta || trendSeries.length < 2) {
+                if (canvas) canvas.classList.add('hidden');
+                box.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">${trendMeta ? 'Need at least 2 entries in this range to show a trend.' : 'Choose what to track.'}</p>`;
+                if (saveBtn) saveBtn.classList.add('hidden');
+                return;
+            }
+
+            // Draw the on-screen preview (same renderer as the shared image)
+            if (canvas) {
+                canvas.classList.remove('hidden');
+                const cssW = canvas.clientWidth || 600;
+                canvas.width = cssW * 2;      // retina-sharp
+                canvas.height = 280 * 2;
+                canvas.style.height = '280px';
+                drawTrendChart(canvas, { forShare: false });
+            }
+
+            const first = trendSeries[0].value;
+            const last = trendSeries[trendSeries.length - 1].value;
+            const delta = Math.round((last - first) * 10) / 10;
+            const good = trendMeta.lowerIsBetter ? (last < first) : (last > first);
+            const sign = delta > 0 ? '+' : '';
+            const colour = delta === 0 ? 'text-slate-400' : (good ? 'text-emerald-600' : 'text-rose-500');
+
+            box.innerHTML = `
+                <div class="bg-slate-50 p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-400">${escapeHtml(trendMeta.label)}</p>
+                        <p class="text-sm text-slate-500">${first}${trendMeta.unit} → <b>${last}${trendMeta.unit}</b> over ${trendSeries.length} entries</p>
+                    </div>
+                    <p class="text-2xl font-black ${colour}">${sign}${delta}${trendMeta.unit}</p>
+                </div>`;
+            if (saveBtn) saveBtn.classList.remove('hidden');
+            lucide.createIcons();
+            return;
+        }
+
+        if (canvas) canvas.classList.add('hidden');
+
+        const d1 = document.getElementById('cmp-date-1').value;
+        const d2 = document.getElementById('cmp-date-2').value;
+
+        progressRows = [];
+        progressHeadline = null;
+
+        if (!d1 || !d2) {
+            box.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Pick two dates to compare.</p>';
+            if (saveBtn) saveBtn.classList.add('hidden');
+            return;
+        }
+        if (d1 === d2) {
+            box.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Pick two different dates.</p>';
+            if (saveBtn) saveBtn.classList.add('hidden');
+            return;
+        }
+
+        // Order so "from" is always the earlier date
+        const from = d1 < d2 ? d1 : d2;
+        const to   = d1 < d2 ? d2 : d1;
+
+        if (compareMode === 'body') {
+            const m1 = (state.metricsHistory || []).find(m => m.date === from) || {};
+            const m2 = (state.metricsHistory || []).find(m => m.date === to) || {};
+            BODY_FIELDS.forEach(f => {
+                const a = parseFloat(m1[f.key]);
+                const b = parseFloat(m2[f.key]);
+                if (isNaN(a) || isNaN(b)) return; // need both to compare
+                progressRows.push({
+                    label: f.label, unit: f.unit,
+                    before: a, after: b,
+                    delta: Math.round((b - a) * 10) / 10,
+                    good: f.lowerIsBetter ? (b < a) : (b > a)
+                });
+            });
+        } else {
+            // Lifts: compare best weight for every exercise trained in the period
+            const names = new Set();
+            (state.workoutHistory || []).forEach(w => {
+                if (!w.date || w.date > to) return;
+                (w.exercises || []).forEach(ex => { if (ex.name) names.add(ex.name); });
+            });
+            names.forEach(name => {
+                const a = bestLiftUpTo(name, from);
+                const b = bestLiftUpTo(name, to);
+                if (b <= 0) return;                 // never lifted by the end date
+                if (a === b) return;                // no change — skip for a cleaner card
+                progressRows.push({
+                    label: name, unit: 'kg',
+                    before: a, after: b,
+                    delta: Math.round((b - a) * 10) / 10,
+                    good: b > a
+                });
+            });
+            // Biggest gains first
+            progressRows.sort((x, y) => y.delta - x.delta);
+        }
+
+        if (progressRows.length === 0) {
+            box.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">No ${compareMode === 'body' ? 'measurements' : 'lifts'} recorded on both dates.</p>`;
+            if (saveBtn) saveBtn.classList.add('hidden');
+            return;
+        }
+
+        // Headline = the biggest positive change
+        const gains = progressRows.filter(r => r.good);
+        if (gains.length > 0) {
+            const top = gains.reduce((best, r) => Math.abs(r.delta) > Math.abs(best.delta) ? r : best, gains[0]);
+            progressHeadline = top;
+        }
+
+        window.cmpFrom = from;
+        window.cmpTo = to;
+
+        box.innerHTML = progressRows.map(r => {
+            const sign = r.delta > 0 ? '+' : '';
+            const colour = r.good ? 'text-emerald-600' : 'text-rose-500';
+            return `
+                <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
+                    <span class="font-bold text-sm flex-1 min-w-0 truncate">${escapeHtml(r.label)}</span>
+                    <div class="flex items-center gap-2 flex-shrink-0 text-sm">
+                        <span class="text-slate-400">${r.before}${r.unit}</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-300"></i>
+                        <span class="font-black">${r.after}${r.unit}</span>
+                        <span class="${colour} font-black w-16 text-right">${sign}${r.delta}${r.unit}</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+        if (saveBtn) saveBtn.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    /**
+     * Build the shareable progress image — same styling as the photo comparison:
+     * black background, orange divider between Before and After, VFIT watermark.
+     */
+    function buildProgressImage() {
+        if (compareMode === 'trend') { buildTrendImage(); return; }
+        if (progressRows.length === 0) { showToast('Nothing to compare'); return; }
+        showToast('Building your comparison...');
+
+        const from = window.cmpFrom, to = window.cmpTo;
+        const fromLbl = new Date(from).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const toLbl = new Date(to).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        // Cap rows so the card stays readable
+        const rows = progressRows.slice(0, 10);
+
+        const W = 1400;
+        const pad = 60;
+        const titleH = 130;
+        const headlineH = progressHeadline ? 190 : 0;
+        const rowH = 78;
+        const footerH = 110;
+        const H = pad * 2 + titleH + headlineH + rows.length * rowH + footerH;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // --- Slight black background ---
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, W, H);
+
+        // --- Orange outline ---
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(pad / 2, pad / 2, W - pad, H - pad);
+
+        ctx.textBaseline = 'middle';
+
+        // --- Title ---
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '900 54px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(compareMode === 'body' ? 'MY PROGRESS' : 'MY LIFTS', W / 2, pad + 40);
+        ctx.fillStyle = '#f97316';
+        ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`${fromLbl}  →  ${toLbl}`, W / 2, pad + 92);
+
+        let y = pad + titleH;
+
+        // --- Headline stat (the biggest win) ---
+        if (progressHeadline) {
+            const h = progressHeadline;
+            const sign = h.delta > 0 ? '+' : '';
+            ctx.fillStyle = '#f97316';
+            ctx.font = '900 96px system-ui, -apple-system, sans-serif';
+            ctx.fillText(`${sign}${h.delta}${h.unit}`, W / 2, y + 55);
+            ctx.fillStyle = '#fdba74';
+            ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
+            ctx.fillText(h.label.toUpperCase(), W / 2, y + 125);
+            y += headlineH;
+        }
+
+        // --- Rows: label | before | orange divider | after | delta ---
+        const colL = pad + 40;
+        const colBefore = W * 0.52;
+        const colAfter = W * 0.70;
+        const colDelta = W - pad - 40;
+        const dividerX = W * 0.61;
+
+        // One continuous orange divider down the middle of the rows
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(dividerX - 3, y, 6, rows.length * rowH);
+
+        rows.forEach((r, i) => {
+            const cy = y + i * rowH + rowH / 2;
+
+            // subtle row striping so it's readable
+            if (i % 2 === 0) {
+                ctx.fillStyle = 'rgba(255,255,255,0.035)';
+                ctx.fillRect(pad, y + i * rowH, W - pad * 2, rowH);
+            }
+
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#fdba74';
+            ctx.font = 'bold 34px system-ui, -apple-system, sans-serif';
+            const name = r.label.length > 22 ? r.label.slice(0, 21) + '…' : r.label;
+            ctx.fillText(name, colL, cy);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#9a6a3a';
+            ctx.font = '32px system-ui, -apple-system, sans-serif';
+            ctx.fillText(`${r.before}${r.unit}`, colBefore, cy);
+
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#fb923c';
+            ctx.font = '900 36px system-ui, -apple-system, sans-serif';
+            ctx.fillText(`${r.after}${r.unit}`, colAfter, cy);
+
+            ctx.textAlign = 'right';
+            const sign = r.delta > 0 ? '+' : '';
+            ctx.fillStyle = r.good ? '#22c55e' : '#ef4444';
+            ctx.font = '900 34px system-ui, -apple-system, sans-serif';
+            ctx.fillText(`${sign}${r.delta}${r.unit}`, colDelta, cy);
+        });
+
+        // --- WATERMARK: bottom-right ---
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '900 44px system-ui, -apple-system, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#f97316';
+        ctx.fillText('VFIT App', W - pad, H - 45);
+        ctx.shadowBlur = 0;
+        ctx.textAlign = 'left';
+
+        canvas.toBlob((blob) => {
+            if (!blob) { showToast('Could not build the image'); return; }
+            comparisonBlob = blob; // reuse the same save/share pipeline as photos
+            const url = URL.createObjectURL(blob);
+            const resultImg = document.getElementById('comparison-result-img');
+            if (resultImg) resultImg.src = url;
+            document.getElementById('comparison-result-modal').style.display = 'flex';
+            lucide.createIcons();
+        }, 'image/jpeg', 0.92);
+    }
+
+    /**
+     * Shareable TREND card: headline change, the chart over time, and the VFIT
+     * watermark. Uses the same drawTrendChart renderer as the on-screen preview.
+     */
+    function buildTrendImage() {
+        if (!trendMeta || trendSeries.length < 2) { showToast('Not enough data to chart'); return; }
+        showToast('Building your trend...');
+
+        const W = 1400;
+        const H = 1150;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // Background + orange frame
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+
+        const first = trendSeries[0].value;
+        const last = trendSeries[trendSeries.length - 1].value;
+        const delta = Math.round((last - first) * 10) / 10;
+        const good = trendMeta.lowerIsBetter ? (last < first) : (last > first);
+        const sign = delta > 0 ? '+' : '';
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Title
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '900 52px system-ui, -apple-system, sans-serif';
+        ctx.fillText(trendMeta.label.toUpperCase(), W / 2, 110);
+
+        // Range subtitle
+        const rangeLabel = trendRange === 'all' ? 'All time'
+            : (trendRange === '90' ? 'Last 3 months' : 'Last 6 months');
+        ctx.fillStyle = '#9a6a3a';
+        ctx.font = 'bold 26px system-ui, -apple-system, sans-serif';
+        ctx.fillText(rangeLabel + ` · ${trendSeries.length} entries`, W / 2, 160);
+
+        // Headline change
+        ctx.fillStyle = delta === 0 ? '#9a6a3a' : (good ? '#22c55e' : '#ef4444');
+        ctx.font = '900 110px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`${sign}${delta}${trendMeta.unit}`, W / 2, 250);
+
+        // Before → After
+        ctx.fillStyle = '#fdba74';
+        ctx.font = 'bold 34px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`${first}${trendMeta.unit}  →  ${last}${trendMeta.unit}`, W / 2, 325);
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+
+        // --- The chart itself, drawn into an offscreen canvas then composited ---
+        const chartH = 640;
+        const chart = document.createElement('canvas');
+        chart.width = W - 120;
+        chart.height = chartH;
+        drawTrendChart(chart, { forShare: true, topOffset: 40 });
+        ctx.drawImage(chart, 60, 370);
+
+        // Orange outline around the chart area
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(60, 370, W - 120, chartH);
+
+        // --- WATERMARK bottom-right ---
+        ctx.textAlign = 'right';
+        ctx.font = '900 44px system-ui, -apple-system, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#f97316';
+        ctx.fillText('VFIT App', W - 60, H - 55);
+        ctx.shadowBlur = 0;
+        ctx.textAlign = 'left';
+
+        canvas.toBlob((blob) => {
+            if (!blob) { showToast('Could not build the image'); return; }
+            comparisonBlob = blob; // reuse the shared save/share pipeline
+            const url = URL.createObjectURL(blob);
+            const resultImg = document.getElementById('comparison-result-img');
+            if (resultImg) resultImg.src = url;
+            document.getElementById('comparison-result-modal').style.display = 'flex';
+            lucide.createIcons();
+        }, 'image/jpeg', 0.92);
+    }
+
+    function closeComparisonResult() {
+        const modal = document.getElementById('comparison-result-modal');
+        if (modal) modal.style.display = 'none';
+        const img = document.getElementById('comparison-result-img');
+        if (img && img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+    }
+
+    function comparisonFileName() {
+        const d = new Date().toISOString().split('T')[0];
+        return `VFIT-progress-${d}.jpg`;
+    }
+
+    function downloadComparisonImage() {
+        if (!comparisonBlob) { showToast('Nothing to save yet'); return; }
+        const url = URL.createObjectURL(comparisonBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = comparisonFileName();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('Comparison saved 📸');
+    }
+
+    async function shareComparisonImage() {
+        if (!comparisonBlob) { showToast('Nothing to share yet'); return; }
+        const file = new File([comparisonBlob], comparisonFileName(), { type: 'image/jpeg' });
+
+        // Use the native share sheet where it's available (phones), so it can go
+        // straight to WhatsApp/Instagram/Messages.
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'My VFIT Progress',
+                    text: 'My progress — tracked with VFIT App'
+                });
+            } catch (err) {
+                if (err && err.name !== 'AbortError') {
+                    console.warn('Share failed:', err);
+                    showToast('Sharing not available — saving instead');
+                    downloadComparisonImage();
+                }
+            }
+        } else {
+            // Desktop / unsupported browsers: fall back to a download
+            showToast('Sharing not supported here — saving instead');
+            downloadComparisonImage();
+        }
     }
 
     // ==========================================================================
