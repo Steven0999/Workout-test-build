@@ -483,6 +483,32 @@
             margin: 0;
         }
         #exercise-list input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+        /* ---- MAXIMUM-SPECIFICITY OVERRIDES ----
+           Belt and braces: these use html body + id so nothing can outrank them,
+           regardless of what Tailwind's runtime CDN injects afterwards. */
+        html body #workout-active { background-color: #2b2f36 !important; }
+        html body #exercise-list > div { background-color: #2b2f36 !important; border: 1.5px solid #f97316 !important; }
+        html body #exercise-list div[id^="sets-"] { background-color: #000 !important; border: 1.5px solid #f97316 !important; }
+        html body #exercise-list .set-row { background-color: #000 !important; border: 1.5px solid #f97316 !important; }
+        html body #exercise-list input,
+        html body #workout-active input {
+            background-color: #000 !important;
+            color: #f97316 !important;
+            -webkit-text-fill-color: #f97316 !important;
+            border: 1.5px solid #f97316 !important;
+        }
+        html body #workout-active h3,
+        html body #workout-active p,
+        html body #workout-active span,
+        html body #exercise-list span,
+        html body #wizard-nav button,
+        html body #wizard-progress { color: #fb923c !important; }
+        html body #workout-active button,
+        html body #wizard-nav button {
+            background-color: #000 !important;
+            border: 1.5px solid #f97316 !important;
+        }
     </style>
 </head>
 <body>
@@ -895,6 +921,7 @@
                         <div>
                             <h3 id="active-workout-title" class="text-xl font-black">Workout</h3>
                             <p id="workout-timer" class="text-indigo-600 font-bold">00:00:00</p>
+                            <p class="text-[9px] font-bold opacity-60" style="color:#f97316;">VFIT v2 · orange theme</p>
                         </div>
                         <button onclick="cancelWorkout()" class="w-10 h-10 bg-red-50 text-red-500 rounded-xl text-xl font-bold">×</button>
                     </div>
@@ -1255,6 +1282,23 @@
             <!-- ============================== -->
             <section id="settings" class="tab-content space-y-6">
                 <div class="glass-card p-6 rounded-[2.5rem] space-y-8">
+                    <!-- EXERCISE DATABASE — choose what's available at your gym -->
+                    <div>
+                        <h3 class="text-[11px] font-black uppercase text-slate-400 mb-3">Exercise Database</h3>
+                        <button onclick="openExerciseDatabase()" class="w-full bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-all active:scale-[0.98]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="dumbbell" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-black text-sm text-slate-900">My Equipment & Exercises</p>
+                                    <p id="exercise-db-status" class="text-xs text-slate-500">Choose what your gym has</p>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                        </button>
+                    </div>
+
                     <!-- ABOUT YOU - opens modal with profile questions -->
                     <div>
                         <h3 class="text-[11px] font-black uppercase text-slate-400 mb-3">About You</h3>
@@ -1731,6 +1775,117 @@
     <!-- CARDIO LOGGING MODAL -->
     <!-- RATE EXERCISES MODAL -->
     <!-- MEMBER ↔ COACH NOTES MODAL -->
+    <!-- WORKOUT LOSS WARNING -->
+    <div id="lose-workout-modal" class="modal-overlay" style="z-index:200;">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-7 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 bg-amber-50 rounded-2xl flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-amber-500"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">Lose your workout?</h3>
+            <p id="lose-workout-msg" class="text-sm text-slate-500 mb-6">You have a workout in progress. Continuing will discard it and everything you've logged.</p>
+            <div class="space-y-3">
+                <button onclick="dismissLoseWorkout()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Go Back</button>
+                <button onclick="confirmLoseWorkout()" class="w-full bg-slate-200 text-slate-700 p-4 rounded-2xl font-bold hover:bg-slate-300">Continue &amp; Discard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXERCISE DATABASE — toggle what's available at your gym -->
+    <div id="exercise-db-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-xl font-black">My Equipment</h3>
+                    <p class="text-xs text-slate-400">Turn off anything your gym doesn't have. Workouts will only use what's ON.</p>
+                </div>
+                <button onclick="closeExerciseDatabase()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none flex-shrink-0">×</button>
+            </div>
+
+            <!-- Gym / Home toggle -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-3">
+                <button onclick="setDbEnv('gym')" id="db-env-gym" class="flex-1 py-2 rounded-lg text-xs font-black uppercase bg-white text-indigo-600 shadow-sm">🏋️ Gym</button>
+                <button onclick="setDbEnv('home')" id="db-env-home" class="flex-1 py-2 rounded-lg text-xs font-black uppercase text-slate-400">🏠 Home</button>
+            </div>
+
+            <!-- Search + bulk actions -->
+            <input id="db-search" type="text" placeholder="Search exercises..." oninput="renderExerciseDatabase()"
+                class="w-full p-3 bg-slate-50 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none font-medium mb-2">
+            <div class="flex gap-2 mb-3">
+                <button onclick="dbSelectAll(true)" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-bold text-xs">Enable All</button>
+                <button onclick="dbSelectAll(false)" class="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg font-bold text-xs">Disable All</button>
+                <button onclick="openAddExerciseForm()" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-bold text-xs">+ New</button>
+            </div>
+
+            <p id="db-count" class="text-[11px] font-bold text-slate-400 mb-2"></p>
+
+            <!-- The exercise list, grouped by muscle -->
+            <div id="exercise-db-list" class="flex-1 overflow-y-auto space-y-4 min-h-[200px]"></div>
+
+            <button onclick="closeExerciseDatabase()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mt-4">Done</button>
+        </div>
+    </div>
+
+    <!-- ADD CUSTOM EXERCISE FORM -->
+    <div id="add-exercise-modal" class="modal-overlay">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black">Add Exercise</h3>
+                <button onclick="closeAddExerciseForm()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <div class="space-y-5">
+                <!-- Exercise name -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Exercise Name</label>
+                    <input id="new-ex-name" type="text" placeholder="e.g. Machine Bicep Curl" autocomplete="off"
+                        class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 font-bold">
+                </div>
+
+                <!-- Environment -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Where can you do it?</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="setNewExEnv('gym')" id="new-ex-env-gym" class="py-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold">🏋️ Gym</button>
+                        <button type="button" onclick="setNewExEnv('home')" id="new-ex-env-home" class="py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold">🏠 Home</button>
+                    </div>
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Exercise Type</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="setNewExType('compound')" id="new-ex-type-compound" class="py-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold">Compound</button>
+                        <button type="button" onclick="setNewExType('isolation')" id="new-ex-type-isolation" class="py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold">Isolation</button>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2">Compound = multiple joints (squat, row). Isolation = single joint (curl, extension).</p>
+                </div>
+
+                <!-- Focus -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Focus</label>
+                    <select id="new-ex-focus" onchange="onNewExFocusChange()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                        <option value="Specific Muscle">Specific Muscle</option>
+                        <option value="Full Body">Full Body</option>
+                        <option value="Upper">Upper Body</option>
+                        <option value="Lower">Lower Body</option>
+                        <option value="Push">Push</option>
+                        <option value="Pull">Pull</option>
+                        <option value="Legs">Legs</option>
+                    </select>
+                </div>
+
+                <!-- Muscles (shown when Specific Muscle is chosen) -->
+                <div id="new-ex-muscles-wrap">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Which muscles does it work?</label>
+                    <div id="new-ex-muscle-chips" class="flex flex-wrap gap-2"></div>
+                    <p class="text-[11px] text-slate-400 mt-2">Tap all the muscles this exercise trains.</p>
+                </div>
+
+                <button onclick="saveCustomExercise()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Save Exercise</button>
+            </div>
+        </div>
+    </div>
+
     <div id="member-notes-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-2">
@@ -2785,7 +2940,10 @@
                 coachUid: null,
                 coachName: null,
                 clientUids: [],
-                pendingRequests: []
+                pendingRequests: [],
+                // Exercise database is account-level, so it follows the user across devices
+                customExercises: [],
+                disabledExercises: { gym: [], home: [] }
             });
 
             showToast('Account created successfully! 🎉');
@@ -2854,6 +3012,9 @@
                 if (firebaseUserData.calorieGoal) {
                     state.goals.calories = firebaseUserData.calorieGoal;
                 }
+                // Exercise database is account-level: pull the cloud copy so your
+                // equipment setup and custom exercises follow you to any device.
+                applyExercisePrefsFromCloud(firebaseUserData);
             } else {
                 await db.collection('users').doc(currentUser.uid).set({
                     name: currentUser.displayName || 'User',
@@ -2868,7 +3029,12 @@
                     coachUid: null,
                     coachName: null,
                     clientUids: [],
-                    pendingRequests: []
+                    pendingRequests: [],
+                    customExercises: state.customExercises || [],
+                    disabledExercises: {
+                        gym: (state.disabledExercises && state.disabledExercises.gym) || [],
+                        home: (state.disabledExercises && state.disabledExercises.home) || []
+                    }
                 });
                 firebaseUserData = { role: 'member', name: currentUser.displayName || 'User', email: currentUser.email };
             }
@@ -2910,6 +3076,64 @@
     function syncToFirebase() {
         // The real sync happens via syncToCloud(). This is a no-op safe stub
         // so autoSaveNutrition() can call it without error.
+    }
+
+    // ==========================================================================
+    // ACCOUNT-LEVEL EXERCISE PREFERENCES (custom exercises + disabled equipment)
+    // ==========================================================================
+    // These are tied to the ACCOUNT, not the device, so your gym equipment setup
+    // and your own exercises follow you to any phone/computer you sign in on.
+    // Applies to members AND coaches.
+
+    /**
+     * Save the user's custom exercises and disabled-equipment lists to their
+     * Firestore user doc. Debounced so rapid toggling doesn't hammer the network.
+     */
+    let exercisePrefsSyncTimer = null;
+    function syncExercisePrefs() {
+        if (!currentUser) return; // not signed in — local save still happened
+        clearTimeout(exercisePrefsSyncTimer);
+        exercisePrefsSyncTimer = setTimeout(async () => {
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    customExercises: state.customExercises || [],
+                    disabledExercises: {
+                        gym: (state.disabledExercises && state.disabledExercises.gym) || [],
+                        home: (state.disabledExercises && state.disabledExercises.home) || []
+                    },
+                    exercisePrefsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.warn('Could not sync exercise preferences:', error);
+                showToast('Equipment saved locally — will sync when online');
+            }
+        }, 700);
+    }
+
+    /**
+     * Pull the account's exercise preferences from Firestore on login and apply
+     * them locally. The cloud copy is the source of truth, so signing in on a new
+     * device brings your equipment setup and custom exercises with you.
+     */
+    function applyExercisePrefsFromCloud(data) {
+        if (!data) return;
+        if (Array.isArray(data.customExercises)) {
+            state.customExercises = data.customExercises;
+            // Re-register the muscles each custom exercise targets so swap,
+            // volume tracking and demand-ordering understand them.
+            state.customExercises.forEach(ce => {
+                if (ce && ce.name && Array.isArray(ce.muscles) && ce.muscles.length > 0) {
+                    EXERCISE_TO_MUSCLES[ce.name] = ce.muscles.slice();
+                }
+            });
+        }
+        if (data.disabledExercises) {
+            state.disabledExercises = {
+                gym: Array.isArray(data.disabledExercises.gym) ? data.disabledExercises.gym : [],
+                home: Array.isArray(data.disabledExercises.home) ? data.disabledExercises.home : []
+            };
+        }
+        saveState(); // cache locally so it works offline until the next login
     }
 
     // ==========================================================================
@@ -3596,6 +3820,11 @@
         weightUnit: 'kg', // user's preferred display unit: 'kg' | 'lbs' | 'st'
         foodRegion: 'uk', // food search region: 'uk' | 'us' | 'world'
         exerciseRatings: {}, // { 'Bench Press': { total: 14, count: 4 }, ... }  — average = total/count
+        // User-created exercises: { name, env, focus, muscles:[], type:'compound'|'isolation' }
+        customExercises: [],
+        // Exercises the user has turned OFF (not available at their gym).
+        // Stored as { gym: ['Machine Bicep Curl', ...], home: [...] }
+        disabledExercises: { gym: [], home: [] },
         userProfile: {
             gender: '',         // 'male' | 'female' | ''
             heightCm: null,     // number
@@ -3684,6 +3913,19 @@
                     home: Object.assign({}, DEFAULT_STATE.equipment.home, (parsed.equipment && parsed.equipment.home) || {})
                 };
                 state.userProfile = Object.assign({}, DEFAULT_STATE.userProfile, parsed.userProfile || {});
+                // Ensure the exercise-database fields exist and have the right shape
+                if (!Array.isArray(state.customExercises)) state.customExercises = [];
+                state.disabledExercises = {
+                    gym: Array.isArray(parsed.disabledExercises && parsed.disabledExercises.gym) ? parsed.disabledExercises.gym : [],
+                    home: Array.isArray(parsed.disabledExercises && parsed.disabledExercises.home) ? parsed.disabledExercises.home : []
+                };
+                // Re-register custom exercises in the reverse muscle index so swap,
+                // volume tracking and demand-ordering know what they target.
+                state.customExercises.forEach(ce => {
+                    if (ce && ce.name && ce.muscles && ce.muscles.length > 0) {
+                        EXERCISE_TO_MUSCLES[ce.name] = ce.muscles.slice();
+                    }
+                });
                 // Migration: older versions may have saved meals with field `type` instead of `mealType`.
                 // Normalize so the diary shows them under the right section.
                 if (Array.isArray(state.dailyMeals)) {
@@ -4015,6 +4257,361 @@
     })();
 
     // ==========================================================================
+    // CENTRAL EXERCISE-POOL ACCESSOR
+    // ==========================================================================
+    // Every place that picks exercises goes through this so that:
+    //   • the user's OWN custom exercises are included, and
+    //   • exercises they've marked unavailable at their gym are excluded.
+    // Returns the same shape as EXERCISE_DB[env]: { Chest: {compound:[], isolation:[]}, ... }
+
+    function isExerciseDisabled(name, env) {
+        const d = (state.disabledExercises && state.disabledExercises[env]) || [];
+        return d.indexOf(name) >= 0;
+    }
+
+    /**
+     * Get the effective exercise DB for an environment: the built-in exercises
+     * plus the user's custom ones, minus anything they've disabled.
+     */
+    function getEnvDB(env) {
+        env = env || state.workoutEnv || 'gym';
+        const base = EXERCISE_DB[env] || {};
+
+        // Deep-ish copy so we never mutate the constant DB
+        const out = {};
+        Object.keys(base).forEach(key => {
+            out[key] = {
+                compound: (base[key].compound || []).slice(),
+                isolation: (base[key].isolation || []).slice()
+            };
+        });
+
+        // Merge in the user's custom exercises for this environment
+        (state.customExercises || []).forEach(ce => {
+            if (!ce || !ce.name) return;
+            if ((ce.env || 'gym') !== env) return;
+            const bucket = (ce.type === 'compound') ? 'compound' : 'isolation';
+
+            // Add under each specific muscle it targets
+            (ce.muscles || []).forEach(m => {
+                if (!out[m]) out[m] = { compound: [], isolation: [] };
+                if (out[m][bucket].indexOf(ce.name) < 0) out[m][bucket].push(ce.name);
+            });
+            // Add under its focus group (Push, Pull, Full Body, ...) if it has one
+            if (ce.focus && ce.focus !== 'Specific Muscle') {
+                if (!out[ce.focus]) out[ce.focus] = { compound: [], isolation: [] };
+                if (out[ce.focus][bucket].indexOf(ce.name) < 0) out[ce.focus][bucket].push(ce.name);
+            }
+        });
+
+        // Strip anything the user has turned off for this environment
+        const disabled = (state.disabledExercises && state.disabledExercises[env]) || [];
+        if (disabled.length > 0) {
+            Object.keys(out).forEach(key => {
+                out[key].compound = out[key].compound.filter(e => disabled.indexOf(e) < 0);
+                out[key].isolation = out[key].isolation.filter(e => disabled.indexOf(e) < 0);
+            });
+        }
+        return out;
+    }
+
+    /**
+     * Every available exercise name in an environment (custom included, disabled removed).
+     */
+    function getAvailableExercises(env) {
+        const db = getEnvDB(env);
+        const set = new Set();
+        Object.values(db).forEach(group => {
+            (group.compound || []).forEach(e => set.add(e));
+            (group.isolation || []).forEach(e => set.add(e));
+        });
+        return Array.from(set).sort();
+    }
+
+    // ==========================================================================
+    // ADD CUSTOM EXERCISE FORM
+    // ==========================================================================
+    let newExEnv = 'gym';
+    let newExType = 'compound';
+    let newExMuscles = [];
+
+    function openAddExerciseForm() {
+        newExEnv = state.workoutEnv || 'gym';
+        newExType = 'compound';
+        newExMuscles = [];
+        document.getElementById('new-ex-name').value = '';
+        document.getElementById('new-ex-focus').value = 'Specific Muscle';
+        setNewExEnv(newExEnv);
+        setNewExType('compound');
+        renderNewExMuscleChips();
+        onNewExFocusChange();
+        document.getElementById('add-exercise-modal').style.display = 'flex';
+    }
+
+    function closeAddExerciseForm() {
+        document.getElementById('add-exercise-modal').style.display = 'none';
+    }
+
+    function setNewExEnv(env) {
+        newExEnv = env;
+        const g = document.getElementById('new-ex-env-gym');
+        const h = document.getElementById('new-ex-env-home');
+        const on = 'py-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold';
+        const off = 'py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold';
+        if (g) g.className = (env === 'gym') ? on : off;
+        if (h) h.className = (env === 'home') ? on : off;
+    }
+
+    function setNewExType(type) {
+        newExType = type;
+        const c = document.getElementById('new-ex-type-compound');
+        const i = document.getElementById('new-ex-type-isolation');
+        const on = 'py-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold';
+        const off = 'py-3 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold';
+        if (c) c.className = (type === 'compound') ? on : off;
+        if (i) i.className = (type === 'isolation') ? on : off;
+    }
+
+    function onNewExFocusChange() {
+        const focus = document.getElementById('new-ex-focus').value;
+        const wrap = document.getElementById('new-ex-muscles-wrap');
+        // Muscle chips only matter for Specific Muscle
+        if (wrap) wrap.style.display = (focus === 'Specific Muscle') ? 'block' : 'none';
+    }
+
+    function renderNewExMuscleChips() {
+        const box = document.getElementById('new-ex-muscle-chips');
+        if (!box) return;
+        box.innerHTML = SPECIFIC_MUSCLES.map(m => {
+            const sel = newExMuscles.indexOf(m) >= 0;
+            return `<button type="button" onclick="toggleNewExMuscle('${m}')"
+                class="px-4 py-2 rounded-full text-xs font-bold border-2 ${sel ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200'}">${m}</button>`;
+        }).join('');
+    }
+
+    function toggleNewExMuscle(muscle) {
+        const i = newExMuscles.indexOf(muscle);
+        if (i >= 0) newExMuscles.splice(i, 1); else newExMuscles.push(muscle);
+        renderNewExMuscleChips();
+    }
+
+    function saveCustomExercise() {
+        const name = document.getElementById('new-ex-name').value.trim();
+        const focus = document.getElementById('new-ex-focus').value;
+
+        if (!name) { showToast('Enter an exercise name'); return; }
+        if (focus === 'Specific Muscle' && newExMuscles.length === 0) {
+            showToast('Pick at least one muscle it works'); return;
+        }
+
+        // Don't allow a duplicate name in the same environment
+        const exists = (state.customExercises || []).some(c =>
+            c.name.toLowerCase() === name.toLowerCase() && (c.env || 'gym') === newExEnv);
+        if (exists) { showToast('You already have that exercise'); return; }
+
+        if (!state.customExercises) state.customExercises = [];
+        state.customExercises.push({
+            name: name,
+            env: newExEnv,
+            focus: focus,
+            type: newExType,
+            // If a focus group was chosen, no specific muscles are required
+            muscles: (focus === 'Specific Muscle') ? newExMuscles.slice() : []
+        });
+        saveState();
+        syncExercisePrefs(); // push to the account so it follows the user across devices
+
+        // Keep the reverse index in sync so swap/volume/ordering know about it
+        if (newExMuscles.length > 0) {
+            EXERCISE_TO_MUSCLES[name] = newExMuscles.slice();
+        }
+
+        closeAddExerciseForm();
+        showToast(`Added "${name}" to your ${newExEnv} exercises ✓`);
+
+        // If a workout is open, drop the new exercise straight into it
+        const activeEl = document.getElementById('workout-active');
+        if (activeEl && !activeEl.classList.contains('hidden')) {
+            addExercise(name);
+        }
+        renderExerciseDatabase(); // refresh the settings list if it's open
+    }
+
+    // ==========================================================================
+    // EXERCISE DATABASE (Settings) — pick what's available at your gym
+    // ==========================================================================
+    let dbEnv = 'gym';
+
+    function openExerciseDatabase() {
+        dbEnv = state.workoutEnv || 'gym';
+        setDbEnv(dbEnv);
+        const search = document.getElementById('db-search');
+        if (search) search.value = '';
+        document.getElementById('exercise-db-modal').style.display = 'flex';
+        renderExerciseDatabase();
+    }
+
+    function closeExerciseDatabase() {
+        document.getElementById('exercise-db-modal').style.display = 'none';
+        updateExerciseDbStatus();
+    }
+
+    function setDbEnv(env) {
+        dbEnv = env;
+        const g = document.getElementById('db-env-gym');
+        const h = document.getElementById('db-env-home');
+        if (g) g.className = `flex-1 py-2 rounded-lg text-xs font-black uppercase ${env === 'gym' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+        if (h) h.className = `flex-1 py-2 rounded-lg text-xs font-black uppercase ${env === 'home' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`;
+        renderExerciseDatabase();
+    }
+
+    /**
+     * Every exercise that EXISTS for an environment (built-in + custom), ignoring
+     * the disabled list — because the settings screen must show disabled ones too
+     * so they can be turned back on.
+     */
+    function getAllExercisesForEnv(env) {
+        const base = EXERCISE_DB[env] || {};
+        const byMuscle = {};
+        SPECIFIC_MUSCLES.forEach(m => {
+            const b = base[m];
+            if (!b) return;
+            byMuscle[m] = new Set([...(b.compound || []), ...(b.isolation || [])]);
+        });
+        // Anything in a focus group but not a muscle group goes under "Other"
+        const other = new Set();
+        Object.keys(base).forEach(key => {
+            if (SPECIFIC_MUSCLES.indexOf(key) >= 0) return;
+            [...(base[key].compound || []), ...(base[key].isolation || [])].forEach(e => {
+                const inMuscle = SPECIFIC_MUSCLES.some(m => byMuscle[m] && byMuscle[m].has(e));
+                if (!inMuscle) other.add(e);
+            });
+        });
+
+        // Merge the user's custom exercises in
+        (state.customExercises || []).forEach(ce => {
+            if ((ce.env || 'gym') !== env) return;
+            if (ce.muscles && ce.muscles.length > 0) {
+                ce.muscles.forEach(m => {
+                    if (!byMuscle[m]) byMuscle[m] = new Set();
+                    byMuscle[m].add(ce.name);
+                });
+            } else {
+                other.add(ce.name);
+            }
+        });
+
+        const out = {};
+        SPECIFIC_MUSCLES.forEach(m => { if (byMuscle[m] && byMuscle[m].size) out[m] = Array.from(byMuscle[m]).sort(); });
+        if (other.size) out['Other'] = Array.from(other).sort();
+        return out;
+    }
+
+    function isCustomExercise(name, env) {
+        return (state.customExercises || []).some(c =>
+            c.name === name && (c.env || 'gym') === env);
+    }
+
+    function renderExerciseDatabase() {
+        const list = document.getElementById('exercise-db-list');
+        if (!list) return;
+        const searchEl = document.getElementById('db-search');
+        const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
+
+        const grouped = getAllExercisesForEnv(dbEnv);
+        const disabled = (state.disabledExercises && state.disabledExercises[dbEnv]) || [];
+
+        let total = 0, enabled = 0;
+        const sections = [];
+
+        Object.keys(grouped).forEach(muscle => {
+            const matches = grouped[muscle].filter(e => !q || e.toLowerCase().includes(q));
+            if (matches.length === 0) return;
+
+            const rows = matches.map(ex => {
+                total++;
+                const isOff = disabled.indexOf(ex) >= 0;
+                if (!isOff) enabled++;
+                const custom = isCustomExercise(ex, dbEnv);
+                const safe = ex.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `
+                    <label class="flex items-center justify-between gap-3 p-2.5 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
+                        <span class="text-sm font-medium flex-1 min-w-0 truncate">
+                            ${escapeHtml(ex)}
+                            ${custom ? '<span class="ml-1 text-[9px] font-black uppercase text-indigo-600">mine</span>' : ''}
+                        </span>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            ${custom ? `<button onclick="event.preventDefault(); deleteCustomExercise('${safe}')" class="text-rose-500 text-[10px] font-bold">Delete</button>` : ''}
+                            <input type="checkbox" ${isOff ? '' : 'checked'} onchange="toggleExerciseAvailable('${safe}', this.checked)" class="w-5 h-5 accent-indigo-600">
+                        </div>
+                    </label>`;
+            }).join('');
+
+            sections.push(`
+                <div>
+                    <h4 class="text-[11px] font-black uppercase text-slate-400 mb-2">${escapeHtml(muscle)}</h4>
+                    <div class="space-y-1.5">${rows}</div>
+                </div>`);
+        });
+
+        list.innerHTML = sections.length
+            ? sections.join('')
+            : '<p class="text-sm text-slate-400 text-center py-6">No exercises match that search.</p>';
+
+        const countEl = document.getElementById('db-count');
+        if (countEl) countEl.textContent = `${enabled} of ${total} exercises enabled for ${dbEnv === 'home' ? 'Home' : 'Gym'}`;
+    }
+
+    function toggleExerciseAvailable(name, isAvailable) {
+        if (!state.disabledExercises) state.disabledExercises = { gym: [], home: [] };
+        if (!state.disabledExercises[dbEnv]) state.disabledExercises[dbEnv] = [];
+        const arr = state.disabledExercises[dbEnv];
+        const i = arr.indexOf(name);
+        if (isAvailable) {
+            if (i >= 0) arr.splice(i, 1);   // enable → remove from disabled list
+        } else {
+            if (i < 0) arr.push(name);      // disable → add to disabled list
+        }
+        saveState();
+        syncExercisePrefs(); // account-level, not device-level
+        renderExerciseDatabase();
+    }
+
+    function dbSelectAll(enable) {
+        if (!state.disabledExercises) state.disabledExercises = { gym: [], home: [] };
+        const grouped = getAllExercisesForEnv(dbEnv);
+        const all = [];
+        Object.values(grouped).forEach(list => all.push(...list));
+        state.disabledExercises[dbEnv] = enable ? [] : Array.from(new Set(all));
+        saveState();
+        syncExercisePrefs();
+        renderExerciseDatabase();
+        showToast(enable ? 'All exercises enabled' : 'All exercises disabled');
+    }
+
+    function deleteCustomExercise(name) {
+        if (!confirm(`Delete "${name}" from your exercises?`)) return;
+        state.customExercises = (state.customExercises || []).filter(c =>
+            !(c.name === name && (c.env || 'gym') === dbEnv));
+        saveState();
+        syncExercisePrefs();
+        renderExerciseDatabase();
+        showToast(`Deleted "${name}"`);
+    }
+
+    function updateExerciseDbStatus() {
+        const el = document.getElementById('exercise-db-status');
+        if (!el) return;
+        const env = state.workoutEnv || 'gym';
+        const grouped = getAllExercisesForEnv(env);
+        let total = 0;
+        Object.values(grouped).forEach(l => { total += l.length; });
+        const disabled = ((state.disabledExercises && state.disabledExercises[env]) || []).length;
+        const custom = (state.customExercises || []).length;
+        el.textContent = `${total - disabled} of ${total} enabled` + (custom ? ` · ${custom} custom` : '');
+    }
+
+    // ==========================================================================
     // REVERSE INDEX: which muscles each exercise targets.
     // Built once from the EXERCISE_DB so a swap can find alternatives that hit
     // the same muscle. Only the *specific muscle* keys count (Chest, Back, ...)
@@ -4039,7 +4636,7 @@
      * Cardio/core/unknown exercises fall to the end.
      */
     function orderWorkoutExercises(list, env) {
-        const envDb = EXERCISE_DB[env] || {};
+        const envDb = getEnvDB(env); // custom merged in, disabled filtered out
         const priorityIndex = {};
         MUSCLE_PRIORITY_ORDER.forEach((m, i) => { priorityIndex[m] = i; });
         const DEFAULT_PRIO = MUSCLE_PRIORITY_ORDER.length + 1;
@@ -4300,7 +4897,7 @@
         // Restrict the whole candidate pool to the ACTIVE environment so a gym
         // swap never returns a home exercise and vice versa.
         const env = (currentWorkoutContext && currentWorkoutContext.env) || state.workoutEnv || 'gym';
-        const envDb = EXERCISE_DB[env] || {};
+        const envDb = getEnvDB(env); // custom merged in, disabled filtered out
 
         // Set of every exercise that exists in the active environment
         const envExercises = new Set();
@@ -4756,7 +5353,7 @@
                 // Strictly use the SELECTED environment's exercises only — no cross-over
                 // between gym and home, so a gym workout never shows home exercises
                 // and vice versa.
-                const exercises = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                const exercises = getEnvDB(env)[muscleKey];
                 if (!exercises || ((exercises.compound || []).length + (exercises.isolation || []).length === 0)) {
                     missingMuscles.push(muscleKey);
                     return;
@@ -4829,6 +5426,11 @@
         workoutAccumulatedSeconds = 0; // fresh workout — no banked time yet
         workoutTimer = setInterval(updateWorkoutTimer, 1000);
 
+        // Push a history entry so an accidental browser Back / swipe-back fires
+        // popstate and we can intercept it with the "lose workout?" warning
+        // instead of the user silently navigating away.
+        try { history.pushState({ workout: true }, ''); } catch (e) { /* ignore */ }
+
         // MANUAL ENTRY → also steps through one exercise at a time.
         // For Specific Muscle we pre-build the exercise list from the chosen muscles.
         // For every other focus, Manual means "I'll pick my own", so we start with a
@@ -4844,7 +5446,7 @@
                     : { compound: 1, isolation: 1 };
                 const queued = [];
                 selectedMuscles.forEach(muscleKey => {
-                    const ex = EXERCISE_DB[env] && EXERCISE_DB[env][muscleKey];
+                    const ex = getEnvDB(env)[muscleKey];
                     if (!ex) return;
                     queued.push(...weightedSample(ex.compound || [], perMuscle.compound));
                     queued.push(...weightedSample(ex.isolation || [], perMuscle.isolation));
@@ -4909,7 +5511,10 @@
                 <div id="wizard-progress" class="text-xs font-bold text-slate-400 flex-shrink-0 px-2"></div>
                 <button onclick="wizardNext()" id="wizard-next-btn" class="flex-1 bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">Next →</button>
             </div>
-            <button onclick="wizardAddExercise()" id="wizard-add-btn" class="w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-indigo-400 hover:text-indigo-500">+ Add Another Exercise</button>`;
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="wizardAddExercise()" id="wizard-add-btn" class="p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-indigo-400 hover:text-indigo-500">+ Add Exercise</button>
+                <button onclick="openAddExerciseForm()" id="wizard-new-btn" class="p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-indigo-400 hover:text-indigo-500">✎ Create New</button>
+            </div>`;
         // Insert the nav right after the exercise list
         const list = document.getElementById('exercise-list');
         if (list && list.parentNode) {
@@ -4993,10 +5598,10 @@
      * - No active context → all exercises (used as fallback)
      */
     function getExercisesForCurrentFocus() {
-        if (!currentWorkoutContext) return ALL_EXERCISES;
+        if (!currentWorkoutContext) return getAvailableExercises(state.workoutEnv || 'gym');
         const ctx = currentWorkoutContext;
         const env = ctx.env || 'gym';
-        const envDb = EXERCISE_DB[env] || {};
+        const envDb = getEnvDB(env); // custom merged in, disabled filtered out
 
         // Specific muscle workout: exercises that target any selected muscle,
         // drawn ONLY from the active environment (gym stays gym, home stays home).
@@ -5028,7 +5633,7 @@
             (group.compound || []).forEach(ex => envSet.add(ex));
             (group.isolation || []).forEach(ex => envSet.add(ex));
         });
-        return envSet.size > 0 ? Array.from(envSet).sort() : ALL_EXERCISES;
+        return envSet.size > 0 ? Array.from(envSet).sort() : getAvailableExercises(env);
     }
 
     function currentWorkoutElapsed() {
@@ -5380,7 +5985,7 @@
         if (!dropdown) return;
 
         // Filtered list by default; full list if user toggled "show all" or there's no context
-        const list = showAllExercisesInPicker ? ALL_EXERCISES : getExercisesForCurrentFocus();
+        const list = showAllExercisesInPicker ? getAvailableExercises(state.workoutEnv || 'gym') : getExercisesForCurrentFocus();
         const rows = list.map(ex => renderDropdownRow(id, ex)).join('');
         dropdown.innerHTML = rows + renderDropdownFooter(id);
         dropdown.classList.remove('hidden');
@@ -5390,14 +5995,14 @@
         const dropdown = document.getElementById(`dropdown-${id}`);
         if (!dropdown) return;
 
-        const base = showAllExercisesInPicker ? ALL_EXERCISES : getExercisesForCurrentFocus();
+        const base = showAllExercisesInPicker ? getAvailableExercises(state.workoutEnv || 'gym') : getExercisesForCurrentFocus();
         const q = query.toLowerCase();
         const filtered = base.filter(ex => ex.toLowerCase().includes(q));
 
         if (filtered.length === 0 && query.length > 0) {
             // Special case: if the filtered list has no matches but the *full* list does,
             // surface that so the user knows to toggle "show all" if they really want it.
-            const fullMatches = !showAllExercisesInPicker && ALL_EXERCISES.some(ex => ex.toLowerCase().includes(q));
+            const fullMatches = !showAllExercisesInPicker && getAvailableExercises(state.workoutEnv || 'gym').some(ex => ex.toLowerCase().includes(q));
             const hint = fullMatches
                 ? `<div class="p-3 text-slate-400 text-sm italic text-center">No matches in current focus.<br>Tap below to show all exercises.</div>`
                 : `<div class="p-3 text-slate-400 text-sm italic text-center">No matches — keep typing for custom name</div>`;
@@ -5811,18 +6416,70 @@
         showToast(`Workout saved! 🏋️ (${exCount} exercises)`);
     }
 
+    // ==========================================================================
+    // WORKOUT LOSS GUARD
+    // ==========================================================================
+    // Stops an in-progress workout being thrown away by accident. Anything that
+    // would discard the workout routes through here first and shows a modal with
+    // "Go Back" / "Continue & Discard".
+
+    let pendingLoseWorkoutAction = null;
+
+    /** True if a workout is currently open with something actually logged in it. */
+    function workoutInProgress() {
+        const active = document.getElementById('workout-active');
+        if (!active || active.classList.contains('hidden')) return false;
+        return true;
+    }
+
+    /**
+     * Ask before discarding. If no workout is running, just runs the action.
+     * @param {Function} action - what to do if the user confirms the loss
+     * @param {String} [msg]    - optional custom message
+     */
+    function guardWorkoutLoss(action, msg) {
+        if (!workoutInProgress()) { action(); return; }
+        pendingLoseWorkoutAction = action;
+        const msgEl = document.getElementById('lose-workout-msg');
+        if (msgEl && msg) msgEl.textContent = msg;
+        else if (msgEl) msgEl.textContent = "You have a workout in progress. Continuing will discard it and everything you've logged.";
+        const modal = document.getElementById('lose-workout-modal');
+        if (modal) modal.style.display = 'flex';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    /** "Go Back" — keep the workout, do nothing. */
+    function dismissLoseWorkout() {
+        pendingLoseWorkoutAction = null;
+        const modal = document.getElementById('lose-workout-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    /** "Continue & Discard" — run the action that discards the workout. */
+    function confirmLoseWorkout() {
+        const action = pendingLoseWorkoutAction;
+        pendingLoseWorkoutAction = null;
+        const modal = document.getElementById('lose-workout-modal');
+        if (modal) modal.style.display = 'none';
+        if (typeof action === 'function') action();
+    }
+
+    /** Actually tear down the workout (used by the × button once confirmed). */
+    function discardWorkoutNow() {
+        clearInterval(workoutTimer);
+        clearActiveWorkout();
+        exitWizardMode();
+        workoutAccumulatedSeconds = 0;
+        workoutStartTime = null;
+        document.getElementById('workout-setup').classList.remove('hidden');
+        document.getElementById('workout-active').classList.add('hidden');
+        currentWorkoutContext = null;
+        showAllExercisesInPicker = false;
+        showToast('Workout discarded');
+    }
+
     function cancelWorkout() {
-        if (confirm('Discard workout?')) {
-            clearInterval(workoutTimer);
-            clearActiveWorkout(); // remove the in-progress save
-            exitWizardMode();
-            workoutAccumulatedSeconds = 0;
-            workoutStartTime = null;
-            document.getElementById('workout-setup').classList.remove('hidden');
-            document.getElementById('workout-active').classList.add('hidden');
-            currentWorkoutContext = null;
-            showAllExercisesInPicker = false;
-        }
+        guardWorkoutLoss(discardWorkoutNow);
     }
 
     // Close exercise dropdowns on outside click
@@ -9086,6 +9743,7 @@
         // About You button status (inputs live inside the modal, not here)
         renderAboutYouStatus();
         renderMaintenanceDisplay();
+        updateExerciseDbStatus(); // "X of Y enabled · N custom" on the Exercise Database button
 
         // AI coach enabled
         const aiCheck = document.getElementById('ai-coach-enabled');
@@ -10155,6 +10813,33 @@
             }
         });
         window.addEventListener('beforeunload', bankAndPersist);
+
+        // ---- REFRESH / CLOSE WARNING ----
+        // The browser only permits its own native dialog here (a custom modal can't
+        // block an unload), so we trigger that. It gives the user a Leave/Cancel
+        // choice before a refresh or tab-close can throw the workout away.
+        window.addEventListener('beforeunload', (e) => {
+            if (workoutInProgress()) {
+                bankAndPersist();          // save first, so even if they leave, it's recoverable
+                e.preventDefault();
+                e.returnValue = '';        // required for the native prompt to show
+                return '';
+            }
+        });
+
+        // ---- BACK-BUTTON / SWIPE-BACK GUARD ----
+        // Catch an accidental browser Back while a workout is open and show our own
+        // "Go Back / Continue & Discard" modal instead of silently leaving.
+        window.addEventListener('popstate', () => {
+            if (workoutInProgress()) {
+                // Immediately re-push so we stay on the page while we ask
+                history.pushState({ workout: true }, '');
+                guardWorkoutLoss(() => {
+                    discardWorkoutNow();
+                    history.back(); // they chose to leave — let the back actually happen
+                }, 'Going back will discard the workout you have in progress and everything you\'ve logged.');
+            }
+        });
 
         // If a workout was in progress last time, drop straight back into it.
         restoreActiveWorkout();
