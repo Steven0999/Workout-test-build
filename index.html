@@ -2743,6 +2743,49 @@
         </div>
     </div>
 
+    <!-- COACH: ASSIGN A WORKOUT TO A CLIENT -->
+    <div id="assign-workout-modal" class="modal-overlay" style="z-index:200;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black">Assign Workout</h3>
+                <button onclick="closeAssignWorkout()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <input id="assign-workout-title" type="text" placeholder="Workout name (e.g. Push Day A)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500 mb-4">
+            <div id="assign-exercise-list" class="flex-1 overflow-y-auto space-y-2 mb-4 min-h-[120px]"></div>
+            <button onclick="addAssignExercise()" class="w-full p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-sm mb-3 hover:border-indigo-400">+ Add Exercise</button>
+            <button onclick="saveAssignedWorkout()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Assign to Client</button>
+        </div>
+    </div>
+
+    <!-- CLIENT: WORKOUTS ASSIGNED BY COACH -->
+    <div id="assigned-workouts-modal" class="modal-overlay" style="z-index:200;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black">My Plan</h3>
+                <button onclick="closeAssignedWorkouts()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">Workouts your coach has set for you. Tap Start to follow one.</p>
+            <div id="assigned-workouts-body" class="flex-1 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- CLIENT: SHARE DAYS WITH COACH -->
+    <div id="share-days-modal" class="modal-overlay" style="z-index:200;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black">Share With Coach</h3>
+                <button onclick="closeShareDays()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-4">
+                <button onclick="setShareTab('workouts')" id="share-tab-workouts" class="flex-1 py-2 rounded-lg text-xs font-black uppercase bg-white text-indigo-600 shadow-sm">Workouts</button>
+                <button onclick="setShareTab('nutrition')" id="share-tab-nutrition" class="flex-1 py-2 rounded-lg text-xs font-black uppercase text-slate-400">Nutrition</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Tick the days you want your coach to see. Untick to stop sharing.</p>
+            <div id="share-days-options" class="flex-1 overflow-y-auto space-y-2 mb-4 min-h-[150px]"></div>
+            <button onclick="saveSharedDays()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Save Sharing</button>
+        </div>
+    </div>
+
     <!-- COMPARE PROGRESS — body metrics & lifts -->
     <div id="compare-progress-modal" class="modal-overlay">
         <div class="bg-white w-full max-w-2xl rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
@@ -3364,7 +3407,7 @@
             // the source of truth for the client list — members set their own
             // coachUid when they approve, and each user only ever writes their own
             // doc, so nothing is blocked by the security rules.
-            const snap = await db.collection('users').where('coachUid', '==', currentUser.uid).get();
+            const snap = await db.collection('users').where('coachUid', '==', currentUser.uid).limit(50).get();
 
             if (snap.empty) {
                 listEl.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No clients yet. Add one above by email — once they approve, they\'ll appear here.</p>';
@@ -3531,6 +3574,23 @@
                 <div class="space-y-2">${recentNutrition}</div>
             </div>
 
+            <!-- Days the client has chosen to share with the coach -->
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-1">Shared With You</h3>
+                <p class="text-xs text-slate-400 mb-4">Workouts &amp; nutrition ${escapeHtml(name)} has shared.</p>
+                <div id="shared-days-list" class="space-y-2">
+                    <p class="text-sm text-slate-400 text-center py-3">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Coach assigns a workout to this client -->
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-1">Assign a Workout</h3>
+                <p class="text-xs text-slate-400 mb-4">Build a workout for ${escapeHtml(name)}. It appears in their app to follow.</p>
+                <div id="assigned-workouts-list" class="space-y-2 mb-4"></div>
+                <button onclick="openAssignWorkout()" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold hover:bg-indigo-700">+ New Assigned Workout</button>
+            </div>
+
             <div class="glass-card rounded-[2.5rem] p-6">
                 <h3 class="text-lg font-black mb-1">Personal Training Notes</h3>
                 <p class="text-xs text-slate-400 mb-4">A shared conversation between you and ${escapeHtml(name)}.</p>
@@ -3546,6 +3606,179 @@
         `;
         lucide.createIcons();
         loadNotesThread();
+        renderSharedDays();
+        renderAssignedWorkoutsForCoach();
+    }
+
+    // ==========================================================================
+    // COACH ↔ CLIENT SHARING & ASSIGNED WORKOUTS
+    // ==========================================================================
+
+    // ---- COACH SIDE: show what the client has shared ----
+    function renderSharedDays() {
+        const box = document.getElementById('shared-days-list');
+        if (!box || !viewingClientData) return;
+        const snap = viewingClientData.data || {};
+        const sharing = snap.sharing || {};
+        const sharedWorkoutDates = sharing.workouts || [];
+        const sharedNutritionDates = sharing.nutrition || [];
+
+        const workouts = snap.workoutHistory || [];
+        const nutrition = snap.nutritionHistory || [];
+
+        let html = '';
+
+        if (sharedWorkoutDates.length > 0) {
+            html += '<p class="text-[10px] font-black uppercase text-slate-400 mt-1 mb-1">Shared Workouts</p>';
+            sharedWorkoutDates.forEach(date => {
+                const w = workouts.find(x => x.date === date);
+                if (!w) return;
+                const exCount = (w.exercises || []).length;
+                const setCount = (w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0);
+                html += `<div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm">${escapeHtml(w.focus || 'Workout')}</span>
+                        <span class="text-xs text-slate-400">${escapeHtml(date)}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets${w.duration ? ' · ' + escapeHtml(w.duration) : ''}</p>
+                    <div class="mt-2 space-y-1">${(w.exercises || []).map(ex =>
+                        `<p class="text-xs"><b>${escapeHtml(ex.name || '')}</b> — ${(ex.sets || []).map(s => `${s.weight || 0}kg×${s.reps || 0}`).join(', ')}</p>`
+                    ).join('')}</div>
+                </div>`;
+            });
+        }
+
+        if (sharedNutritionDates.length > 0) {
+            html += '<p class="text-[10px] font-black uppercase text-slate-400 mt-3 mb-1">Shared Nutrition</p>';
+            sharedNutritionDates.forEach(date => {
+                const n = nutrition.find(x => x.date === date);
+                if (!n) return;
+                const meals = (n.meals || []).map(m =>
+                    `<p class="text-xs">${escapeHtml(m.name || 'Food')} — ${Math.round(m.calories || 0)} kcal</p>`
+                ).join('');
+                html += `<div class="bg-slate-50 p-3 rounded-xl">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-sm">${escapeHtml(date)}</span>
+                        <span class="text-xs text-slate-400">${Math.round(n.calories || 0)} kcal · ${Math.round(n.protein || 0)}g P</span>
+                    </div>
+                    ${meals || '<p class="text-xs text-slate-400">No meal detail</p>'}
+                </div>`;
+            });
+        }
+
+        box.innerHTML = html || '<p class="text-sm text-slate-400 text-center py-3">Nothing shared yet. Your client can share days from their app.</p>';
+    }
+
+    // ---- COACH SIDE: assign workouts ----
+    let assignExercises = []; // [{name, sets:[{weight,reps}]}] being built
+
+    function renderAssignedWorkoutsForCoach() {
+        const box = document.getElementById('assigned-workouts-list');
+        if (!box || !viewingClientData) return;
+        const assigned = (viewingClientData.data || {}).assignedWorkouts || [];
+        if (assigned.length === 0) {
+            box.innerHTML = '<p class="text-sm text-slate-400 text-center py-2">None assigned yet.</p>';
+            return;
+        }
+        box.innerHTML = assigned.slice().reverse().map(w => `
+            <div class="bg-indigo-50 p-3 rounded-xl">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-sm">${escapeHtml(w.title || 'Workout')}</span>
+                    <span class="text-[10px] text-slate-400">${escapeHtml((w.assignedAt || '').split('T')[0])}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">${(w.exercises || []).map(e => escapeHtml(e.name)).join(', ')}</p>
+            </div>`).join('');
+    }
+
+    function openAssignWorkout() {
+        assignExercises = [];
+        document.getElementById('assign-workout-title').value = '';
+        renderAssignExerciseList();
+        document.getElementById('assign-workout-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeAssignWorkout() {
+        document.getElementById('assign-workout-modal').style.display = 'none';
+    }
+
+    function addAssignExercise() {
+        assignExercises.push({ name: '', sets: [{ weight: '', reps: '' }] });
+        renderAssignExerciseList();
+    }
+
+    function addAssignSet(exIdx) {
+        assignExercises[exIdx].sets.push({ weight: '', reps: '' });
+        renderAssignExerciseList();
+    }
+
+    function updateAssignField(exIdx, field, value, setIdx) {
+        if (field === 'name') assignExercises[exIdx].name = value;
+        else assignExercises[exIdx].sets[setIdx][field] = value;
+    }
+
+    function removeAssignExercise(exIdx) {
+        assignExercises.splice(exIdx, 1);
+        renderAssignExerciseList();
+    }
+
+    function renderAssignExerciseList() {
+        const box = document.getElementById('assign-exercise-list');
+        if (!box) return;
+        if (assignExercises.length === 0) {
+            box.innerHTML = '<p class="text-sm text-slate-400 text-center py-3">Add exercises to build the workout.</p>';
+            return;
+        }
+        box.innerHTML = assignExercises.map((ex, i) => `
+            <div class="bg-slate-50 p-3 rounded-xl">
+                <div class="flex gap-2 mb-2">
+                    <input value="${escapeHtml(ex.name)}" oninput="updateAssignField(${i}, 'name', this.value)" placeholder="Exercise name" class="flex-1 p-2 rounded-lg border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm">
+                    <button onclick="removeAssignExercise(${i})" class="text-rose-500 text-xs font-bold px-2">✕</button>
+                </div>
+                ${ex.sets.map((s, si) => `
+                    <div class="flex gap-2 mb-1 items-center">
+                        <span class="text-xs text-slate-400 w-10">Set ${si + 1}</span>
+                        <input value="${s.weight}" oninput="updateAssignField(${i}, 'weight', this.value, ${si})" placeholder="kg" inputmode="decimal" class="w-20 p-2 rounded-lg text-center border-2 border-transparent focus:border-indigo-500 outline-none text-sm">
+                        <span class="text-xs text-slate-400">×</span>
+                        <input value="${s.reps}" oninput="updateAssignField(${i}, 'reps', this.value, ${si})" placeholder="reps" inputmode="numeric" class="w-20 p-2 rounded-lg text-center border-2 border-transparent focus:border-indigo-500 outline-none text-sm">
+                    </div>`).join('')}
+                <button onclick="addAssignSet(${i})" class="text-indigo-600 text-xs font-bold mt-1">+ Add set</button>
+            </div>`).join('');
+    }
+
+    async function saveAssignedWorkout() {
+        if (!viewingClientData) return;
+        const title = document.getElementById('assign-workout-title').value.trim() || 'Coach Workout';
+        const clean = assignExercises
+            .filter(ex => ex.name.trim())
+            .map(ex => ({
+                name: ex.name.trim(),
+                sets: ex.sets.map(s => ({ weight: s.weight || '', reps: s.reps || '' }))
+            }));
+        if (clean.length === 0) { showToast('Add at least one exercise'); return; }
+
+        const workout = {
+            title: title,
+            exercises: clean,
+            assignedBy: firebaseUserData.name || 'Coach',
+            assignedAt: new Date().toISOString(),
+            id: 'aw_' + Date.now()
+        };
+
+        try {
+            await db.collection('users').doc(viewingClientData.uid).update({
+                assignedWorkouts: firebase.firestore.FieldValue.arrayUnion(workout)
+            });
+            // keep local copy in sync so the list updates immediately
+            if (!viewingClientData.data.assignedWorkouts) viewingClientData.data.assignedWorkouts = [];
+            viewingClientData.data.assignedWorkouts.push(workout);
+            closeAssignWorkout();
+            renderAssignedWorkoutsForCoach();
+            showToast('Workout assigned ✓');
+        } catch (error) {
+            console.error('Assign failed:', error);
+            showToast('Assign failed: ' + (error.code || error.message || 'unknown'), 6000);
+        }
     }
 
     function backToCoachDashboard() {
@@ -3672,8 +3905,9 @@
                     </div>`).join('');
             }
             if (coachUid) {
+                const assignedCount = (me.assignedWorkouts || []).length;
                 html += `
-                    <div class="bg-slate-50 p-4 rounded-2xl flex items-center gap-3">
+                    <div class="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 mb-3">
                         <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">
                             ${escapeHtml((coachName || 'C').charAt(0).toUpperCase())}
                         </div>
@@ -3682,6 +3916,14 @@
                             <p class="font-bold truncate">${escapeHtml(coachName || 'Coach')}</p>
                         </div>
                         <button onclick="openMemberNotes()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Notes</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="openShareDays()" class="bg-emerald-600 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> Share Days
+                        </button>
+                        <button onclick="openAssignedWorkouts()" class="bg-slate-900 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i> My Plan${assignedCount ? ` (${assignedCount})` : ''}
+                        </button>
                     </div>`;
             } else if (pending.length === 0) {
                 html += '<p class="text-sm text-slate-400">No coach connected. When a coach sends a request, it\'ll appear here to approve.</p>';
@@ -3730,6 +3972,185 @@
             console.error('Error declining:', error);
             showToast('Could not decline request');
         }
+    }
+
+    // ---- CLIENT SIDE: share workout / nutrition days with the coach ----
+    let shareTab = 'workouts';
+    let shareSelection = { workouts: [], nutrition: [] };
+
+    async function openShareDays() {
+        if (!firebaseUserData.coachUid) { showToast('No coach connected'); return; }
+        // Start from what's already shared
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            const sharing = (meDoc.data() || {}).sharing || {};
+            shareSelection = {
+                workouts: (sharing.workouts || []).slice(),
+                nutrition: (sharing.nutrition || []).slice()
+            };
+        } catch (e) { shareSelection = { workouts: [], nutrition: [] }; }
+        setShareTab('workouts');
+        document.getElementById('share-days-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeShareDays() {
+        document.getElementById('share-days-modal').style.display = 'none';
+    }
+
+    function setShareTab(tab) {
+        shareTab = tab;
+        const w = document.getElementById('share-tab-workouts');
+        const n = document.getElementById('share-tab-nutrition');
+        const on = 'flex-1 py-2 rounded-lg text-xs font-black uppercase bg-white text-indigo-600 shadow-sm';
+        const off = 'flex-1 py-2 rounded-lg text-xs font-black uppercase text-slate-400';
+        if (w) w.className = (tab === 'workouts') ? on : off;
+        if (n) n.className = (tab === 'nutrition') ? on : off;
+        renderShareOptions();
+    }
+
+    function renderShareOptions() {
+        const box = document.getElementById('share-days-options');
+        if (!box) return;
+        const list = shareTab === 'workouts'
+            ? (state.workoutHistory || [])
+            : (state.nutritionHistory || []);
+        if (list.length === 0) {
+            box.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">No ${shareTab} logged yet.</p>`;
+            return;
+        }
+        box.innerHTML = list.slice(0, 60).map(item => {
+            const date = item.date;
+            const selected = shareSelection[shareTab].indexOf(date) >= 0;
+            const summary = shareTab === 'workouts'
+                ? `${escapeHtml(item.focus || 'Workout')} · ${(item.exercises || []).length} exercises`
+                : `${Math.round(item.calories || 0)} kcal · ${Math.round(item.protein || 0)}g protein`;
+            return `
+                <label class="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer">
+                    <div class="min-w-0">
+                        <p class="font-bold text-sm">${escapeHtml(date)}</p>
+                        <p class="text-xs text-slate-400 truncate">${summary}</p>
+                    </div>
+                    <input type="checkbox" ${selected ? 'checked' : ''} onchange="toggleShareDay('${date}', this.checked)" class="w-5 h-5 accent-indigo-600 flex-shrink-0">
+                </label>`;
+        }).join('');
+    }
+
+    function toggleShareDay(date, on) {
+        const arr = shareSelection[shareTab];
+        const i = arr.indexOf(date);
+        if (on) { if (i < 0) arr.push(date); }
+        else { if (i >= 0) arr.splice(i, 1); }
+    }
+
+    async function saveSharedDays() {
+        try {
+            await db.collection('users').doc(currentUser.uid).update({
+                sharing: {
+                    workouts: shareSelection.workouts,
+                    nutrition: shareSelection.nutrition
+                }
+            });
+            // Make sure the shared days' full data is in the cloud snapshot for the coach
+            await pushMemberDataToCloud();
+            closeShareDays();
+            const total = shareSelection.workouts.length + shareSelection.nutrition.length;
+            showToast(total > 0 ? `Sharing ${total} day${total > 1 ? 's' : ''} with your coach ✓` : 'Sharing updated');
+        } catch (error) {
+            console.error('Share failed:', error);
+            showToast('Could not save sharing: ' + (error.code || error.message || 'unknown'), 6000);
+        }
+    }
+
+    // ---- CLIENT SIDE: view & use workouts the coach assigned ----
+    async function openAssignedWorkouts() {
+        if (!firebaseUserData.coachUid) { showToast('No coach connected'); return; }
+        let assigned = [];
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            assigned = (meDoc.data() || {}).assignedWorkouts || [];
+        } catch (e) { /* ignore */ }
+
+        const box = document.getElementById('assigned-workouts-body');
+        if (assigned.length === 0) {
+            box.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Your coach hasn\'t assigned any workouts yet.</p>';
+        } else {
+            box.innerHTML = assigned.slice().reverse().map((w, idx) => {
+                const realIdx = assigned.length - 1 - idx;
+                return `
+                <div class="bg-slate-50 p-4 rounded-2xl mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-black">${escapeHtml(w.title || 'Workout')}</p>
+                            <p class="text-[10px] text-slate-400">From ${escapeHtml(w.assignedBy || 'Coach')} · ${escapeHtml((w.assignedAt || '').split('T')[0])}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-1 mb-3">
+                        ${(w.exercises || []).map(ex => `
+                            <p class="text-sm"><b>${escapeHtml(ex.name)}</b> — ${(ex.sets || []).map(s => `${s.weight || '—'}kg×${s.reps || '—'}`).join(', ')}</p>
+                        `).join('')}
+                    </div>
+                    <button onclick="startAssignedWorkout(${realIdx})" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold text-sm">Start This Workout</button>
+                </div>`;
+            }).join('');
+        }
+        document.getElementById('assigned-workouts-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeAssignedWorkouts() {
+        document.getElementById('assigned-workouts-modal').style.display = 'none';
+    }
+
+    async function startAssignedWorkout(idx) {
+        let assigned = [];
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            assigned = (meDoc.data() || {}).assignedWorkouts || [];
+        } catch (e) { /* ignore */ }
+        const w = assigned[idx];
+        if (!w) { showToast('Workout not found'); return; }
+
+        closeAssignedWorkouts();
+        switchTab('workout');
+
+        // Set up the active workout view directly with the assigned exercises
+        currentWorkoutContext = { env: state.workoutEnv || 'gym', focus: w.title || 'Coach Workout', muscles: null };
+        workoutStartTime = Date.now();
+        workoutAccumulatedSeconds = 0;
+        clearInterval(workoutTimer);
+        workoutTimer = setInterval(updateWorkoutTimer, 1000);
+        try { history.pushState({ workout: true }, ''); } catch (e) {}
+
+        document.getElementById('workout-setup').classList.add('hidden');
+        document.getElementById('workout-active').classList.remove('hidden');
+        const titleEl = document.getElementById('active-workout-title');
+        if (titleEl) titleEl.innerText = '📋 ' + (w.title || 'Coach Workout');
+        document.getElementById('exercise-list').innerHTML = '';
+
+        (w.exercises || []).forEach(ex => {
+            addExercise(ex.name || '');
+            const cards = document.querySelectorAll('#exercise-list > div');
+            const card = cards[cards.length - 1];
+            if (!card) return;
+            const setsContainer = card.querySelector('[id^="sets-"]');
+            const exId = setsContainer ? setsContainer.id.replace('sets-', '') : null;
+            (ex.sets || []).forEach(s => {
+                if (exId) addSetToExercise(exId, ex.name ? getPersonalRecord(ex.name) : null, ex.name || '');
+                const rows = card.querySelectorAll('.set-row');
+                const row = rows[rows.length - 1];
+                if (row) {
+                    const w2 = row.querySelector('.set-weight');
+                    const r2 = row.querySelector('.set-reps');
+                    if (w2) w2.value = s.weight || '';
+                    if (r2) r2.value = s.reps || '';
+                }
+            });
+        });
+        // Step through it one exercise at a time like other workouts
+        setTimeout(() => enterWizardMode(), 120);
+        persistActiveWorkout();
+        showToast('Following your coach\'s workout 💪');
     }
 
     function openMemberNotes() {
