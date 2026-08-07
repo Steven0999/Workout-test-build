@@ -1867,6 +1867,15 @@
                     <p class="text-[11px] text-slate-400 mt-2">Compound = multiple joints (squat, row). Isolation = single joint (curl, extension).</p>
                 </div>
 
+                <!-- Assisted toggle -->
+                <label class="flex items-center justify-between gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer">
+                    <div class="min-w-0">
+                        <p class="font-bold text-sm">Assisted exercise</p>
+                        <p class="text-[11px] text-slate-400">e.g. assisted pull-ups/dips — a machine takes weight off you. A LOWER number is better.</p>
+                    </div>
+                    <input type="checkbox" id="new-ex-assisted" class="w-6 h-6 accent-indigo-600 flex-shrink-0">
+                </label>
+
                 <!-- Focus -->
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Focus</label>
@@ -3894,15 +3903,18 @@
             let html = '';
             if (pending.length > 0) {
                 html += '<h4 class="text-sm font-black mb-2">Connection Requests</h4>';
-                html += pending.map(r => `
+                html += pending.map((r, ri) => {
+                    const safeName = (r.fromName || 'Coach').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    return `
                     <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-2">
                         <p class="font-bold text-sm">${escapeHtml(r.fromName || 'A coach')}</p>
                         <p class="text-xs text-slate-500 mb-2">${escapeHtml(r.fromEmail || '')} wants to be your coach</p>
                         <div class="flex gap-2">
-                            <button onclick="approveCoach('${r.fromUid}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm">Approve</button>
+                            <button onclick="approveCoach('${r.fromUid}', '${safeName}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm">Approve</button>
                             <button onclick="declineCoach('${r.fromUid}')" class="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg font-bold text-sm">Decline</button>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
             }
             if (coachUid) {
                 const assignedCount = (me.assignedWorkouts || []).length;
@@ -3936,24 +3948,26 @@
         }
     }
 
-    async function approveCoach(coachUid) {
+    async function approveCoach(coachUid, coachNameFromRequest) {
         try {
-            const coachDoc = await db.collection('users').doc(coachUid).get();
-            if (!coachDoc.exists) { showToast('Coach no longer exists'); return; }
-            const coach = coachDoc.data();
-            // The member only writes their OWN doc (sets their coach + clears requests).
-            // We do NOT write to the coach's doc here — the Firestore rules only let a
-            // non-owner touch another user's `pendingRequests`, so writing clientUids
-            // would be denied. Instead the coach finds clients by querying for members
-            // whose coachUid points at them (see loadCoachClients).
+            // We do NOT read the coach's document here. The hardened rules only let
+            // you read your own doc or a client linked to you, so a member reading
+            // the coach's doc is (correctly) denied — that was the "permission
+            // denied" on approve. The coach's name already arrived in the pending
+            // request (fromName), so we use that and avoid the blocked read entirely.
+            const coachName = coachNameFromRequest || 'Coach';
+
+            // The member writes ONLY their own doc: set their coach + clear requests.
+            // This touches coachUid, coachName and pendingRequests — never `role` —
+            // so the self-update rule allows it.
             await db.collection('users').doc(currentUser.uid).update({
                 coachUid: coachUid,
-                coachName: coach.name || 'Coach',
+                coachName: coachName,
                 pendingRequests: []
             });
             firebaseUserData.coachUid = coachUid;
-            firebaseUserData.coachName = coach.name || 'Coach';
-            showToast('Connected with ' + (coach.name || 'your coach') + ' ✓');
+            firebaseUserData.coachName = coachName;
+            showToast('Connected with ' + coachName + ' ✓');
             renderMemberCoachSection();
         } catch (error) {
             console.error('Error approving coach:', error);
@@ -4854,6 +4868,8 @@
         newExMuscles = [];
         document.getElementById('new-ex-name').value = '';
         document.getElementById('new-ex-focus').value = 'Specific Muscle';
+        const assistedCb = document.getElementById('new-ex-assisted');
+        if (assistedCb) assistedCb.checked = false;
         setNewExEnv(newExEnv);
         setNewExType('compound');
         renderNewExMuscleChips();
@@ -4923,11 +4939,13 @@
         if (exists) { showToast('You already have that exercise'); return; }
 
         if (!state.customExercises) state.customExercises = [];
+        const isAssisted = !!(document.getElementById('new-ex-assisted') || {}).checked;
         state.customExercises.push({
             name: name,
             env: newExEnv,
             focus: focus,
             type: newExType,
+            assisted: isAssisted, // when true, a LOWER weight is a better result
             // If a focus group was chosen, no specific muscles are required
             muscles: (focus === 'Specific Muscle') ? newExMuscles.slice() : []
         });
@@ -5046,12 +5064,15 @@
                 const isOff = disabled.indexOf(ex) >= 0;
                 if (!isOff) enabled++;
                 const custom = isCustomExercise(ex, dbEnv);
+                const customObj = (state.customExercises || []).find(c => c.name === ex && (c.env || 'gym') === dbEnv);
+                const isAssist = (customObj && customObj.assisted) || /assisted/i.test(ex);
                 const safe = ex.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 return `
                     <label class="flex items-center justify-between gap-3 p-2.5 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100">
                         <span class="text-sm font-medium flex-1 min-w-0 truncate">
                             ${escapeHtml(ex)}
                             ${custom ? '<span class="ml-1 text-[9px] font-black uppercase text-indigo-600">mine</span>' : ''}
+                            ${isAssist ? '<span class="ml-1 text-[9px] font-black uppercase text-amber-600">assisted</span>' : ''}
                         </span>
                         <div class="flex items-center gap-2 flex-shrink-0">
                             ${custom ? `<button onclick="event.preventDefault(); deleteCustomExercise('${safe}')" class="text-rose-500 text-[10px] font-bold">Delete</button>` : ''}
@@ -6718,7 +6739,13 @@
      * the number goes DOWN (less help needed).
      */
     function isAssistanceExercise(name) {
-        return /assisted/i.test(name || '');
+        if (!name) return false;
+        // Built-in assisted exercises are detected by name...
+        if (/assisted/i.test(name)) return true;
+        // ...and custom exercises are detected by their saved "assisted" flag, so
+        // a user-created assisted exercise behaves the same (lower weight = better).
+        const custom = (state.customExercises || []).find(c => c.name === name);
+        return !!(custom && custom.assisted);
     }
 
     /**
@@ -9952,19 +9979,22 @@
             });
         } else if (pick.startsWith('lift:')) {
             const name = pick.slice(5);
-            trendMeta = { label: name, unit: 'kg', lowerIsBetter: false };
+            const assisted = isAssistanceExercise(name);
+            trendMeta = { label: name, unit: 'kg', lowerIsBetter: assisted };
             (state.workoutHistory || []).forEach(w => {
                 if (!w.date) return;
                 if (cutoff && w.date < cutoff) return;
-                let best = 0;
+                let best = assisted ? null : 0;
                 (w.exercises || []).forEach(ex => {
                     if (ex.name !== name) return;
                     (ex.sets || []).forEach(s => {
                         const kg = parseFloat(s.weight);
-                        if (!isNaN(kg) && kg > best) best = kg;
+                        if (isNaN(kg)) return;
+                        if (assisted) { if (best === null || kg < best) best = kg; }
+                        else { if (kg > best) best = kg; }
                     });
                 });
-                if (best > 0) trendSeries.push({ date: w.date, value: best });
+                if (best !== null && best >= 0 && (assisted || best > 0)) trendSeries.push({ date: w.date, value: best });
             });
         }
         trendSeries.sort((a, b) => a.date.localeCompare(b.date));
@@ -10108,20 +10138,24 @@
         }
     }
 
-    /** Best (heaviest) set for an exercise on or before a given date. */
+    /** Best set for an exercise on or before a date. For assisted exercises the
+     *  best is the LOWEST weight (least assistance); otherwise the heaviest. */
     function bestLiftUpTo(exerciseName, date) {
-        let best = 0;
+        const assisted = isAssistanceExercise(exerciseName);
+        let best = assisted ? null : 0;
         (state.workoutHistory || []).forEach(w => {
             if (!w.date || w.date > date) return;
             (w.exercises || []).forEach(ex => {
                 if (ex.name !== exerciseName) return;
                 (ex.sets || []).forEach(s => {
                     const kg = parseFloat(s.weight);
-                    if (!isNaN(kg) && kg > best) best = kg;
+                    if (isNaN(kg)) return;
+                    if (assisted) { if (best === null || kg < best) best = kg; }
+                    else { if (kg > best) best = kg; }
                 });
             });
         });
-        return best;
+        return best === null ? 0 : best;
     }
 
     function loadProgressComparison() {
@@ -10223,7 +10257,7 @@
                     label: name, unit: 'kg',
                     before: a, after: b,
                     delta: Math.round((b - a) * 10) / 10,
-                    good: b > a
+                    good: isAssistanceExercise(name) ? (b < a) : (b > a)
                 });
             });
             // Biggest gains first
