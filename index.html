@@ -3695,16 +3695,105 @@
                     <span class="font-bold text-sm">${escapeHtml(w.title || 'Workout')}</span>
                     <span class="text-[10px] text-slate-400">${escapeHtml((w.assignedAt || '').split('T')[0])}</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-1">${(w.exercises || []).map(e => escapeHtml(e.name)).join(', ')}</p>
+                <div class="mt-1 space-y-1">
+                    ${(w.exercises || []).map(e => `
+                        <div>
+                            <p class="text-xs text-slate-600">${escapeHtml(e.name)}</p>
+                            ${e.focus ? `<p class="text-[11px] text-indigo-600 pl-2">🎯 ${escapeHtml(e.focus)}</p>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
             </div>`).join('');
     }
 
+    let assigningToClient = null; // when set, a finished workout is assigned to this client instead of saved
+
     function openAssignWorkout() {
-        assignExercises = [];
-        document.getElementById('assign-workout-title').value = '';
-        renderAssignExerciseList();
-        document.getElementById('assign-workout-modal').style.display = 'flex';
-        lucide.createIcons();
+        if (!viewingClientData) return;
+        // Build the workout using the REAL workout interface (same cards, exercise
+        // picker, PB display, add-set) rather than a stripped-down form. We remember
+        // which client we're assigning to; finishing routes to saveAssignedFromBuilder().
+        assigningToClient = { uid: viewingClientData.uid, name: viewingClientData.name };
+
+        closeCoachSection(); // hide the coach overlay so the workout screen is visible
+        switchTab('workout');
+
+        currentWorkoutContext = { env: state.workoutEnv || 'gym', focus: 'Assign to ' + (viewingClientData.name || 'client'), muscles: null };
+        workoutStartTime = Date.now();
+        workoutAccumulatedSeconds = 0;
+        clearInterval(workoutTimer);
+        // No timer needed for building a plan, but keep the structure consistent
+        document.getElementById('workout-setup').classList.add('hidden');
+        document.getElementById('workout-active').classList.remove('hidden');
+        const titleEl = document.getElementById('active-workout-title');
+        if (titleEl) titleEl.innerText = '📝 Assigning to ' + (viewingClientData.name || 'client');
+        document.getElementById('exercise-list').innerHTML = '';
+        addExercise(); // start with one blank exercise card
+        setTimeout(() => enterWizardMode(), 120);
+        showToast('Build the workout, then Finish to assign it');
+    }
+
+    /**
+     * Called from saveWorkout() when the coach is in assign mode. Reads the built
+     * exercises straight from the workout cards and assigns them to the client,
+     * instead of saving to the coach's own history.
+     */
+    async function saveAssignedFromBuilder() {
+        const clientUid = assigningToClient ? assigningToClient.uid : null;
+        const clientName = assigningToClient ? assigningToClient.name : 'client';
+        if (!clientUid) return false;
+
+        // Read the exercises out of the workout DOM (same source saveWorkout uses)
+        const exercises = [];
+        document.querySelectorAll('#exercise-list > div').forEach(card => {
+            const nameInput = card.querySelector('input[type="text"]');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) return;
+            const sets = [];
+            card.querySelectorAll('.set-row').forEach(row => {
+                const w = row.querySelector('.set-weight');
+                const r = row.querySelector('.set-reps');
+                sets.push({ weight: (w && w.value) || '', reps: (r && r.value) || '' });
+            });
+            // Coach's Focus text for this exercise (may be blank)
+            const focusEl = card.querySelector('[id^="coach-focus-"]');
+            const focus = focusEl ? focusEl.value.trim() : '';
+            const exObj = { name: name, sets: sets.length ? sets : [{ weight: '', reps: '' }] };
+            if (focus) exObj.focus = focus;
+            exercises.push(exObj);
+        });
+
+        if (exercises.length === 0) { showToast('Add at least one exercise'); return true; }
+
+        const workout = {
+            title: 'Coach Workout',
+            exercises: exercises,
+            assignedBy: firebaseUserData.name || 'Coach',
+            assignedAt: new Date().toISOString(),
+            id: 'aw_' + Date.now()
+        };
+
+        try {
+            await db.collection('users').doc(clientUid).update({
+                assignedWorkouts: firebase.firestore.FieldValue.arrayUnion(workout)
+            });
+            showToast('Workout assigned to ' + clientName + ' ✓');
+        } catch (error) {
+            console.error('Assign failed:', error);
+            showToast('Assign failed: ' + (error.code || error.message || 'unknown'), 6000);
+        }
+
+        // Tear down the builder and return to the coach's client view
+        assigningToClient = null;
+        clearInterval(workoutTimer);
+        exitWizardMode();
+        clearActiveWorkout();
+        document.getElementById('workout-active').classList.add('hidden');
+        document.getElementById('workout-setup').classList.remove('hidden');
+        currentWorkoutContext = null;
+        openCoachSection();
+        setTimeout(() => { if (viewingClientData) renderClientDetail(); else openClientDetail(clientUid); }, 100);
+        return true;
     }
 
     function closeAssignWorkout() {
@@ -3835,11 +3924,34 @@
         return notes.map(n => {
             const isMine = n.fromUid === currentUser.uid;
             const time = n.at ? new Date(n.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+            // Workout-feedback messages get a distinct card with star rows
+            if (n.type === 'workout-feedback' && Array.isArray(n.feedback)) {
+                const rows = n.feedback.map(it => {
+                    const stars = it.stars ? '★'.repeat(it.stars) + '☆'.repeat(5 - it.stars) : '—';
+                    return `<div class="text-xs py-0.5">
+                        <span class="font-bold">${escapeHtml(it.name)}</span>
+                        <span class="text-amber-500">${stars}</span>
+                        ${it.comment ? `<div class="text-[11px] italic opacity-80">"${escapeHtml(it.comment)}"</div>` : ''}
+                    </div>`;
+                }).join('');
+                return `
+                    <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] bg-emerald-50 border border-emerald-200 text-slate-800 px-4 py-3 rounded-2xl">
+                            <p class="text-[10px] font-bold text-emerald-700 mb-1">${escapeHtml(n.fromName || '')} completed a workout</p>
+                            <p class="text-sm font-black mb-1">📋 ${escapeHtml(n.workoutTitle || 'Coach Workout')}</p>
+                            ${rows}
+                            <p class="text-[9px] opacity-60 mt-1 text-right">${time}</p>
+                        </div>
+                    </div>`;
+            }
+
+            const safeText = escapeHtml(n.text || '').replace(/\n/g, '<br>');
             return `
                 <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
                     <div class="max-w-[80%] ${isMine ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'} px-4 py-2.5 rounded-2xl">
                         <p class="text-[10px] font-bold opacity-70 mb-0.5">${escapeHtml(n.fromName || '')}${n.fromRole === 'coach' ? ' · Coach' : ''}</p>
-                        <p class="text-sm">${escapeHtml(n.text)}</p>
+                        <p class="text-sm">${safeText}</p>
                         <p class="text-[9px] opacity-60 mt-1 text-right">${time}</p>
                     </div>
                 </div>`;
@@ -3882,7 +3994,7 @@
             loadNotesThread();
         } catch (error) {
             console.error('Error posting note:', error);
-            showToast('Could not send note — check connection/rules');
+            showToast('Note failed: ' + (error.code || error.message || 'unknown'), 6000);
         }
     }
 
@@ -4099,9 +4211,12 @@
                             <p class="text-[10px] text-slate-400">From ${escapeHtml(w.assignedBy || 'Coach')} · ${escapeHtml((w.assignedAt || '').split('T')[0])}</p>
                         </div>
                     </div>
-                    <div class="space-y-1 mb-3">
+                    <div class="space-y-2 mb-3">
                         ${(w.exercises || []).map(ex => `
-                            <p class="text-sm"><b>${escapeHtml(ex.name)}</b> — ${(ex.sets || []).map(s => `${s.weight || '—'}kg×${s.reps || '—'}`).join(', ')}</p>
+                            <div>
+                                <p class="text-sm"><b>${escapeHtml(ex.name)}</b> — ${(ex.sets || []).map(s => `${s.weight || '—'}kg×${s.reps || '—'}`).join(', ')}</p>
+                                ${ex.focus ? `<p class="text-[11px] text-indigo-600 pl-2 mt-0.5">🎯 ${escapeHtml(ex.focus)}</p>` : ''}
+                            </div>
                         `).join('')}
                     </div>
                     <button onclick="startAssignedWorkout(${realIdx})" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold text-sm">Start This Workout</button>
@@ -4127,6 +4242,7 @@
 
         closeAssignedWorkouts();
         switchTab('workout');
+        window._activeAssignedWorkout = { title: w.title || 'Coach Workout', coachUid: firebaseUserData.coachUid };
 
         // Set up the active workout view directly with the assigned exercises
         currentWorkoutContext = { env: state.workoutEnv || 'gym', focus: w.title || 'Coach Workout', muscles: null };
@@ -4142,11 +4258,29 @@
         if (titleEl) titleEl.innerText = '📋 ' + (w.title || 'Coach Workout');
         document.getElementById('exercise-list').innerHTML = '';
 
+        // Build a name→focus map so each exercise card shows the coach's focus note.
+        window._assignedFocusByName = {};
+        (w.exercises || []).forEach(ex => {
+            if (ex.focus) window._assignedFocusByName[ex.name] = ex.focus;
+        });
+
         (w.exercises || []).forEach(ex => {
             addExercise(ex.name || '');
             const cards = document.querySelectorAll('#exercise-list > div');
             const card = cards[cards.length - 1];
             if (!card) return;
+            // Directly attach this exercise's focus note (handles duplicate names too)
+            if (ex.focus) {
+                const nameContainer = card.querySelector('.relative');
+                if (nameContainer && !card.querySelector('.coach-focus-note')) {
+                    const note = document.createElement('div');
+                    note.className = "coach-focus-note mt-2 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-xl";
+                    note.innerHTML = `
+                        <p class="text-[10px] font-black uppercase text-indigo-600 mb-0.5">🎯 Coach's Focus</p>
+                        <p class="text-sm text-slate-700">${escapeHtml(ex.focus)}</p>`;
+                    nameContainer.appendChild(note);
+                }
+            }
             const setsContainer = card.querySelector('[id^="sets-"]');
             const exId = setsContainer ? setsContainer.id.replace('sets-', '') : null;
             (ex.sets || []).forEach(s => {
@@ -4223,7 +4357,7 @@
             loadMemberNotesThread();
         } catch (error) {
             console.error('Error posting member note:', error);
-            showToast('Could not send note — check connection/rules');
+            showToast('Note failed: ' + (error.code || error.message || 'unknown'), 6000);
         }
     }
 
@@ -6407,6 +6541,22 @@
         pbLine.className = "text-xs font-bold mt-2 min-h-[16px]";
         nameContainer.appendChild(pbLine);
 
+        // Coach's Focus — when a COACH is assigning, show an editable textarea so
+        // they can write a per-exercise coaching cue. (For a client doing an
+        // assigned workout, the read-only focus note is attached in
+        // startAssignedWorkout, which knows each exercise's focus text.)
+        if (assigningToClient) {
+            const focusWrap = document.createElement('div');
+            focusWrap.className = "mt-2";
+            focusWrap.innerHTML = `
+                <label class="text-[10px] font-black uppercase text-indigo-500 flex items-center gap-1 mb-1">
+                    <span>🎯 Coach's Focus</span>
+                </label>
+                <textarea id="coach-focus-${id}" rows="2" placeholder="What should they focus on? (tempo, form cues, intensity…)"
+                    class="w-full p-2.5 bg-indigo-50 rounded-xl border-2 border-indigo-100 focus:border-indigo-400 outline-none text-sm"></textarea>`;
+            nameContainer.appendChild(focusWrap);
+        }
+
         const setsContainer = document.createElement('div');
         setsContainer.id = `sets-${id}`;
         setsContainer.className = "bg-slate-50 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4 min-h-[100px] w-full";
@@ -6813,6 +6963,13 @@
     function saveWorkout() {
         clearInterval(workoutTimer);
 
+        // If a coach is building a workout to assign to a client, finishing means
+        // "assign it" — not save it to the coach's own history or show ratings.
+        if (assigningToClient) {
+            saveAssignedFromBuilder();
+            return;
+        }
+
         const exercises = [];
         document.querySelectorAll('#exercise-list > div').forEach(card => {
             const nameInput = card.querySelector('input[type="text"]');
@@ -6883,7 +7040,7 @@
             return `
                 <div class="bg-slate-50 p-3 rounded-2xl">
                     <p class="font-bold text-sm mb-2">${safeName}</p>
-                    <div class="flex justify-between gap-1" id="rating-row-${idx}">
+                    <div class="flex justify-between gap-1 mb-2" id="rating-row-${idx}">
                         ${[1, 2, 3, 4, 5].map(n => `
                             <button type="button"
                                 onclick="setPendingRating('${safeName}', ${n}, ${idx})"
@@ -6893,6 +7050,8 @@
                             </button>
                         `).join('')}
                     </div>
+                    <input type="text" id="rating-comment-${idx}" data-exname="${safeName}" placeholder="Add a comment (optional)"
+                        class="w-full p-2.5 bg-white rounded-xl border-2 border-slate-200 focus:border-indigo-500 outline-none text-sm">
                 </div>`;
         }).join('');
 
@@ -6930,11 +7089,31 @@
     function finalizeWorkoutSave(skipAll) {
         if (!pendingWorkout) return;
 
+        // Gather any comments the user typed against each exercise
+        const comments = {};
+        document.querySelectorAll('[id^="rating-comment-"]').forEach(inp => {
+            const name = inp.getAttribute('data-exname');
+            const val = (inp.value || '').trim();
+            if (name && val) comments[name] = val;
+        });
+
         if (!skipAll && window._pendingRatings) {
             Object.entries(window._pendingRatings).forEach(([name, stars]) => {
                 recordExerciseRating(name, stars);
             });
         }
+
+        // If this was a workout the coach assigned, send the star ratings and
+        // comments back to the coach as feedback (so they can see how it went).
+        if (window._activeAssignedWorkout && window._activeAssignedWorkout.coachUid) {
+            const feedbackItems = (pendingWorkout.exercises || []).map(ex => ({
+                name: ex.name,
+                stars: (window._pendingRatings && window._pendingRatings[ex.name]) || 0,
+                comment: comments[ex.name] || ''
+            }));
+            sendWorkoutFeedbackToCoach(window._activeAssignedWorkout, feedbackItems);
+        }
+        window._activeAssignedWorkout = null;
 
         state.workoutHistory.unshift(pendingWorkout);
         const exCount = pendingWorkout.exercises.length;
@@ -6954,6 +7133,38 @@
         showAllExercisesInPicker = false;
         renderDashboard();
         showToast(`Workout saved! 🏋️ (${exCount} exercises)`);
+    }
+
+    /**
+     * Send the client's exercise ratings + comments for a coach-assigned workout
+     * back to the coach, as a message in their shared notes thread. This is how
+     * the coach sees how the client rated the session.
+     */
+    async function sendWorkoutFeedbackToCoach(assignedInfo, items) {
+        const coachUid = assignedInfo.coachUid;
+        const memberUid = currentUser.uid;
+        if (!coachUid) return;
+
+        // Build a readable feedback summary
+        const lines = items.map(it => {
+            const stars = it.stars ? '★'.repeat(it.stars) + '☆'.repeat(5 - it.stars) : '(no rating)';
+            return `${it.name}: ${stars}${it.comment ? ' — "' + it.comment + '"' : ''}`;
+        });
+        const message = {
+            fromUid: memberUid,
+            fromName: firebaseUserData.name || 'Client',
+            fromRole: 'member',
+            type: 'workout-feedback',
+            workoutTitle: assignedInfo.title || 'Coach Workout',
+            feedback: items,
+            text: `📋 Completed "${assignedInfo.title || 'Coach Workout'}"\n` + lines.join('\n'),
+            at: new Date().toISOString()
+        };
+        try {
+            await appendNote(coachUid, memberUid, message);
+        } catch (error) {
+            console.warn('Could not send workout feedback to coach:', error);
+        }
     }
 
     // ==========================================================================
