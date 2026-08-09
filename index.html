@@ -2766,6 +2766,18 @@
         </div>
     </div>
 
+    <!-- COACH: DETAILED VIEW OF A SHARED WORKOUT / NUTRITION DAY -->
+    <div id="shared-detail-modal" class="modal-overlay" style="z-index:200;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="shared-detail-title" class="text-xl font-black">Detail</h3>
+                <button onclick="closeSharedDetail()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none flex-shrink-0">×</button>
+            </div>
+            <div id="shared-detail-body" class="flex-1 overflow-y-auto"></div>
+            <button onclick="closeSharedDetail()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold mt-4">Close</button>
+        </div>
+    </div>
+
     <!-- CLIENT: WORKOUTS ASSIGNED BY COACH -->
     <div id="assigned-workouts-modal" class="modal-overlay" style="z-index:200;">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
@@ -3644,15 +3656,12 @@
                 if (!w) return;
                 const exCount = (w.exercises || []).length;
                 const setCount = (w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0);
-                html += `<div class="bg-slate-50 p-3 rounded-xl">
+                html += `<div onclick="openSharedDetail('workout', '${escapeHtml(date)}')" class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:bg-slate-100">
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-sm">${escapeHtml(w.focus || 'Workout')}</span>
-                        <span class="text-xs text-slate-400">${escapeHtml(date)}</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">${escapeHtml(date)} <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets${w.duration ? ' · ' + escapeHtml(w.duration) : ''}</p>
-                    <div class="mt-2 space-y-1">${(w.exercises || []).map(ex =>
-                        `<p class="text-xs"><b>${escapeHtml(ex.name || '')}</b> — ${(ex.sets || []).map(s => `${s.weight || 0}kg×${s.reps || 0}`).join(', ')}</p>`
-                    ).join('')}</div>
+                    <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets${w.duration ? ' · ' + escapeHtml(w.duration) : ''} · tap for detail</p>
                 </div>`;
             });
         }
@@ -3662,20 +3671,113 @@
             sharedNutritionDates.forEach(date => {
                 const n = nutrition.find(x => x.date === date);
                 if (!n) return;
-                const meals = (n.meals || []).map(m =>
-                    `<p class="text-xs">${escapeHtml(m.name || 'Food')} — ${Math.round(m.calories || 0)} kcal</p>`
-                ).join('');
-                html += `<div class="bg-slate-50 p-3 rounded-xl">
+                const mealCount = (n.meals || []).length;
+                html += `<div onclick="openSharedDetail('nutrition', '${escapeHtml(date)}')" class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:bg-slate-100">
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-bold text-sm">${escapeHtml(date)}</span>
-                        <span class="text-xs text-slate-400">${Math.round(n.calories || 0)} kcal · ${Math.round(n.protein || 0)}g P</span>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">${Math.round(n.calories || 0)} kcal <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
                     </div>
-                    ${meals || '<p class="text-xs text-slate-400">No meal detail</p>'}
+                    <p class="text-xs text-slate-400">${mealCount} item${mealCount !== 1 ? 's' : ''} · ${Math.round(n.protein || 0)}g P · ${Math.round(n.carbs || 0)}g C · ${Math.round(n.fat || 0)}g F · tap for detail</p>
                 </div>`;
             });
         }
 
         box.innerHTML = html || '<p class="text-sm text-slate-400 text-center py-3">Nothing shared yet. Your client can share days from their app.</p>';
+        lucide.createIcons();
+    }
+
+    /**
+     * Coach taps a shared workout or nutrition day → full detail modal.
+     * Reads from the client's snapshot (viewingClientData.data).
+     */
+    function openSharedDetail(type, date) {
+        if (!viewingClientData) return;
+        const snap = viewingClientData.data || {};
+        const modal = document.getElementById('shared-detail-modal');
+        const body = document.getElementById('shared-detail-body');
+        const titleEl = document.getElementById('shared-detail-title');
+        if (!modal || !body) return;
+
+        const prettyDate = new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        if (type === 'workout') {
+            const w = (snap.workoutHistory || []).find(x => x.date === date);
+            if (!w) { showToast('Workout not found'); return; }
+            titleEl.textContent = w.focus || 'Workout';
+
+            let totalVolume = 0;
+            (w.exercises || []).forEach(ex => (ex.sets || []).forEach(s => {
+                const kg = parseFloat(s.weight), reps = parseInt(s.reps);
+                if (!isNaN(kg) && !isNaN(reps)) totalVolume += kg * reps;
+            }));
+
+            body.innerHTML = `
+                <p class="text-sm text-slate-400 mb-1">${prettyDate}</p>
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    ${w.duration ? `<span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">⏱ ${escapeHtml(w.duration)}</span>` : ''}
+                    <span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">${(w.exercises || []).length} exercises</span>
+                    ${totalVolume > 0 ? `<span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">${Math.round(totalVolume).toLocaleString()} kg volume</span>` : ''}
+                </div>
+                ${(w.exercises || []).map(ex => {
+                    const rows = (ex.sets || []).map((s, i) => `
+                        <div class="flex items-center gap-3 py-1.5 border-b border-slate-100 last:border-0">
+                            <span class="text-xs font-black text-slate-400 w-12">Set ${i + 1}</span>
+                            <span class="text-sm font-bold">${s.weight || '—'} kg</span>
+                            <span class="text-slate-300">×</span>
+                            <span class="text-sm font-bold">${s.reps || '—'} reps</span>
+                            ${(s.rir !== undefined && s.rir !== '') ? `<span class="text-xs text-amber-600 ml-auto">RIR ${escapeHtml(String(s.rir))}</span>` : ''}
+                        </div>`).join('');
+                    return `
+                        <div class="bg-slate-50 rounded-2xl p-4 mb-3">
+                            <p class="font-black text-sm mb-2">${escapeHtml(ex.name || 'Exercise')}</p>
+                            ${rows || '<p class="text-xs text-slate-400">No sets recorded</p>'}
+                        </div>`;
+                }).join('')}
+            `;
+        } else {
+            const n = (snap.nutritionHistory || []).find(x => x.date === date);
+            if (!n) { showToast('Nutrition not found'); return; }
+            titleEl.textContent = 'Nutrition';
+
+            body.innerHTML = `
+                <p class="text-sm text-slate-400 mb-3">${prettyDate}</p>
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <div class="bg-indigo-50 rounded-xl p-2 text-center">
+                        <p class="text-lg font-black text-indigo-600">${Math.round(n.calories || 0)}</p>
+                        <p class="text-[9px] font-bold uppercase text-slate-400">kcal</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2 text-center">
+                        <p class="text-lg font-black">${Math.round(n.protein || 0)}g</p>
+                        <p class="text-[9px] font-bold uppercase text-slate-400">Protein</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2 text-center">
+                        <p class="text-lg font-black">${Math.round(n.carbs || 0)}g</p>
+                        <p class="text-[9px] font-bold uppercase text-slate-400">Carbs</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-2 text-center">
+                        <p class="text-lg font-black">${Math.round(n.fat || 0)}g</p>
+                        <p class="text-[9px] font-bold uppercase text-slate-400">Fat</p>
+                    </div>
+                </div>
+                <p class="text-[10px] font-black uppercase text-slate-400 mb-2">Foods logged (${(n.meals || []).length})</p>
+                ${(n.meals || []).map(m => `
+                    <div class="bg-slate-50 rounded-2xl p-3 mb-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm flex-1 min-w-0 truncate">${escapeHtml(m.name || 'Food')}</span>
+                            <span class="text-sm font-black text-indigo-600 ml-2">${Math.round(m.calories || 0)} kcal</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">${Math.round(m.protein || 0)}g P · ${Math.round(m.carbs || 0)}g C · ${Math.round(m.fat || 0)}g F${m.fiber ? ' · ' + Math.round(m.fiber) + 'g fibre' : ''}</p>
+                    </div>`).join('') || '<p class="text-sm text-slate-400">No foods recorded</p>'}
+            `;
+        }
+
+        modal.style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeSharedDetail() {
+        const modal = document.getElementById('shared-detail-modal');
+        if (modal) modal.style.display = 'none';
     }
 
     // ---- COACH SIDE: assign workouts ----
@@ -3713,20 +3815,20 @@
         // Build the workout using the REAL workout interface (same cards, exercise
         // picker, PB display, add-set) rather than a stripped-down form. We remember
         // which client we're assigning to; finishing routes to saveAssignedFromBuilder().
-        assigningToClient = { uid: viewingClientData.uid, name: viewingClientData.name };
+        const clientName = viewingClientData.name || 'client';
+        assigningToClient = { uid: viewingClientData.uid, name: clientName };
 
         closeCoachSection(); // hide the coach overlay so the workout screen is visible
-        switchTab('workout');
+        switchTab('training'); // the workout lives in the "training" tab
 
-        currentWorkoutContext = { env: state.workoutEnv || 'gym', focus: 'Assign to ' + (viewingClientData.name || 'client'), muscles: null };
+        currentWorkoutContext = { env: state.workoutEnv || 'gym', focus: 'Assign to ' + clientName, muscles: null };
         workoutStartTime = Date.now();
         workoutAccumulatedSeconds = 0;
         clearInterval(workoutTimer);
-        // No timer needed for building a plan, but keep the structure consistent
         document.getElementById('workout-setup').classList.add('hidden');
         document.getElementById('workout-active').classList.remove('hidden');
         const titleEl = document.getElementById('active-workout-title');
-        if (titleEl) titleEl.innerText = '📝 Assigning to ' + (viewingClientData.name || 'client');
+        if (titleEl) titleEl.innerText = '📝 Assigning to ' + clientName;
         document.getElementById('exercise-list').innerHTML = '';
         addExercise(); // start with one blank exercise card
         setTimeout(() => enterWizardMode(), 120);
@@ -4241,7 +4343,7 @@
         if (!w) { showToast('Workout not found'); return; }
 
         closeAssignedWorkouts();
-        switchTab('workout');
+        switchTab('training');
         window._activeAssignedWorkout = { title: w.title || 'Coach Workout', coachUid: firebaseUserData.coachUid };
 
         // Set up the active workout view directly with the assigned exercises
@@ -6397,7 +6499,7 @@
         workoutStartTime = Date.now();
 
         // Make sure we're on the Training tab and showing the active workout view
-        if (typeof switchTab === 'function') switchTab('workout');
+        if (typeof switchTab === 'function') switchTab('training');
         const setupEl = document.getElementById('workout-setup');
         const activeEl = document.getElementById('workout-active');
         if (setupEl) setupEl.classList.add('hidden');
