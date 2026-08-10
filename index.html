@@ -623,9 +623,15 @@
                     <p id="status-date" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Loading...</p>
                 </div>
             </div>
-            <button onclick="switchTab('profile')" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors" aria-label="Profile">
-                <i data-lucide="user" class="w-6 h-6 text-slate-700"></i>
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="openNotifications()" class="relative w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors" aria-label="Notifications">
+                    <i data-lucide="bell" class="w-6 h-6 text-slate-700"></i>
+                    <span class="notif-badge hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">0</span>
+                </button>
+                <button onclick="switchTab('profile')" class="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors" aria-label="Profile">
+                    <i data-lucide="user" class="w-6 h-6 text-slate-700"></i>
+                </button>
+            </div>
         </header>
 
         <main class="max-w-xl mx-auto p-4 sm:p-6 space-y-6">
@@ -855,6 +861,18 @@
                     <div id="workout-date-warning" class="hidden mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
                         <p class="text-xs text-amber-800 font-bold text-center">⚠️ Editing past date - Click "Finish Workout" to confirm</p>
                     </div>
+                </div>
+
+                <!-- Coach's assigned plan — only shown to clients who have a coach -->
+                <div id="coach-plan-card" class="hidden glass-card p-6 rounded-[2.5rem]">
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="clipboard-list" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-black">From Your Coach</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Workouts your coach has set for you. Tap Start to follow one.</p>
+                    <div id="coach-plan-list" class="space-y-3"></div>
                 </div>
 
                 <!-- Workout Setup -->
@@ -2766,6 +2784,32 @@
         </div>
     </div>
 
+    <!-- NOTIFICATIONS -->
+    <div id="notifications-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5"></i> Notifications</h3>
+                <button onclick="closeNotifications()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <div id="notifications-body" class="flex-1 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- COACH: NAME THE WORKOUT before assigning -->
+    <div id="name-workout-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-7">
+            <div class="w-14 h-14 mx-auto mb-4 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                <i data-lucide="tag" class="w-7 h-7 text-indigo-600"></i>
+            </div>
+            <h3 class="text-xl font-black text-center mb-1">Name this workout</h3>
+            <p class="text-sm text-slate-500 text-center mb-5">So you and your client can tell which workout is which (e.g. "Push Day A", "Leg Day").</p>
+            <input id="name-workout-input" type="text" placeholder="Workout name" maxlength="40"
+                class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-indigo-500 mb-4 text-center"
+                onkeydown="if(event.key==='Enter')confirmAssignWorkoutName()">
+            <button onclick="confirmAssignWorkoutName()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Assign to Client</button>
+        </div>
+    </div>
+
     <!-- COACH: DETAILED VIEW OF A SHARED WORKOUT / NUTRITION DAY -->
     <div id="shared-detail-modal" class="modal-overlay" style="z-index:200;">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] flex flex-col">
@@ -3308,6 +3352,10 @@
                 workoutHistory: (state.workoutHistory || []).slice(0, 100),
                 nutritionHistory: (state.nutritionHistory || []).slice(0, 60),
                 dailyMeals: state.dailyMeals || [],
+                // Goals, focus & targets — so the coach can see what the client is working toward
+                userGoals: state.userGoals || [],
+                goalTargets: state.goals || {},
+                userProfile: state.userProfile || {},
                 metricsHistory: (state.metricsHistory || []).map(m => {
                     const copy = { ...m };
                     delete copy.photos; // photos are large; don't sync them
@@ -3595,6 +3643,13 @@
                 <div class="space-y-2">${recentNutrition}</div>
             </div>
 
+            <!-- Client's goals, focus & targets -->
+            <div class="glass-card rounded-[2.5rem] p-6">
+                <h3 class="text-lg font-black mb-1">Goals &amp; Targets</h3>
+                <p class="text-xs text-slate-400 mb-4">What ${escapeHtml(name)} is working toward.</p>
+                <div id="client-goals-list"></div>
+            </div>
+
             <!-- Days the client has chosen to share with the coach -->
             <div class="glass-card rounded-[2.5rem] p-6">
                 <h3 class="text-lg font-black mb-1">Shared With You</h3>
@@ -3628,12 +3683,243 @@
         lucide.createIcons();
         loadNotesThread();
         renderSharedDays();
+        renderClientGoals();
         renderAssignedWorkoutsForCoach();
     }
 
     // ==========================================================================
     // COACH ↔ CLIENT SHARING & ASSIGNED WORKOUTS
     // ==========================================================================
+
+    // ==========================================================================
+    // NOTIFICATIONS  (coach <-> client activity feed)
+    // ==========================================================================
+    // Stored as an `events` array on the shared notes doc (which both the coach
+    // and the client are allowed to write to). Each event records who it's FOR,
+    // so each side only counts the ones meant for them as unread. `seenBy` tracks
+    // who has opened their notifications so we can show an unread badge.
+
+    /**
+     * Add a notification for a recipient. Figures out the coach/member pair from
+     * the current user's role, writes into the shared notes doc's events array.
+     * @param {String} recipientUid - who should receive/see this notification
+     * @param {Object} notif - { type, title, body, fromName }
+     */
+    async function pushNotification(recipientUid, notif) {
+        try {
+            let coachUid, memberUid;
+            if (currentUserRole === 'coach') {
+                coachUid = currentUser.uid;
+                memberUid = recipientUid;
+            } else {
+                coachUid = firebaseUserData.coachUid;
+                memberUid = currentUser.uid;
+            }
+            if (!coachUid || !memberUid) return;
+
+            const event = {
+                type: notif.type || 'update',
+                title: notif.title || 'Update',
+                body: notif.body || '',
+                fromName: notif.fromName || '',
+                forUid: recipientUid,
+                at: new Date().toISOString(),
+                id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1000)
+            };
+
+            const ref = db.collection('notes').doc(notesDocId(coachUid, memberUid));
+            const existing = await ref.get();
+            if (existing.exists) {
+                await ref.update({ events: firebase.firestore.FieldValue.arrayUnion(event) });
+            } else {
+                await ref.set({ coachUid: coachUid, memberUid: memberUid, messages: [], events: [event] });
+            }
+        } catch (error) {
+            console.warn('Could not push notification:', error);
+        }
+    }
+
+    /**
+     * Load all notifications addressed to the current user across their coach/
+     * client relationship. Members have one coach; coaches may have many clients.
+     */
+    async function loadMyNotifications() {
+        const results = [];
+        try {
+            if (currentUserRole === 'coach') {
+                // All notes docs where this coach is a participant
+                const snap = await db.collection('notes').where('coachUid', '==', currentUser.uid).limit(50).get();
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    (d.events || []).forEach(e => { if (e.forUid === currentUser.uid) results.push(e); });
+                });
+            } else {
+                const coachUid = firebaseUserData.coachUid;
+                if (coachUid) {
+                    const ref = db.collection('notes').doc(notesDocId(coachUid, currentUser.uid));
+                    const doc = await ref.get();
+                    if (doc.exists) {
+                        (doc.data().events || []).forEach(e => { if (e.forUid === currentUser.uid) results.push(e); });
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Could not load notifications:', error);
+        }
+        results.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+        return results;
+    }
+
+    // Track which notification ids the user has already seen (persisted locally)
+    function seenNotifIds() {
+        try { return JSON.parse(localStorage.getItem('vfit_seen_notifs') || '[]'); }
+        catch (e) { return []; }
+    }
+    function markNotifsSeen(ids) {
+        const set = new Set(seenNotifIds());
+        ids.forEach(id => set.add(id));
+        localStorage.setItem('vfit_seen_notifs', JSON.stringify(Array.from(set).slice(-500)));
+    }
+
+    async function refreshNotifBadge() {
+        const notifs = await loadMyNotifications();
+        const seen = new Set(seenNotifIds());
+        const unread = notifs.filter(n => !seen.has(n.id)).length;
+        document.querySelectorAll('.notif-badge').forEach(badge => {
+            if (unread > 0) {
+                badge.textContent = unread > 9 ? '9+' : String(unread);
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        });
+        window._cachedNotifs = notifs;
+    }
+
+    async function openNotifications() {
+        const modal = document.getElementById('notifications-modal');
+        const body = document.getElementById('notifications-body');
+        if (!modal || !body) return;
+        body.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Loading...</p>';
+        modal.style.display = 'flex';
+
+        const notifs = await loadMyNotifications();
+        const seen = new Set(seenNotifIds());
+
+        if (notifs.length === 0) {
+            body.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">No notifications yet.</p>';
+        } else {
+            const iconFor = {
+                'workout-assigned': { icon: 'clipboard-list', color: 'bg-indigo-100 text-indigo-600' },
+                'workout-completed': { icon: 'check-circle', color: 'bg-emerald-100 text-emerald-600' },
+                'days-shared': { icon: 'share-2', color: 'bg-emerald-100 text-emerald-600' },
+                'note': { icon: 'message-circle', color: 'bg-blue-100 text-blue-600' },
+                'coach-connected': { icon: 'user-check', color: 'bg-indigo-100 text-indigo-600' }
+            };
+            body.innerHTML = notifs.map(n => {
+                const isUnread = !seen.has(n.id);
+                const ic = iconFor[n.type] || { icon: 'bell', color: 'bg-slate-100 text-slate-600' };
+                const time = n.at ? new Date(n.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                return `
+                    <div class="flex gap-3 p-3 rounded-2xl mb-2 ${isUnread ? 'bg-indigo-50' : 'bg-slate-50'}">
+                        <div class="w-10 h-10 ${ic.color} rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="${ic.icon}" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-sm">${escapeHtml(n.title || '')}</p>
+                                ${isUnread ? '<span class="w-2 h-2 bg-indigo-600 rounded-full flex-shrink-0"></span>' : ''}
+                            </div>
+                            ${n.body ? `<p class="text-xs text-slate-500 mt-0.5">${escapeHtml(n.body)}</p>` : ''}
+                            <p class="text-[10px] text-slate-400 mt-1">${n.fromName ? escapeHtml(n.fromName) + ' · ' : ''}${time}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+        lucide.createIcons();
+
+        // Mark all as seen now that they've been opened
+        markNotifsSeen(notifs.map(n => n.id));
+        refreshNotifBadge();
+    }
+
+    function closeNotifications() {
+        const modal = document.getElementById('notifications-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // ---- COACH SIDE: show the client's goals, focus & targets ----
+    function renderClientGoals() {
+        const box = document.getElementById('client-goals-list');
+        if (!box || !viewingClientData) return;
+        const snap = viewingClientData.data || {};
+        const goals = snap.userGoals || [];
+        const targets = snap.goalTargets || {};
+        const profile = snap.userProfile || {};
+
+        let html = '';
+
+        // Focus goals (weight loss / muscle gain / health) — same shape the client sets
+        if (goals.length > 0) {
+            html += goals.map(g => {
+                const focusInfo = {
+                    weight_loss: { emoji: '🔥', label: 'Weight Loss', color: 'text-rose-600' },
+                    muscle_gain: { emoji: '💪', label: 'Muscle Gain', color: 'text-indigo-600' },
+                    health:      { emoji: '🌱', label: 'Health',      color: 'text-emerald-600' }
+                }[g.focus] || { emoji: '🎯', label: g.type || 'Goal', color: 'text-slate-600' };
+
+                let summary = '';
+                if (g.focus === 'weight_loss' && g.details) {
+                    const parts = [];
+                    if (g.details.kg) parts.push(`${g.details.kg}kg`);
+                    if (g.details.weeks) parts.push(`${g.details.weeks}w`);
+                    if (g.details.style) parts.push(g.details.style === 'toned' ? 'toned' : 'scale weight');
+                    if (parts.length) summary = parts.join(' · ');
+                } else if (g.focus === 'muscle_gain' && g.details) {
+                    const parts = [];
+                    if (g.details.priority) parts.push(g.details.priority);
+                    if (g.details.physique) parts.push(g.details.physique);
+                    if (g.details.experience) parts.push(g.details.experience);
+                    if (parts.length) summary = parts.join(' · ');
+                } else if (g.focus === 'health' && g.details && g.details.area) {
+                    summary = g.details.area;
+                }
+
+                return `
+                    <div class="bg-slate-50 p-3 rounded-xl mb-2">
+                        <span class="text-[10px] font-black ${focusInfo.color} uppercase">${focusInfo.emoji} ${focusInfo.label}</span>
+                        <p class="font-bold text-sm mt-1">${escapeHtml(g.description || '')}</p>
+                        ${summary ? `<p class="text-xs text-slate-500 mt-1">${escapeHtml(summary)}</p>` : ''}
+                    </div>`;
+            }).join('');
+        }
+
+        // Daily targets (calories / water / steps)
+        const targetChips = [];
+        if (targets.calories) targetChips.push(`🔥 ${targets.calories} kcal`);
+        if (targets.water) targetChips.push(`💧 ${targets.water} ml`);
+        if (targets.steps) targetChips.push(`👟 ${targets.steps.toLocaleString()} steps`);
+        if (targetChips.length) {
+            html += `<p class="text-[10px] font-black uppercase text-slate-400 mt-2 mb-1">Daily Targets</p>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    ${targetChips.map(c => `<span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full">${c}</span>`).join('')}
+                </div>`;
+        }
+
+        // Profile basics that inform training
+        const profBits = [];
+        if (profile.gender) profBits.push(profile.gender);
+        if (profile.age) profBits.push(`${profile.age} yrs`);
+        if (profile.heightCm) profBits.push(`${profile.heightCm} cm`);
+        if (profile.yearsTraining != null) profBits.push(`${profile.yearsTraining}y training`);
+        if (profile.activityLevel) profBits.push(profile.activityLevel.replace('_', ' '));
+        if (profBits.length) {
+            html += `<p class="text-[10px] font-black uppercase text-slate-400 mt-2 mb-1">Profile</p>
+                <p class="text-xs text-slate-500">${escapeHtml(profBits.join(' · '))}</p>`;
+        }
+
+        box.innerHTML = html || '<p class="text-sm text-slate-400 text-center py-3">No goals or targets set yet.</p>';
+    }
 
     // ---- COACH SIDE: show what the client has shared ----
     function renderSharedDays() {
@@ -3826,6 +4112,7 @@
         workoutAccumulatedSeconds = 0;
         clearInterval(workoutTimer);
         document.getElementById('workout-setup').classList.add('hidden');
+        { const _cpc = document.getElementById('coach-plan-card'); if (_cpc) _cpc.classList.add('hidden'); }
         document.getElementById('workout-active').classList.remove('hidden');
         const titleEl = document.getElementById('active-workout-title');
         if (titleEl) titleEl.innerText = '📝 Assigning to ' + clientName;
@@ -3840,9 +4127,10 @@
      * exercises straight from the workout cards and assigns them to the client,
      * instead of saving to the coach's own history.
      */
+    let pendingAssignExercises = null; // holds the built workout while naming it
+
     async function saveAssignedFromBuilder() {
         const clientUid = assigningToClient ? assigningToClient.uid : null;
-        const clientName = assigningToClient ? assigningToClient.name : 'client';
         if (!clientUid) return false;
 
         // Read the exercises out of the workout DOM (same source saveWorkout uses)
@@ -3867,9 +4155,27 @@
 
         if (exercises.length === 0) { showToast('Add at least one exercise'); return true; }
 
+        // Stash the built workout and ask the coach to name it before saving.
+        pendingAssignExercises = exercises;
+        const input = document.getElementById('name-workout-input');
+        if (input) input.value = '';
+        document.getElementById('name-workout-modal').style.display = 'flex';
+        setTimeout(() => { if (input) input.focus(); }, 100);
+        lucide.createIcons();
+        return true;
+    }
+
+    async function confirmAssignWorkoutName() {
+        const clientUid = assigningToClient ? assigningToClient.uid : null;
+        const clientName = assigningToClient ? assigningToClient.name : 'client';
+        if (!clientUid || !pendingAssignExercises) return;
+
+        const input = document.getElementById('name-workout-input');
+        const title = (input && input.value.trim()) || 'Coach Workout';
+
         const workout = {
-            title: 'Coach Workout',
-            exercises: exercises,
+            title: title,
+            exercises: pendingAssignExercises,
             assignedBy: firebaseUserData.name || 'Coach',
             assignedAt: new Date().toISOString(),
             id: 'aw_' + Date.now()
@@ -3879,19 +4185,29 @@
             await db.collection('users').doc(clientUid).update({
                 assignedWorkouts: firebase.firestore.FieldValue.arrayUnion(workout)
             });
-            showToast('Workout assigned to ' + clientName + ' ✓');
+            // Notify the client that a new workout was assigned
+            await pushNotification(clientUid, {
+                type: 'workout-assigned',
+                title: 'New workout from your coach',
+                body: '"' + title + '" is ready in your Training tab',
+                fromName: firebaseUserData.name || 'Coach'
+            });
+            showToast('Assigned "' + title + '" to ' + clientName + ' ✓');
         } catch (error) {
             console.error('Assign failed:', error);
             showToast('Assign failed: ' + (error.code || error.message || 'unknown'), 6000);
         }
 
         // Tear down the builder and return to the coach's client view
+        pendingAssignExercises = null;
+        document.getElementById('name-workout-modal').style.display = 'none';
         assigningToClient = null;
         clearInterval(workoutTimer);
         exitWizardMode();
         clearActiveWorkout();
         document.getElementById('workout-active').classList.add('hidden');
         document.getElementById('workout-setup').classList.remove('hidden');
+        if (typeof renderCoachPlanInTraining === 'function') renderCoachPlanInTraining();
         currentWorkoutContext = null;
         openCoachSection();
         setTimeout(() => { if (viewingClientData) renderClientDetail(); else openClientDetail(clientUid); }, 100);
@@ -4092,6 +4408,14 @@
         };
         try {
             await appendNote(coachUid, memberUid, message);
+            // Notify the other person about the new note
+            const recipientUid = (currentUser.uid === coachUid) ? memberUid : coachUid;
+            await pushNotification(recipientUid, {
+                type: 'note',
+                title: 'New message from ' + (firebaseUserData.name || 'your ' + (currentUserRole === 'coach' ? 'coach' : 'client')),
+                body: text.length > 60 ? text.slice(0, 57) + '...' : text,
+                fromName: firebaseUserData.name || ''
+            });
             input.value = '';
             loadNotesThread();
         } catch (error) {
@@ -4131,7 +4455,6 @@
                 }).join('');
             }
             if (coachUid) {
-                const assignedCount = (me.assignedWorkouts || []).length;
                 html += `
                     <div class="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 mb-3">
                         <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">
@@ -4143,14 +4466,12 @@
                         </div>
                         <button onclick="openMemberNotes()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Notes</button>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 gap-2">
                         <button onclick="openShareDays()" class="bg-emerald-600 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
-                            <i data-lucide="share-2" class="w-4 h-4"></i> Share Days
+                            <i data-lucide="share-2" class="w-4 h-4"></i> Share Days With Coach
                         </button>
-                        <button onclick="openAssignedWorkouts()" class="bg-slate-900 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
-                            <i data-lucide="clipboard-list" class="w-4 h-4"></i> My Plan${assignedCount ? ` (${assignedCount})` : ''}
-                        </button>
-                    </div>`;
+                    </div>
+                    <p class="text-[11px] text-slate-400 text-center mt-2">Your coach's workouts appear in the Training tab.</p>`;
             } else if (pending.length === 0) {
                 html += '<p class="text-sm text-slate-400">No coach connected. When a coach sends a request, it\'ll appear here to approve.</p>';
             }
@@ -4281,6 +4602,16 @@
             });
             // Make sure the shared days' full data is in the cloud snapshot for the coach
             await pushMemberDataToCloud();
+            // Notify the coach that the client shared days
+            if (firebaseUserData.coachUid) {
+                const total = shareSelection.workouts.length + shareSelection.nutrition.length;
+                await pushNotification(firebaseUserData.coachUid, {
+                    type: 'days-shared',
+                    title: (firebaseUserData.name || 'Your client') + ' shared their data',
+                    body: total + ' day' + (total !== 1 ? 's' : '') + ' now visible to you',
+                    fromName: firebaseUserData.name || 'Client'
+                });
+            }
             closeShareDays();
             const total = shareSelection.workouts.length + shareSelection.nutrition.length;
             showToast(total > 0 ? `Sharing ${total} day${total > 1 ? 's' : ''} with your coach ✓` : 'Sharing updated');
@@ -4291,6 +4622,53 @@
     }
 
     // ---- CLIENT SIDE: view & use workouts the coach assigned ----
+    // ---- CLIENT SIDE: show the coach's assigned plan IN the Training section ----
+    // Only appears when the client actually has a coach.
+    async function renderCoachPlanInTraining() {
+        const card = document.getElementById('coach-plan-card');
+        const list = document.getElementById('coach-plan-list');
+        if (!card || !list) return;
+
+        // Hide entirely unless this user has a coach
+        if (currentUserRole !== 'member' || !firebaseUserData || !firebaseUserData.coachUid) {
+            card.classList.add('hidden');
+            return;
+        }
+
+        let assigned = [];
+        try {
+            const meDoc = await db.collection('users').doc(currentUser.uid).get();
+            assigned = (meDoc.data() || {}).assignedWorkouts || [];
+        } catch (e) { /* offline — leave hidden */ }
+
+        if (assigned.length === 0) {
+            // Has a coach but nothing assigned yet — hide the card entirely
+            // (only show when a coach has actually set a workout).
+            card.classList.add('hidden');
+            return;
+        }
+
+        card.classList.remove('hidden');
+        list.innerHTML = assigned.slice().reverse().map((w, idx) => {
+            const realIdx = assigned.length - 1 - idx;
+            const exNames = (w.exercises || []).map(e => escapeHtml(e.name)).join(', ');
+            const hasFocus = (w.exercises || []).some(e => e.focus);
+            return `
+                <div class="bg-slate-50 rounded-2xl p-4">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="min-w-0">
+                            <p class="font-black">${escapeHtml(w.title || 'Coach Workout')}</p>
+                            <p class="text-[10px] text-slate-400">From ${escapeHtml(w.assignedBy || 'Coach')} · ${escapeHtml((w.assignedAt || '').split('T')[0])}</p>
+                        </div>
+                        ${hasFocus ? '<span class="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full flex-shrink-0">🎯 cues</span>' : ''}
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3 truncate">${exNames}</p>
+                    <button onclick="startAssignedWorkout(${realIdx})" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold text-sm">Start This Workout</button>
+                </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
     async function openAssignedWorkouts() {
         if (!firebaseUserData.coachUid) { showToast('No coach connected'); return; }
         let assigned = [];
@@ -4355,6 +4733,7 @@
         try { history.pushState({ workout: true }, ''); } catch (e) {}
 
         document.getElementById('workout-setup').classList.add('hidden');
+        { const _cpc = document.getElementById('coach-plan-card'); if (_cpc) _cpc.classList.add('hidden'); }
         document.getElementById('workout-active').classList.remove('hidden');
         const titleEl = document.getElementById('active-workout-title');
         if (titleEl) titleEl.innerText = '📋 ' + (w.title || 'Coach Workout');
@@ -4455,6 +4834,12 @@
         };
         try {
             await appendNote(coachUid, memberUid, message);
+            await pushNotification(coachUid, {
+                type: 'note',
+                title: 'New message from ' + (firebaseUserData.name || 'your client'),
+                body: text.length > 60 ? text.slice(0, 57) + '...' : text,
+                fromName: firebaseUserData.name || 'Client'
+            });
             input.value = '';
             loadMemberNotesThread();
         } catch (error) {
@@ -4516,6 +4901,11 @@
             setupMidnightSave();
             setupFoodSearch();
             renderWorkoutEnvTabs();
+
+            // Notifications: show the unread badge, then keep it fresh
+            refreshNotifBadge();
+            if (window._notifPoll) clearInterval(window._notifPoll);
+            window._notifPoll = setInterval(refreshNotifBadge, 60000); // check once a minute
 
             lucide.createIcons();
         } else {
@@ -4795,6 +5185,7 @@
         if (tabId === 'profile') renderProfile();
         if (tabId === 'settings') renderSettings();
         if (tabId === 'dashboard') renderDashboard();
+        if (tabId === 'training') renderCoachPlanInTraining();
         if (tabId === 'metrics') {
             // Set date picker to current viewing date and refresh status + history
             const picker = document.getElementById('metrics-date-picker');
@@ -6096,6 +6487,7 @@
         title = envLabel + ' · ' + title;
 
         document.getElementById('workout-setup').classList.add('hidden');
+        { const _cpc = document.getElementById('coach-plan-card'); if (_cpc) _cpc.classList.add('hidden'); }
         document.getElementById('workout-active').classList.remove('hidden');
         document.getElementById('active-workout-title').innerText = title;
         document.getElementById('exercise-list').innerHTML = '';
@@ -7230,6 +7622,7 @@
         pushMemberDataToCloud(); // keep the coach's view up to date
         document.getElementById('rate-exercises-modal').style.display = 'none';
         document.getElementById('workout-setup').classList.remove('hidden');
+        if (typeof renderCoachPlanInTraining === 'function') renderCoachPlanInTraining();
         document.getElementById('workout-active').classList.add('hidden');
         currentWorkoutContext = null;
         showAllExercisesInPicker = false;
@@ -7264,6 +7657,13 @@
         };
         try {
             await appendNote(coachUid, memberUid, message);
+            // Also drop a notification for the coach
+            await pushNotification(coachUid, {
+                type: 'workout-completed',
+                title: (firebaseUserData.name || 'Your client') + ' completed a workout',
+                body: '"' + (assignedInfo.title || 'Coach Workout') + '" — tap to see their ratings',
+                fromName: firebaseUserData.name || 'Client'
+            });
         } catch (error) {
             console.warn('Could not send workout feedback to coach:', error);
         }
@@ -7325,6 +7725,7 @@
         workoutAccumulatedSeconds = 0;
         workoutStartTime = null;
         document.getElementById('workout-setup').classList.remove('hidden');
+        if (typeof renderCoachPlanInTraining === 'function') renderCoachPlanInTraining();
         document.getElementById('workout-active').classList.add('hidden');
         currentWorkoutContext = null;
         showAllExercisesInPicker = false;
