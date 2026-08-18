@@ -956,6 +956,12 @@
                 <div class="flex bg-slate-100 p-2 rounded-2xl gap-2">
                     <button onclick="setNutritionTab('diary')" id="nut-tab-diary" class="flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm">Diary</button>
                     <button onclick="setNutritionTab('search')" id="nut-tab-search" class="flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400">Search</button>
+                    <button onclick="setNutritionTab('shift')" id="nut-tab-shift" class="flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400">Shift</button>
+                </div>
+
+                <!-- SHIFT WORKER VIEW -->
+                <div id="nut-view-shift" class="space-y-6 hidden">
+                    <div id="shift-worker-content"></div>
                 </div>
 
                 <!-- DIARY VIEW -->
@@ -1335,6 +1341,20 @@
                                 <div class="text-left">
                                     <p class="font-black text-sm text-slate-900">Profile & Body Stats</p>
                                     <p id="about-you-status" class="text-xs text-slate-500">Tap to set up</p>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
+                        </button>
+
+                        <!-- Progress update reminders -->
+                        <button onclick="openProgressReminders()" class="w-full mt-4 bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-all active:scale-[0.98]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="bell-ring" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-black text-sm text-slate-900">Progress Reminders</p>
+                                    <p id="reminders-status" class="text-xs text-slate-500">Weight, measurements & photos</p>
                                 </div>
                             </div>
                             <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 flex-shrink-0"></i>
@@ -2784,12 +2804,104 @@
         </div>
     </div>
 
+    <!-- PROGRESS REMINDERS SETUP -->
+    <div id="progress-reminders-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-black">Progress Reminders</h3>
+                <button onclick="closeProgressReminders()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-5">Get reminded to log your weight, measurements and photos. Set each one separately.</p>
+            <div id="reminders-sections" class="space-y-4"></div>
+            <button onclick="saveProgressReminders()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 mt-5">Save Reminders</button>
+        </div>
+    </div>
+
+    <!-- SIGN-IN UPDATE ALERTS (acknowledgement flow) -->
+    <div id="update-alerts-modal" class="modal-overlay" style="z-index:260;">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-7">
+            <div class="w-14 h-14 mx-auto mb-4 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                <i data-lucide="clipboard-check" class="w-7 h-7 text-emerald-600"></i>
+            </div>
+            <p id="update-alert-progress" class="text-center text-[10px] font-black uppercase text-slate-400 mb-1"></p>
+            <h3 id="update-alert-title" class="text-xl font-black text-center mb-1"></h3>
+            <p id="update-alert-body" class="text-sm text-slate-500 text-center mb-5"></p>
+
+            <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer mb-4">
+                <input type="checkbox" id="update-alert-check" class="w-6 h-6 accent-emerald-600 flex-shrink-0 mt-0.5">
+                <span id="update-alert-check-label" class="text-sm font-bold"></span>
+            </label>
+
+            <button id="update-alert-next" onclick="updateAlertNext()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold hover:bg-emerald-700">Next</button>
+            <button onclick="snoozeUpdateAlerts()" class="w-full mt-2 text-xs text-slate-400 font-bold">Remind me later</button>
+        </div>
+    </div>
+
+    <!-- SHIFT WORKER SETUP -->
+    <div id="shift-setup-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-xl font-black">Your Shift Pattern</h3>
+                <button onclick="closeShiftSetup()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Shift type</label>
+            <select id="shift-type-select" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none mb-4">
+                <option value="nights">Night shifts</option>
+                <option value="days">Day shifts</option>
+                <option value="earlies">Early shifts</option>
+                <option value="rotating">Rotating shifts</option>
+            </select>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Shift starts</label>
+                    <input type="time" id="shift-start-input" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Shift ends</label>
+                    <input type="time" id="shift-end-input" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none">
+                </div>
+            </div>
+
+            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Days you're on shift</label>
+            <div class="grid grid-cols-7 gap-1 mb-4">
+                ${['S','M','T','W','T','F','S'].map((d,i)=>`
+                    <label class="flex flex-col items-center gap-1 cursor-pointer">
+                        <span class="text-[10px] font-bold text-slate-400">${d}</span>
+                        <input type="checkbox" id="shift-day-${i}" class="w-5 h-5 accent-indigo-600">
+                    </label>`).join('')}
+            </div>
+
+            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Main goal</label>
+            <select id="shift-goal-select" onchange="toggleFastingVisibility()" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none mb-4">
+                <option value="fat_loss">Fat loss</option>
+                <option value="muscle_gain">Muscle gain</option>
+            </select>
+
+            <div id="shift-fasting-wrap" class="mb-5">
+                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl cursor-pointer">
+                    <input type="checkbox" id="shift-fasting-check" class="w-6 h-6 accent-indigo-600 flex-shrink-0 mt-0.5">
+                    <div>
+                        <p class="font-bold text-sm">Include optional intermittent fasting</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">5:2-style, scheduled on rest days only — never during a night shift. Only if fasting is safe for you.</p>
+                    </div>
+                </label>
+            </div>
+
+            <button onclick="saveShiftSetup()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Save My Plan</button>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS -->
     <div id="notifications-modal" class="modal-overlay" style="z-index:210;">
         <div class="bg-white w-full max-w-lg rounded-[40px] p-6 sm:p-8 max-h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-black flex items-center gap-2"><i data-lucide="bell" class="w-5 h-5"></i> Notifications</h3>
-                <button onclick="closeNotifications()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+                <div class="flex items-center gap-2">
+                    <button id="notif-clear-all" onclick="clearAllNotifs()" class="text-xs font-bold text-slate-400 hover:text-slate-600" style="display:none;">Clear all</button>
+                    <button onclick="closeNotifications()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+                </div>
             </div>
             <div id="notifications-body" class="flex-1 overflow-y-auto"></div>
         </div>
@@ -3564,17 +3676,19 @@
         const profile = snapshot.userProfile || {};
         const goals = snapshot.goals || {};
 
-        const recentWorkouts = workouts.slice(0, 8).map(w => {
+        const recentWorkouts = workouts.map(w => {
             const exCount = (w.exercises || []).length;
             const setCount = (w.exercises || []).reduce((s, e) => s + (e.sets || []).length, 0);
-            return `<div class="bg-slate-50 p-3 rounded-xl">
+            const title = w.title || w.focus || 'Workout';
+            const badge = w.title ? '<span class="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">coach plan</span>' : '';
+            return `<div onclick="openSessionDetail('${escapeHtml(w.date || '')}', '${w.id || ''}')" class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:bg-slate-100">
                 <div class="flex justify-between items-center">
-                    <span class="font-bold text-sm">${escapeHtml(w.focus || 'Workout')}</span>
-                    <span class="text-xs text-slate-400">${escapeHtml(w.date || '')}</span>
+                    <span class="font-bold text-sm flex items-center gap-2">${escapeHtml(title)} ${badge}</span>
+                    <span class="text-xs text-slate-400 flex items-center gap-1">${escapeHtml(w.date || '')} <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets · ${escapeHtml(w.duration || '')}</p>
+                <p class="text-xs text-slate-400 mt-1">${exCount} exercises · ${setCount} sets${w.duration ? ' · ' + escapeHtml(w.duration) : ''} · tap for detail</p>
             </div>`;
-        }).join('') || '<p class="text-sm text-slate-400 text-center py-3">No workouts logged</p>';
+        }).join('') || '<p class="text-sm text-slate-400 text-center py-3">No completed sessions yet</p>';
 
         const latestMetric = metrics[0] || {};
         const metricRows = [];
@@ -3634,8 +3748,9 @@
             </div>
 
             <div class="glass-card rounded-[2.5rem] p-6">
-                <h3 class="text-lg font-black mb-3">Recent Training (${workouts.length})</h3>
-                <div class="space-y-2">${recentWorkouts}</div>
+                <h3 class="text-lg font-black mb-1">Completed Sessions (${workouts.length})</h3>
+                <p class="text-xs text-slate-400 mb-3">Every workout ${escapeHtml(name)} has finished. Tap any to see full detail.</p>
+                <div class="space-y-2 max-h-96 overflow-y-auto">${recentWorkouts}</div>
             </div>
 
             <div class="glass-card rounded-[2.5rem] p-6">
@@ -3781,10 +3896,35 @@
         localStorage.setItem('vfit_seen_notifs', JSON.stringify(Array.from(set).slice(-500)));
     }
 
+    // Track which notifications the user has DISMISSED (read and cleared off the list)
+    function dismissedNotifIds() {
+        try { return JSON.parse(localStorage.getItem('vfit_dismissed_notifs') || '[]'); }
+        catch (e) { return []; }
+    }
+    function dismissNotif(id) {
+        const set = new Set(dismissedNotifIds());
+        set.add(id);
+        localStorage.setItem('vfit_dismissed_notifs', JSON.stringify(Array.from(set).slice(-1000)));
+        markNotifsSeen([id]);
+        openNotifications();     // re-render the list without the dismissed item
+        refreshNotifBadge();
+    }
+    function clearAllNotifs() {
+        const notifs = window._cachedNotifs || [];
+        const set = new Set(dismissedNotifIds());
+        notifs.forEach(n => set.add(n.id));
+        localStorage.setItem('vfit_dismissed_notifs', JSON.stringify(Array.from(set).slice(-1000)));
+        markNotifsSeen(notifs.map(n => n.id));
+        openNotifications();
+        refreshNotifBadge();
+    }
+
     async function refreshNotifBadge() {
         const notifs = await loadMyNotifications();
         const seen = new Set(seenNotifIds());
-        const unread = notifs.filter(n => !seen.has(n.id)).length;
+        const dismissed = new Set(dismissedNotifIds());
+        // Unread = not seen and not dismissed
+        const unread = notifs.filter(n => !seen.has(n.id) && !dismissed.has(n.id)).length;
         document.querySelectorAll('.notif-badge').forEach(badge => {
             if (unread > 0) {
                 badge.textContent = unread > 9 ? '9+' : String(unread);
@@ -3803,11 +3943,22 @@
         body.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Loading...</p>';
         modal.style.display = 'flex';
 
-        const notifs = await loadMyNotifications();
+        const all = await loadMyNotifications();
+        const dismissed = new Set(dismissedNotifIds());
         const seen = new Set(seenNotifIds());
+        // Show everything that hasn't been dismissed
+        const notifs = all.filter(n => !dismissed.has(n.id));
+
+        const clearBtn = document.getElementById('notif-clear-all');
+        if (clearBtn) clearBtn.style.display = notifs.length > 0 ? '' : 'none';
 
         if (notifs.length === 0) {
-            body.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">No notifications yet.</p>';
+            body.innerHTML = `
+                <div class="text-center py-12">
+                    <i data-lucide="bell-off" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+                    <p class="text-sm text-slate-400 font-bold">You're all caught up</p>
+                    <p class="text-xs text-slate-400 mt-1">New activity with your ${currentUserRole === 'coach' ? 'clients' : 'coach'} shows here.</p>
+                </div>`;
         } else {
             const iconFor = {
                 'workout-assigned': { icon: 'clipboard-list', color: 'bg-indigo-100 text-indigo-600' },
@@ -3833,13 +3984,17 @@
                             ${n.body ? `<p class="text-xs text-slate-500 mt-0.5">${escapeHtml(n.body)}</p>` : ''}
                             <p class="text-[10px] text-slate-400 mt-1">${n.fromName ? escapeHtml(n.fromName) + ' · ' : ''}${time}</p>
                         </div>
+                        <button onclick="dismissNotif('${n.id}')" class="text-slate-300 hover:text-slate-500 flex-shrink-0 self-start" aria-label="Dismiss">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
                     </div>`;
             }).join('');
         }
         lucide.createIcons();
 
-        // Mark all as seen now that they've been opened
-        markNotifsSeen(notifs.map(n => n.id));
+        // Opening the list marks everything as SEEN (clears the badge), but items
+        // stay on the list until individually dismissed or cleared.
+        markNotifsSeen(all.map(n => n.id));
         refreshNotifBadge();
     }
 
@@ -3969,6 +4124,60 @@
         }
 
         box.innerHTML = html || '<p class="text-sm text-slate-400 text-center py-3">Nothing shared yet. Your client can share days from their app.</p>';
+        lucide.createIcons();
+    }
+
+    /**
+     * Coach taps a completed session in the archive → full detail (reuses the
+     * shared-detail modal). Finds the workout by id first, falling back to date.
+     */
+    function openSessionDetail(date, id) {
+        if (!viewingClientData) return;
+        const snap = viewingClientData.data || {};
+        const workouts = snap.workoutHistory || [];
+        const w = (id && workouts.find(x => String(x.id) === String(id))) || workouts.find(x => x.date === date);
+        if (!w) { showToast('Session not found'); return; }
+
+        const modal = document.getElementById('shared-detail-modal');
+        const body = document.getElementById('shared-detail-body');
+        const titleEl = document.getElementById('shared-detail-title');
+        if (!modal || !body) return;
+
+        titleEl.textContent = w.title || w.focus || 'Workout';
+        const prettyDate = new Date(w.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        let totalVolume = 0;
+        (w.exercises || []).forEach(ex => (ex.sets || []).forEach(s => {
+            const kg = parseFloat(s.weight), reps = parseInt(s.reps);
+            if (!isNaN(kg) && !isNaN(reps)) totalVolume += kg * reps;
+        }));
+
+        body.innerHTML = `
+            <p class="text-sm text-slate-400 mb-1">${prettyDate}</p>
+            ${w.title ? `<p class="text-xs font-bold text-indigo-600 mb-2">📋 Coach-assigned workout</p>` : ''}
+            <div class="flex gap-2 mb-4 flex-wrap">
+                ${w.duration ? `<span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">⏱ ${escapeHtml(w.duration)}</span>` : ''}
+                <span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">${(w.exercises || []).length} exercises</span>
+                ${totalVolume > 0 ? `<span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">${Math.round(totalVolume).toLocaleString()} kg volume</span>` : ''}
+            </div>
+            ${(w.exercises || []).map(ex => {
+                const rows = (ex.sets || []).map((s, i) => `
+                    <div class="flex items-center gap-3 py-1.5 border-b border-slate-100 last:border-0">
+                        <span class="text-xs font-black text-slate-400 w-12">Set ${i + 1}</span>
+                        <span class="text-sm font-bold">${s.weight || '—'} kg</span>
+                        <span class="text-slate-300">×</span>
+                        <span class="text-sm font-bold">${s.reps || '—'} reps</span>
+                        ${(s.rir !== undefined && s.rir !== '') ? `<span class="text-xs text-amber-600 ml-auto">RIR ${escapeHtml(String(s.rir))}</span>` : ''}
+                    </div>`).join('');
+                return `
+                    <div class="bg-slate-50 rounded-2xl p-4 mb-3">
+                        <p class="font-black text-sm mb-1">${escapeHtml(ex.name || 'Exercise')}</p>
+                        ${ex.focus ? `<p class="text-[11px] text-indigo-600 mb-2">🎯 ${escapeHtml(ex.focus)}</p>` : ''}
+                        ${rows || '<p class="text-xs text-slate-400">No sets recorded</p>'}
+                    </div>`;
+            }).join('')}
+        `;
+        modal.style.display = 'flex';
         lucide.createIcons();
     }
 
@@ -4622,7 +4831,640 @@
     }
 
     // ---- CLIENT SIDE: view & use workouts the coach assigned ----
-    // ---- CLIENT SIDE: show the coach's assigned plan IN the Training section ----
+    // ==========================================================================
+    // PROGRESS REMINDERS — weight / measurements / photos, scheduled
+    // ==========================================================================
+    function updReminders() {
+        if (!state.updateReminders) state.updateReminders = JSON.parse(JSON.stringify(DEFAULT_STATE.updateReminders));
+        return state.updateReminders;
+    }
+
+    const REMINDER_META = {
+        weight:      { label: 'Weight', icon: 'scale', desc: 'Log your bodyweight' },
+        measurement: { label: 'Body Measurements', icon: 'ruler', desc: 'Chest, waist, arms, etc.' },
+        photo:       { label: 'Progress Photos', icon: 'camera', desc: 'Front, side, back photos' }
+    };
+    const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function openProgressReminders() {
+        renderRemindersSections();
+        document.getElementById('progress-reminders-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+    function closeProgressReminders() {
+        document.getElementById('progress-reminders-modal').style.display = 'none';
+    }
+
+    function renderRemindersSections() {
+        const box = document.getElementById('reminders-sections');
+        if (!box) return;
+        const r = updReminders();
+        box.innerHTML = ['weight', 'measurement', 'photo'].map(key => {
+            const cfg = r[key];
+            const meta = REMINDER_META[key];
+            const on = cfg.enabled;
+            return `
+                <div class="border-2 ${on ? 'border-indigo-200' : 'border-slate-200'} rounded-3xl p-4">
+                    <label class="flex items-center justify-between gap-3 cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 ${on ? 'bg-indigo-600' : 'bg-slate-300'} rounded-xl flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="${meta.icon}" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-black text-sm">${meta.label}</p>
+                                <p class="text-[11px] text-slate-400">${meta.desc}</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleReminder('${key}', this.checked)" class="w-6 h-6 accent-indigo-600 flex-shrink-0">
+                    </label>
+
+                    <div id="reminder-body-${key}" class="${on ? '' : 'hidden'} mt-4 space-y-3">
+                        <div>
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-1.5">How often</label>
+                            <div class="grid grid-cols-4 gap-1">
+                                ${['daily', 'weekly', 'monthly', 'custom'].map(f => `
+                                    <button onclick="setReminderFreq('${key}', '${f}')" class="py-2 rounded-lg text-[10px] font-black uppercase ${cfg.frequency === f ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}">${f}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Weekly: pick weekday(s) -->
+                        <div id="reminder-weekly-${key}" class="${cfg.frequency === 'weekly' || cfg.frequency === 'custom' ? '' : 'hidden'}">
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-1.5">${cfg.frequency === 'custom' ? 'Pick your days' : 'Which day'}</label>
+                            <div class="grid grid-cols-7 gap-1">
+                                ${WEEKDAYS.map((d, i) => `
+                                    <button onclick="toggleReminderDay('${key}', ${i})" class="py-2 rounded-lg text-[9px] font-black ${(cfg.customDays || []).indexOf(i) >= 0 ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}">${d[0]}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Monthly: pick day of month -->
+                        <div id="reminder-monthly-${key}" class="${cfg.frequency === 'monthly' ? '' : 'hidden'}">
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-1.5">Day of the month</label>
+                            <select onchange="setReminderDate('${key}', this.value)" class="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none text-sm">
+                                ${Array.from({length: 28}, (_, i) => i + 1).map(d => `<option value="${d}" ${cfg.customDate === d ? 'selected' : ''}>${d}${d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'}</option>`).join('')}
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Days 1–28 so it works every month.</p>
+                        </div>
+
+                        ${key === 'measurement' || key === 'photo' || key === 'weight' ? `
+                        <div class="bg-pink-50 border border-pink-100 rounded-xl p-2.5">
+                            <p class="text-[10px] text-pink-700">💡 Using <b>custom</b> days can help track around a menstrual cycle — measuring at the same phase each month gives more accurate, comparable results (fluid shifts across the cycle can affect weight and measurements).</p>
+                        </div>` : ''}
+
+                        <div>
+                            <label class="text-[9px] font-black uppercase text-slate-400 block mb-1.5">How to remind me</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setReminderDelivery('${key}', 'alert')" class="p-3 rounded-xl text-xs font-bold ${cfg.delivery === 'alert' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}">
+                                    <i data-lucide="bell" class="w-4 h-4 inline"></i> Sign-in alert
+                                </button>
+                                <button onclick="setReminderDelivery('${key}', 'ai')" class="p-3 rounded-xl text-xs font-bold ${cfg.delivery === 'ai' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}">
+                                    <i data-lucide="sparkles" class="w-4 h-4 inline"></i> AI coach
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">${cfg.delivery === 'alert'
+                                ? 'A tick-box alert when you open the app, repeating daily until you log it or turn it off.'
+                                : 'Your AI coach will mention it in conversation instead of a pop-up.'}</p>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function toggleReminder(key, on) {
+        updReminders()[key].enabled = on;
+        renderRemindersSections();
+    }
+    function setReminderFreq(key, freq) {
+        const cfg = updReminders()[key];
+        cfg.frequency = freq;
+        // Sensible defaults when switching
+        if (freq === 'weekly' && (!cfg.customDays || cfg.customDays.length !== 1)) cfg.customDays = [cfg.customDays && cfg.customDays[0] != null ? cfg.customDays[0] : 1];
+        renderRemindersSections();
+    }
+    function toggleReminderDay(key, day) {
+        const cfg = updReminders()[key];
+        if (!cfg.customDays) cfg.customDays = [];
+        const i = cfg.customDays.indexOf(day);
+        if (cfg.frequency === 'weekly') {
+            cfg.customDays = [day]; // weekly = single day
+        } else {
+            if (i >= 0) cfg.customDays.splice(i, 1); else cfg.customDays.push(day);
+        }
+        renderRemindersSections();
+    }
+    function setReminderDate(key, d) {
+        updReminders()[key].customDate = parseInt(d, 10);
+    }
+    function setReminderDelivery(key, mode) {
+        updReminders()[key].delivery = mode;
+        renderRemindersSections();
+    }
+
+    function saveProgressReminders() {
+        saveState();
+        closeProgressReminders();
+        updateRemindersStatus();
+        showToast('Reminders saved');
+    }
+
+    function updateRemindersStatus() {
+        const el = document.getElementById('reminders-status');
+        if (!el) return;
+        const r = updReminders();
+        const active = ['weight', 'measurement', 'photo'].filter(k => r[k].enabled);
+        el.textContent = active.length === 0
+            ? 'Weight, measurements & photos'
+            : active.map(k => REMINDER_META[k].label.split(' ')[0]).join(', ') + ' on';
+    }
+
+    // ---- Is a given reminder due today? ----
+    // A reminder is due if it's enabled, today matches its schedule, and it hasn't
+    // already been completed for the current period.
+    function isReminderDue(key) {
+        const cfg = updReminders()[key];
+        if (!cfg || !cfg.enabled) return false;
+
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const dow = now.getDay();       // 0..6
+        const dom = now.getDate();      // 1..31
+        const lastDone = cfg.lastDone;  // ISO date string or null
+
+        // Has it been logged already for this period? If logged today, never due.
+        if (lastDone === today) return false;
+
+        if (cfg.frequency === 'daily') {
+            return true; // due every day it hasn't been done
+        }
+        if (cfg.frequency === 'weekly') {
+            const targetDay = (cfg.customDays && cfg.customDays[0] != null) ? cfg.customDays[0] : 1;
+            return dow === targetDay;
+        }
+        if (cfg.frequency === 'custom') {
+            return (cfg.customDays || []).indexOf(dow) >= 0;
+        }
+        if (cfg.frequency === 'monthly') {
+            // Due on the chosen day of month (clamped for short months)
+            const target = Math.min(cfg.customDate || 1, daysInThisMonth());
+            return dom === target;
+        }
+        return false;
+    }
+    function daysInThisMonth() {
+        const n = new Date();
+        return new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+    }
+
+    /** Mark a reminder as completed today (called when the user logs that item). */
+    function markReminderDone(key) {
+        const cfg = updReminders()[key];
+        if (!cfg) return;
+        cfg.lastDone = new Date().toISOString().split('T')[0];
+        saveState();
+        refreshDueAlertBadgeSoon();
+    }
+
+    // ---- The sign-in ALERT flow (delivery === 'alert') ----
+    // Builds a queue of due 'alert' reminders and walks the user through ticking
+    // each. They tick the box and press Next; on the last one it's Finish.
+    let alertQueue = [];
+    let alertIndex = 0;
+
+    function getDueAlerts() {
+        return ['weight', 'measurement', 'photo'].filter(k =>
+            updReminders()[k].delivery === 'alert' && isReminderDue(k)
+        );
+    }
+
+    function maybeShowUpdateAlerts() {
+        alertQueue = getDueAlerts();
+        alertIndex = 0;
+        if (alertQueue.length > 0) {
+            showCurrentAlert();
+        }
+    }
+
+    function showCurrentAlert() {
+        const key = alertQueue[alertIndex];
+        if (!key) { document.getElementById('update-alerts-modal').style.display = 'none'; return; }
+        const meta = REMINDER_META[key];
+
+        const progressEl = document.getElementById('update-alert-progress');
+        const titleEl = document.getElementById('update-alert-title');
+        const bodyEl = document.getElementById('update-alert-body');
+        const checkLabel = document.getElementById('update-alert-check-label');
+        const check = document.getElementById('update-alert-check');
+        const nextBtn = document.getElementById('update-alert-next');
+
+        progressEl.textContent = alertQueue.length > 1 ? `Update ${alertIndex + 1} of ${alertQueue.length}` : 'Reminder';
+        titleEl.textContent = 'Time for a ' + meta.label.toLowerCase() + ' update';
+        bodyEl.textContent = 'Take a moment to log your ' + meta.label.toLowerCase() + '. Tick below once done, or come back to it later.';
+        checkLabel.textContent = "I've logged my " + meta.label.toLowerCase() + " (or I'll do it now)";
+        check.checked = false;
+        // Last in queue → "Finish", otherwise "Next"
+        nextBtn.textContent = (alertIndex >= alertQueue.length - 1) ? 'Finish' : 'Next';
+
+        document.getElementById('update-alerts-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function updateAlertNext() {
+        const key = alertQueue[alertIndex];
+        const check = document.getElementById('update-alert-check');
+        if (check && check.checked) {
+            // They confirmed — mark done so it stops reminding this period, and
+            // jump them to the right logging screen.
+            markReminderDone(key);
+            openLoggerFor(key);
+        }
+        alertIndex++;
+        if (alertIndex >= alertQueue.length) {
+            document.getElementById('update-alerts-modal').style.display = 'none';
+        } else {
+            showCurrentAlert();
+        }
+    }
+
+    function snoozeUpdateAlerts() {
+        // Dismiss for now; they'll be reminded again next sign-in / next day
+        document.getElementById('update-alerts-modal').style.display = 'none';
+    }
+
+    /** Send the user to the relevant logging screen for a reminder type. */
+    function openLoggerFor(key) {
+        // Close any alert modal first
+        const am = document.getElementById('update-alerts-modal');
+        if (am) am.style.display = 'none';
+        setTimeout(() => {
+            switchTab('metrics');
+            setTimeout(() => {
+                if (key === 'weight' && typeof openRecordWeightModal === 'function') openRecordWeightModal();
+                else if (key === 'measurement' && typeof openRecordMeasurementsModal === 'function') openRecordMeasurementsModal();
+                else if (key === 'photo' && typeof openProgressPhotosModal === 'function') openProgressPhotosModal();
+            }, 200);
+        }, 200);
+    }
+
+    function refreshDueAlertBadgeSoon() {
+        // (Hook for a future badge; safe no-op if not present.)
+    }
+
+
+    // Evidence-based guidance (NOT medical advice) that adapts meal timing and
+    // training to a person's shift. Keyed to circadian science: the SCN (the
+    // brain's master clock in the hypothalamus) is set mainly by light, while
+    // "peripheral clocks" in the gut/muscle respond to zeitgebers ("time-givers")
+    // like food timing, activity and light. Shift work desynchronises these, so
+    // the aim is to reduce eating in the biological night and place training when
+    // the body is most primed.
+
+    function shiftP() {
+        if (!state.shiftProfile) state.shiftProfile = JSON.parse(JSON.stringify(DEFAULT_STATE.shiftProfile));
+        return state.shiftProfile;
+    }
+
+    function renderShiftWorker() {
+        const box = document.getElementById('shift-worker-content');
+        if (!box) return;
+        const sp = shiftP();
+
+        // GATE 1: must acknowledge the medical disclaimer before anything else
+        if (!sp.acknowledgedDisclaimer) {
+            box.innerHTML = shiftDisclaimerHTML();
+            lucide.createIcons();
+            return;
+        }
+
+        // GATE 2: not enabled yet → show intro + setup button
+        if (!sp.enabled) {
+            box.innerHTML = `
+                <div class="glass-card p-6 rounded-[2.5rem] text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="moon" class="w-8 h-8 text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-xl font-black mb-2">Shift Worker Mode</h3>
+                    <p class="text-sm text-slate-500 mb-5">Meal timing and training built around your shift pattern, using circadian-rhythm science. Working nights makes your body eat and train "against the clock" — this helps you work with it.</p>
+                    <button onclick="openShiftSetup()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Set Up My Shift</button>
+                    <button onclick="reshowShiftDisclaimer()" class="w-full mt-2 text-xs text-slate-400 font-bold">Review the health disclaimer</button>
+                </div>`;
+            lucide.createIcons();
+            return;
+        }
+
+        // ENABLED: show today's plan
+        box.innerHTML = shiftPlanHTML();
+        lucide.createIcons();
+    }
+
+    function shiftDisclaimerHTML() {
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <div class="w-16 h-16 mx-auto mb-4 bg-amber-50 rounded-2xl flex items-center justify-center">
+                    <i data-lucide="heart-pulse" class="w-8 h-8 text-amber-500"></i>
+                </div>
+                <h3 class="text-xl font-black text-center mb-3">Before you start — please read</h3>
+                <div class="space-y-3 text-sm text-slate-600 mb-5">
+                    <p><b>This is general guidance, not medical advice.</b> The suggestions here are based on published research on shift work and circadian rhythms, but they are not a substitute for professional medical care.</p>
+                    <p><b>Speak to your GP first.</b> This is especially important if you have diabetes or take glucose-lowering medication (including insulin), have heart or blood-pressure conditions, are pregnant or breastfeeding, have a history of disordered eating, or take any regular medication. Meal-timing and fasting changes can affect these conditions and medications.</p>
+                    <p><b>Fasting isn't for everyone.</b> The optional fasting features should not be used by anyone for whom fasting is unsafe. If in doubt, don't — and ask your GP.</p>
+                    <p class="text-xs text-slate-400">VFIT is a tracking tool. It can't see your medical history and doesn't know your individual needs. Always prioritise advice from a qualified healthcare professional over anything shown here.</p>
+                </div>
+                <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl cursor-pointer mb-3">
+                    <input type="checkbox" id="shift-disclaimer-check" class="w-6 h-6 accent-indigo-600 flex-shrink-0 mt-0.5">
+                    <span class="text-sm font-bold">I understand this is not medical advice, and I'll speak to my GP before making significant changes — especially regarding any health conditions or medication.</span>
+                </label>
+                <button onclick="acceptShiftDisclaimer()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">I Understand — Continue</button>
+            </div>`;
+    }
+
+    function acceptShiftDisclaimer() {
+        const cb = document.getElementById('shift-disclaimer-check');
+        if (!cb || !cb.checked) { showToast('Please tick the box to confirm you understand'); return; }
+        shiftP().acknowledgedDisclaimer = true;
+        saveState();
+        renderShiftWorker();
+    }
+
+    function reshowShiftDisclaimer() {
+        shiftP().acknowledgedDisclaimer = false;
+        saveState();
+        renderShiftWorker();
+    }
+
+    // ---- SETUP ----
+    function openShiftSetup() {
+        const sp = shiftP();
+        const modal = document.getElementById('shift-setup-modal');
+        if (!modal) return;
+        document.getElementById('shift-type-select').value = sp.shiftType;
+        document.getElementById('shift-start-input').value = sp.shiftStart;
+        document.getElementById('shift-end-input').value = sp.shiftEnd;
+        document.getElementById('shift-goal-select').value = sp.goal;
+        document.getElementById('shift-fasting-check').checked = !!sp.useFasting;
+        [0,1,2,3,4,5,6].forEach(d => {
+            const cb = document.getElementById('shift-day-' + d);
+            if (cb) cb.checked = (sp.workDays || []).indexOf(d) >= 0;
+        });
+        toggleFastingVisibility();
+        modal.style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeShiftSetup() {
+        document.getElementById('shift-setup-modal').style.display = 'none';
+    }
+
+    function toggleFastingVisibility() {
+        const goal = document.getElementById('shift-goal-select').value;
+        const wrap = document.getElementById('shift-fasting-wrap');
+        if (wrap) wrap.style.display = (goal === 'fat_loss') ? '' : 'none';
+    }
+
+    function saveShiftSetup() {
+        const sp = shiftP();
+        sp.shiftType = document.getElementById('shift-type-select').value;
+        sp.shiftStart = document.getElementById('shift-start-input').value || '19:00';
+        sp.shiftEnd = document.getElementById('shift-end-input').value || '07:00';
+        sp.goal = document.getElementById('shift-goal-select').value;
+        sp.useFasting = (sp.goal === 'fat_loss') && document.getElementById('shift-fasting-check').checked;
+        sp.workDays = [0,1,2,3,4,5,6].filter(d => {
+            const cb = document.getElementById('shift-day-' + d);
+            return cb && cb.checked;
+        });
+        sp.enabled = true;
+        saveState();
+        closeShiftSetup();
+        renderShiftWorker();
+        showToast('Shift plan ready 🌙');
+    }
+
+    // ---- Helpers for time maths ----
+    function hmToMin(hm) {
+        const [h, m] = (hm || '0:0').split(':').map(Number);
+        return (h * 60 + (m || 0));
+    }
+    function minToHM(min) {
+        min = ((min % 1440) + 1440) % 1440;
+        const h = Math.floor(min / 60), m = min % 60;
+        const ap = h < 12 ? 'am' : 'pm';
+        let h12 = h % 12; if (h12 === 0) h12 = 12;
+        return `${h12}:${String(m).padStart(2, '0')}${ap}`;
+    }
+    function isOnShiftToday() {
+        const sp = shiftP();
+        const today = new Date().getDay();
+        return (sp.workDays || []).indexOf(today) >= 0;
+    }
+
+    function shiftPlanHTML() {
+        const sp = shiftP();
+        const onShift = isOnShiftToday();
+        const isNight = sp.shiftType === 'nights' || sp.shiftType === 'rotating';
+        let html = '';
+
+        html += `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-400">Today</p>
+                        <h3 class="text-xl font-black">${onShift ? '🌙 On Shift' : '☀️ Off Shift / Rest Day'}</h3>
+                    </div>
+                    <button onclick="openShiftSetup()" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-2 rounded-xl">Edit</button>
+                </div>
+                <p class="text-sm text-slate-500">${onShift
+                    ? `Your shift runs ${minToHM(hmToMin(sp.shiftStart))} – ${minToHM(hmToMin(sp.shiftEnd))}. Plan below is tuned for a working ${isNight ? 'night' : 'day'}.`
+                    : 'A rest/off day — the plan shifts toward normal daytime eating to help your body clock re-anchor.'}
+                </p>
+            </div>`;
+
+        html += onShift
+            ? (isNight ? nightShiftMealHTML() : dayShiftMealHTML())
+            : offDayMealHTML();
+
+        html += shiftTrainingHTML(onShift, isNight);
+
+        if (sp.goal === 'fat_loss' && sp.useFasting) html += fastingGuidanceHTML(onShift);
+
+        html += shiftFoodIdeasHTML(isNight && onShift);
+        html += shiftScienceHTML();
+
+        html += `
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <p class="text-xs text-amber-800"><b>Not medical advice.</b> This is general guidance. Speak to your GP before significant changes, especially with any health condition or medication. <button onclick="reshowShiftDisclaimer()" class="underline font-bold">Review disclaimer</button></p>
+            </div>`;
+
+        return html;
+    }
+
+    function mealRow(time, title, desc, tone) {
+        const colors = {
+            main: 'bg-indigo-50 border-indigo-200',
+            light: 'bg-emerald-50 border-emerald-200',
+            avoid: 'bg-rose-50 border-rose-200',
+            sleep: 'bg-slate-100 border-slate-200'
+        };
+        return `
+            <div class="flex gap-3 p-3 rounded-2xl border ${colors[tone] || 'bg-slate-50 border-slate-200'} mb-2">
+                <div class="text-xs font-black text-slate-500 w-20 flex-shrink-0 pt-0.5">${time}</div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm">${title}</p>
+                    <p class="text-xs text-slate-500 mt-0.5">${desc}</p>
+                </div>
+            </div>`;
+    }
+
+    function nightShiftMealHTML() {
+        const sp = shiftP();
+        const start = hmToMin(sp.shiftStart);
+        const end = hmToMin(sp.shiftEnd);
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="text-lg font-black mb-1">Meal Timing — Working Night</h3>
+                <p class="text-xs text-slate-400 mb-4">The goal: eat your main food before/early in the shift, keep the deep-night hours light, and don't go to bed on a full stomach.</p>
+                ${mealRow(minToHM(start - 120), 'Anchor meal (before shift)', 'Your biggest, most balanced meal ~2h before starting. Lean protein + complex carbs + veg for steady 4–6h energy — this is what stops the 3am vending-machine trap.', 'main')}
+                ${mealRow(minToHM(start + 180), 'Mid-shift protein snack', 'A protein-forward snack ~3–4h in. Greek yogurt, cottage cheese, boiled eggs, or a lean-protein wrap. Keeps you full without a sugar crash.', 'light')}
+                ${mealRow('12am–6am', 'Biological night — keep minimal', 'Try to avoid a full meal in these hours: this is when your body handles food worst (higher glucose & fat in the blood). If you must eat, keep it small and protein/veg based, not sugary or heavy.', 'avoid')}
+                ${mealRow(minToHM(end), 'Post-shift: light only', 'A small, easy-to-digest meal at most. Finish eating at least ~1h before sleep so it doesn\'t wreck your sleep quality.', 'light')}
+                ${mealRow('Daytime', 'Sleep', 'Protect your sleep window. Dark, cool, quiet room. Sleep is where fat-loss and muscle-building actually happen.', 'sleep')}
+            </div>`;
+    }
+
+    function dayShiftMealHTML() {
+        const sp = shiftP();
+        const start = hmToMin(sp.shiftStart);
+        const end = hmToMin(sp.shiftEnd);
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="text-lg font-black mb-1">Meal Timing — Working Day</h3>
+                <p class="text-xs text-slate-400 mb-4">Daytime shifts are more circadian-friendly. Front-load your calories earlier and keep the evening lighter.</p>
+                ${mealRow(minToHM(start - 60), 'Breakfast', 'A solid protein + carb breakfast within ~an hour of waking. Insulin sensitivity is highest earlier in the day.', 'main')}
+                ${mealRow('Midday', 'Lunch — main meal', 'Make lunch your largest meal where you can. Protein, complex carbs, veg.', 'main')}
+                ${mealRow(minToHM(end), 'Dinner — lighter & earlier', 'Aim to finish your main evening eating before ~9pm. Late, large dinners are linked to worse metabolic outcomes.', 'light')}
+                ${mealRow('After 9pm', 'Wind down', 'Avoid late heavy meals and sugary snacks. A small protein snack is fine if genuinely hungry.', 'avoid')}
+            </div>`;
+    }
+
+    function offDayMealHTML() {
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="text-lg font-black mb-1">Meal Timing — Rest / Off Day</h3>
+                <p class="text-xs text-slate-400 mb-4">Use rest days to nudge your body clock back toward daytime eating — it helps recovery and metabolic health.</p>
+                ${mealRow('On waking', 'Breakfast', 'Eat within ~an hour of waking to anchor your body clock to daytime. Protein + carbs.', 'main')}
+                ${mealRow('Midday', 'Lunch — main meal', 'Largest meal of the day around midday when your metabolism is best set up for it.', 'main')}
+                ${mealRow('~6–7pm', 'Early dinner', 'Finish your main eating earlier in the evening. Aim to stop before ~9pm.', 'light')}
+                ${mealRow('Late', 'Minimise late eating', 'Keep the late-evening hours light. This re-trains your system after nights.', 'avoid')}
+            </div>`;
+    }
+
+    function shiftTrainingHTML(onShift, isNight) {
+        const sp = shiftP();
+        const fatLoss = sp.goal === 'fat_loss';
+        let inner = '';
+
+        if (onShift && isNight) {
+            inner = `
+                <p class="text-sm text-slate-600 mb-3">On a night-shift day, your strength peak and your available energy don't line up with a normal schedule. Best options:</p>
+                ${trainTip('Before your shift (2–4h after waking)', 'Your best window on a night-shift day. Core body temperature and neuromuscular readiness are higher a few hours after you wake — that\'s when to do your hardest lifting or intervals, not right after rolling out of bed.', 'primary')}
+                ${trainTip('On a mid-shift break', 'A short, lower-sweat strength session (compound lifts, moderate load) works well mid-shift and can boost alertness without frying you.', 'ok')}
+                ${trainTip('After a night shift — keep it gentle', 'Post-shift your body temp is at its lowest and cortisol can spike from hard training. Save heavy sessions for another time; a short walk to wind down is ideal before sleep.', 'avoid')}`;
+        } else if (onShift && !isNight) {
+            inner = `
+                <p class="text-sm text-slate-600 mb-3">Day shifts fit the body clock better. Strength naturally peaks late afternoon/early evening.</p>
+                ${trainTip('Before or after your shift', 'If your job is physically tiring, train before work so fatigue doesn\'t rob the session. If it\'s a desk job, late afternoon/evening after work is your natural strength peak.', 'primary')}
+                ${trainTip('Consistency beats perfection', 'Training at the same time daily trains your muscle clocks to perform then — even a "non-optimal" time becomes optimal with consistency.', 'ok')}`;
+        } else {
+            inner = `
+                <p class="text-sm text-slate-600 mb-3">Rest days are ideal for your hardest training — you're not also carrying shift fatigue.</p>
+                ${trainTip('Late afternoon / early evening (~4–7pm)', 'Maximal strength peaks in the evening and is lowest early morning. If you want a heavy session, this is the window.', 'primary')}
+                ${trainTip(fatLoss ? 'Add easy cardio / steps' : 'Prioritise progressive overload', fatLoss ? 'On rest days, low-intensity cardio or a long walk adds fat-loss without denting recovery.' : 'Push your key lifts a little heavier or add a rep — rest days are when you can genuinely progress.', 'ok')}`;
+        }
+
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="text-lg font-black mb-1">Training Today — ${fatLoss ? 'Fat Loss' : 'Muscle Gain'}</h3>
+                <p class="text-xs text-slate-400 mb-4">Timed to your circadian phase, not the clock on the wall.</p>
+                ${inner}
+            </div>`;
+    }
+
+    function trainTip(title, desc, tone) {
+        const dot = { primary: 'bg-indigo-500', ok: 'bg-emerald-500', avoid: 'bg-rose-400' }[tone] || 'bg-slate-400';
+        return `
+            <div class="flex gap-3 mb-3">
+                <div class="w-2.5 h-2.5 rounded-full ${dot} flex-shrink-0 mt-1.5"></div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm">${title}</p>
+                    <p class="text-xs text-slate-500 mt-0.5">${desc}</p>
+                </div>
+            </div>`;
+    }
+
+    function fastingGuidanceHTML(onShift) {
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem] border-2 border-dashed border-indigo-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="timer" class="w-5 h-5 text-indigo-600"></i>
+                    <h3 class="text-lg font-black">Optional: Intermittent Fasting</h3>
+                </div>
+                <p class="text-xs text-slate-400 mb-4">You've turned this on for fat loss. In a 2025 trial with night-shift workers, a 5:2-style approach produced similar weight loss to normal calorie restriction — so it's an option, not a must.</p>
+                <div class="p-3 bg-rose-50 border border-rose-200 rounded-2xl mb-3">
+                    <p class="text-sm font-bold text-rose-700">⚠️ Never fast during a night shift</p>
+                    <p class="text-xs text-rose-600 mt-1">Fasting while awake and working overnight worsens fatigue and concentration — a safety risk. Put fasting days on rest days or day-off periods only.</p>
+                </div>
+                ${onShift
+                    ? mealRow('Today', 'Not a fasting day', 'You\'re on shift — eat normally per the plan above. Save any fasting for a rest day.', 'light')
+                    : mealRow('Today (rest day)', 'Optional fasting day', 'If you choose to fast today: keep it to the lighter "5:2" style (~500–600 kcal), stay hydrated, and stop if you feel unwell. Protein + veg + plenty of water.', 'main')}
+                <p class="text-[11px] text-slate-400 mt-2">Fasting isn't safe for everyone. If you have any doubt, don't fast — and check with your GP.</p>
+            </div>`;
+    }
+
+    function shiftFoodIdeasHTML(emphasiseNight) {
+        return `
+            <div class="glass-card p-6 rounded-[2.5rem]">
+                <h3 class="text-lg font-black mb-1">Protein-Forward Food Ideas</h3>
+                <p class="text-xs text-slate-400 mb-4">${emphasiseNight
+                    ? 'On nights, protein is your best friend — it keeps you full, steadies blood sugar, and avoids the crash-and-crave cycle that sugary snacks cause. Prep these ahead so 3am-you has good options.'
+                    : 'Protein at each meal supports muscle and keeps you full. Batch-prep on days off.'}</p>
+                <div class="grid grid-cols-2 gap-2">
+                    ${foodIdea('🥚 Boiled eggs', 'Prep a dozen; grab 2–3')}
+                    ${foodIdea('🍗 Grilled chicken', 'Batch-cook, portion out')}
+                    ${foodIdea('🥛 Greek yogurt', 'High protein, low effort')}
+                    ${foodIdea('🧀 Cottage cheese', 'Slow-release protein, great pre-sleep')}
+                    ${foodIdea('🥜 Nuts & seeds', 'Protein + good fats (watch portions)')}
+                    ${foodIdea('🐟 Tinned tuna/salmon', 'On oatcakes or wholegrain')}
+                    ${foodIdea('🫘 Beans & lentils', 'Fibre + plant protein')}
+                    ${foodIdea('🥤 Protein shake', 'Fast backup when busy')}
+                </div>
+                <div class="mt-3 p-3 bg-slate-50 rounded-2xl">
+                    <p class="text-xs text-slate-500"><b>Avoid on shift:</b> sugary snacks, pastries, energy drinks and fast food. They spike then crash your blood sugar, leaving you hungrier and more tired — the opposite of what you need at 3am.</p>
+                </div>
+            </div>`;
+    }
+
+    function foodIdea(name, note) {
+        return `
+            <div class="bg-slate-50 rounded-2xl p-3">
+                <p class="font-bold text-sm">${name}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">${note}</p>
+            </div>`;
+    }
+
+    function shiftScienceHTML() {
+        return `
+            <details class="glass-card rounded-[2.5rem] p-6">
+                <summary class="text-lg font-black cursor-pointer">The science (why this works)</summary>
+                <div class="space-y-3 text-sm text-slate-600 mt-4">
+                    <p><b>Your master clock — the SCN.</b> Deep in your brain (the hypothalamus) sits the suprachiasmatic nucleus, or SCN. It's your body's master clock, and it's set mainly by <b>light</b>. It tells your body when to be alert, when to release melatonin for sleep, and when your metabolism is primed for food.</p>
+                    <p><b>Zeitgebers — "time-givers".</b> Besides light, your body takes timing cues from <b>food, activity and temperature</b>. These are called zeitgebers (German for "time-givers"). Your gut and muscles have their own "peripheral clocks" that respond to when you eat and train — not just to light.</p>
+                    <p><b>Why shift work is hard.</b> On nights, your SCN still thinks it's night (because of the light/dark cycle), but you're eating and working. This <b>desynchronises</b> your master clock from your gut and muscle clocks. Eating at 3am means digesting food when your body is metabolically set to sleep — which is why the same meal raises blood sugar and fat more at night than in the day.</p>
+                    <p><b>What we do about it.</b> We use the zeitgebers you <i>can</i> control — food timing and training timing — to reduce that mismatch: concentrate eating when your body is more aligned, keep the deep-night hours light, and place training near your true strength peak (a few hours after waking, when core temperature is up).</p>
+                    <p class="text-xs text-slate-400">This is a simplified summary of active research. The science is still developing and individual responses vary — another reason to work with your GP.</p>
+                </div>
+            </details>`;
+    }
+
     // Only appears when the client actually has a coach.
     async function renderCoachPlanInTraining() {
         const card = document.getElementById('coach-plan-card');
@@ -4907,6 +5749,10 @@
             if (window._notifPoll) clearInterval(window._notifPoll);
             window._notifPoll = setInterval(refreshNotifBadge, 60000); // check once a minute
 
+            updateRemindersStatus();
+            // After the app has settled, show any due sign-in update alerts
+            setTimeout(() => { try { maybeShowUpdateAlerts(); } catch (e) {} }, 900);
+
             lucide.createIcons();
         } else {
             currentUser = null;
@@ -4972,6 +5818,30 @@
         proteinGoal: 150,
         weightUnit: 'kg', // user's preferred display unit: 'kg' | 'lbs' | 'st'
         foodRegion: 'uk', // food search region: 'uk' | 'us' | 'world'
+        // Shift-worker mode: null until set up. When enabled, drives chrono-nutrition
+        // meal-timing guidance and training suggestions keyed to the shift pattern.
+        shiftProfile: {
+            enabled: false,
+            acknowledgedDisclaimer: false,
+            shiftType: 'nights',      // 'days' | 'nights' | 'rotating' | 'earlies'
+            shiftStart: '19:00',      // clock time the shift starts
+            shiftEnd: '07:00',        // clock time the shift ends
+            workDays: [1, 2, 3, 4, 5],// 0=Sun..6=Sat that they're on shift
+            goal: 'fat_loss',         // 'fat_loss' | 'muscle_gain'
+            useFasting: false         // optional 5:2-style fasting (rest days only)
+        },
+        // Progress-update reminders. Three independent trackers (weight, body
+        // measurements, progress photos), each with its own schedule + delivery.
+        // frequency: 'daily' | 'weekly' | 'monthly' | 'custom'
+        // customDays: array of weekday numbers (0=Sun..6=Sat) for weekly/custom
+        // customDate: day-of-month (1..31) for monthly, or a chosen recurring date
+        // delivery: 'ai' (AI coach mentions it) | 'alert' (sign-in acknowledgement)
+        // lastDone: ISO date string of the last time that update was logged
+        updateReminders: {
+            weight:      { enabled: false, frequency: 'weekly', customDays: [1], customDate: 1, delivery: 'alert', lastDone: null },
+            measurement: { enabled: false, frequency: 'monthly', customDays: [1], customDate: 1, delivery: 'alert', lastDone: null },
+            photo:       { enabled: false, frequency: 'monthly', customDays: [1], customDate: 1, delivery: 'alert', lastDone: null }
+        },
         exerciseRatings: {}, // { 'Bench Press': { total: 14, count: 4 }, ... }  — average = total/count
         // User-created exercises: { name, env, focus, muscles:[], type:'compound'|'isolation' }
         customExercises: [],
@@ -5066,6 +5936,12 @@
                     home: Object.assign({}, DEFAULT_STATE.equipment.home, (parsed.equipment && parsed.equipment.home) || {})
                 };
                 state.userProfile = Object.assign({}, DEFAULT_STATE.userProfile, parsed.userProfile || {});
+                state.shiftProfile = Object.assign({}, DEFAULT_STATE.shiftProfile, parsed.shiftProfile || {});
+                state.updateReminders = {
+                    weight: Object.assign({}, DEFAULT_STATE.updateReminders.weight, (parsed.updateReminders && parsed.updateReminders.weight) || {}),
+                    measurement: Object.assign({}, DEFAULT_STATE.updateReminders.measurement, (parsed.updateReminders && parsed.updateReminders.measurement) || {}),
+                    photo: Object.assign({}, DEFAULT_STATE.updateReminders.photo, (parsed.updateReminders && parsed.updateReminders.photo) || {})
+                };
                 // Ensure the exercise-database fields exist and have the right shape
                 if (!Array.isArray(state.customExercises)) state.customExercises = [];
                 state.disabledExercises = {
@@ -7778,23 +8654,32 @@
     function setNutritionTab(tab) {
         const diaryView = document.getElementById('nut-view-diary');
         const searchView = document.getElementById('nut-view-search');
+        const shiftView = document.getElementById('nut-view-shift');
         const diaryTab = document.getElementById('nut-tab-diary');
         const searchTab = document.getElementById('nut-tab-search');
+        const shiftTab = document.getElementById('nut-tab-shift');
+        const on = 'flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm';
+        const off = 'flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400';
+
+        diaryView.classList.add('hidden');
+        searchView.classList.add('hidden');
+        if (shiftView) shiftView.classList.add('hidden');
+        diaryTab.className = off;
+        searchTab.className = off;
+        if (shiftTab) shiftTab.className = off;
 
         if (tab === 'diary') {
             diaryView.classList.remove('hidden');
-            searchView.classList.add('hidden');
-            diaryTab.className = 'flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm';
-            searchTab.className = 'flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400';
+            diaryTab.className = on;
             renderDiary();
+        } else if (tab === 'shift') {
+            if (shiftView) shiftView.classList.remove('hidden');
+            if (shiftTab) shiftTab.className = on;
+            renderShiftWorker();
         } else {
-            diaryView.classList.add('hidden');
             searchView.classList.remove('hidden');
-            diaryTab.className = 'flex-1 py-4 text-xs font-black uppercase rounded-xl text-slate-400';
-            searchTab.className = 'flex-1 py-4 text-xs font-black uppercase rounded-xl bg-white text-indigo-600 shadow-sm';
+            searchTab.className = on;
             renderCreatedMeals();
-            // Show whatever filter is active (recent foods by default) so the
-            // search tab is useful even before the user types anything.
             renderRegionToggle();
             renderFilterContent();
         }
@@ -9898,6 +10783,7 @@
         }
 
         mergeMetricEntry(date, { weight: Math.round(kg * 10) / 10 }, null);
+        if (typeof markReminderDone === 'function') markReminderDone('weight');
         closeRecordWeightModal();
         renderMetricsStatusLines();
         renderMetricsHistory();
@@ -9949,6 +10835,7 @@
         }
 
         mergeMetricEntry(date, fields, null);
+        if (typeof markReminderDone === 'function') markReminderDone('measurement');
         closeRecordMeasurementsModal();
         renderMetricsStatusLines();
         renderMetricsHistory();
@@ -10024,6 +10911,7 @@
 
         // Reset buffer only on confirmed success
         state.currentPhotos = { front: null, side: null, back: null };
+        if (typeof markReminderDone === 'function') markReminderDone('photo');
 
         document.getElementById('progress-photos-modal').style.display = 'none';
         renderMetricsStatusLines();
@@ -12119,14 +13007,32 @@
     function generateAICoachRecommendations() {
         const recommendations = [];
 
-        recommendations.push(analyzeTrainingFrequency());
-        recommendations.push(checkDeloadNeed());
-        recommendations.push(checkPerformanceTrend());
-        recommendations.push(analyzeWeeklyVolume());
-        recommendations.push(analyzeMuscleGroupBalance());
-        recommendations.push(analyzeNutritionAdherence());
+        // Helper: attach a category to a recommendation (if it exists)
+        const tag = (rec, category) => { if (rec) { rec.category = rec.category || category; recommendations.push(rec); } };
 
-        return recommendations.filter(r => r !== null);
+        // Due progress-update reminders set to AI-coach delivery → Metrics section
+        ['weight', 'measurement', 'photo'].forEach(key => {
+            const cfg = updReminders()[key];
+            if (cfg && cfg.delivery === 'ai' && isReminderDue(key)) {
+                const meta = REMINDER_META[key];
+                tag({
+                    icon: 'bell-ring',
+                    color: 'text-emerald-600',
+                    title: meta.label + ' update due',
+                    text: `It's time for your <b>${meta.label.toLowerCase()}</b> update — logging it today keeps your progress tracking accurate. <button onclick="openLoggerFor('${key}')" class="underline font-bold text-indigo-600">Log now</button>`,
+                    detail: `Regular, consistent tracking is what makes your progress data meaningful. Logging your ${meta.label.toLowerCase()} on schedule means your trends, comparisons and charts reflect real change rather than random gaps — and it keeps you accountable to your goals. Tap "Log now" to record it, or head to the Metrics tab whenever you're ready.`
+                }, 'metrics');
+            }
+        });
+
+        tag(analyzeTrainingFrequency(), 'training');
+        tag(checkDeloadNeed(), 'training');
+        tag(checkPerformanceTrend(), 'training');
+        tag(analyzeWeeklyVolume(), 'training');
+        tag(analyzeMuscleGroupBalance(), 'training');
+        tag(analyzeNutritionAdherence(), 'nutrition');
+
+        return recommendations;
     }
 
     /**
@@ -12153,7 +13059,9 @@
         if (over.length > 0) {
             const m = over[0];
             return { icon: 'alert-triangle', color: 'text-rose-500',
-                text: `${m} is at ${fmt(volume[m])} sets in the last 7 days — above the ~20-set mark where extra volume tends to add fatigue without much extra growth. Consider trimming a little.` };
+                title: 'Possible junk volume',
+                text: `${m} is at ${fmt(volume[m])} sets in the last 7 days — above the ~20-set mark where extra volume tends to add fatigue without much extra growth. Consider trimming a little.`,
+                detail: `You've done ${fmt(volume[m])} sets for ${m} in the last 7 days. Research on training volume suggests most muscle groups grow well on roughly 12–20 hard sets per week, and beyond about 20 the extra sets mostly add fatigue rather than more muscle — sometimes called "junk volume". Consider dropping ${m} back toward 15–18 quality sets, making sure each is close to failure, and redirecting that energy to a muscle that's under-trained or to better recovery. This isn't a hard rule — advanced lifters can sometimes handle more — but if progress has stalled or you feel run down, trimming here is a sensible first move.` };
         }
 
         // Under-training — only nag if they've done a fair amount of training already,
@@ -12163,14 +13071,18 @@
             const m = under[0];
             const needed = fmt(12 - volume[m]);
             return { icon: 'plus-circle', color: 'text-indigo-500',
-                text: `${m} is at ${fmt(volume[m])} sets over the last 7 days — about ${needed} short of the 12-set minimum for growth. Add a set or two in your next session.` };
+                title: 'Room to add volume',
+                text: `${m} is at ${fmt(volume[m])} sets over the last 7 days — about ${needed} short of the 12-set minimum for growth. Add a set or two in your next session.`,
+                detail: `Over the last 7 days you've done ${fmt(volume[m])} hard sets for ${m}. The evidence suggests most muscles need at least around 12 challenging sets per week to drive meaningful growth, and you're roughly ${needed} short of that. This doesn't mean you've done anything wrong — it may just be earlier in your week, or ${m} hasn't come up in your recent sessions. To close the gap, add a set or two of a ${m} exercise in your next relevant workout, or slot in a short accessory finisher. Aim to build toward the 12–20 set range across the week, keeping every set close to failure so it actually counts.` };
         }
 
         // Everything on target — give positive reinforcement naming the best-covered muscle
         const onTarget = trained.filter(m => volume[m] >= 12 && volume[m] <= 20);
         if (onTarget.length >= 2) {
             return { icon: 'check-circle', color: 'text-emerald-500',
-                text: `Volume looking good — ${onTarget.length} muscle groups in the 12-20 set sweet spot over the last 7 days.` };
+                title: 'Volume in the sweet spot',
+                text: `Volume looking good — ${onTarget.length} muscle groups in the 12-20 set sweet spot over the last 7 days.`,
+                detail: `Nicely balanced week: ${onTarget.length} muscle groups are sitting in the 12–20 hard-sets range that research points to as the productive zone for growth — enough stimulus to grow, not so much that it just piles on fatigue. Keep doing what you're doing. The main thing now is progression: over the coming weeks, gradually add a little weight or a rep where you can, rather than simply adding more and more sets. Quality and consistency at this volume will take you further than chasing bigger numbers.` };
         }
         return null;
     }
@@ -12182,18 +13094,26 @@
 
         if (recent.length === 0) {
             return { icon: 'calendar', color: 'text-amber-500',
-                text: 'No workouts logged this week. Try a quick session to get momentum back!' };
+                title: 'No sessions logged this week',
+                text: 'No workouts logged this week. Try a quick session to get momentum back!',
+                detail: `You haven't logged any workouts in the last 7 days. Life happens, and one quiet week won't undo your progress — but the hardest part is usually just restarting. Rather than aiming for a perfect session, aim for an easy one: even 20–30 minutes hitting a few compound lifts is enough to break the inertia and rebuild the habit. Momentum tends to snowball, so the goal today is simply to get one session on the board. If something specific is getting in the way — time, energy, motivation — scaling the session right down is far better than skipping it.` };
         }
         if (recent.length >= 5) {
             return { icon: 'alert-triangle', color: 'text-amber-500',
-                text: `You've trained ${recent.length}× this week — consider a rest day to allow recovery.` };
+                title: 'Watch your recovery',
+                text: `You've trained ${recent.length}× this week — consider a rest day to allow recovery.`,
+                detail: `You've logged ${recent.length} sessions in the last 7 days — that's a lot of training, and it shows real commitment. The thing to remember is that muscle is built during recovery, not during the session itself: training provides the stimulus, but sleep and rest days are when adaptation actually happens. Training this frequently without enough recovery can quietly lead to worse performance, poor sleep, and burnout. Make sure at least one or two days a week are genuine rest or light activity, you're sleeping well, and you're eating enough to fuel this workload. If you're feeling strong and recovering fine, that's great — just keep an eye on it.` };
         }
         if (recent.length >= 3) {
             return { icon: 'check-circle', color: 'text-emerald-500',
-                text: `Solid week — ${recent.length} sessions logged. Keep it up!` };
+                title: 'Solid, consistent week',
+                text: `Solid week — ${recent.length} sessions logged. Keep it up!`,
+                detail: `${recent.length} sessions in the last 7 days is a genuinely productive, sustainable rhythm — enough training to drive progress with enough room to recover between sessions. This is the kind of consistency that beats occasional heroic weeks. The best thing you can do from here is protect it: keep showing up at roughly this frequency, and layer in gradual progression (a little more weight or an extra rep over time). Long-term results come from repeating good weeks like this one, not from any single standout session.` };
         }
         return { icon: 'trending-up', color: 'text-indigo-500',
-            text: `${recent.length} workout${recent.length === 1 ? '' : 's'} this week. Aim for 3-4 for steady progress.` };
+            title: 'Building momentum',
+            text: `${recent.length} workout${recent.length === 1 ? '' : 's'} this week. Aim for 3-4 for steady progress.`,
+            detail: `You've logged ${recent.length} workout${recent.length === 1 ? '' : 's'} in the last 7 days — a good start. For most people chasing steady progress, around 3–4 sessions a week is the sweet spot: frequent enough to build and maintain momentum, while still leaving time to recover and fit training around real life. If you can add one more session this week, you'll be right in that productive zone. It doesn't need to be long — consistency and showing up regularly matter far more than the length of any individual workout.` };
     }
 
     /**
@@ -12210,7 +13130,9 @@
 
         if (recent.length >= 16) {
             return { icon: 'battery-low', color: 'text-rose-500',
-                text: 'You\'ve been training hard for 4 weeks straight. A deload week could help you come back stronger.' };
+                title: 'A deload could help',
+                text: 'You\'ve been training hard for 4 weeks straight. A deload week could help you come back stronger.',
+                detail: `You've put in around ${recent.length} sessions over the last 4 weeks — a big, sustained block of training. After several hard weeks, fatigue accumulates faster than your body can fully clear it, and performance can quietly stall or dip. A deload — a planned easier week where you cut volume or intensity by roughly 40–50% — lets that fatigue dissipate while keeping the training habit intact. Most lifters come back from a deload feeling fresher and often hitting new bests. It can feel counterintuitive to back off when you're motivated, but a well-timed easy week is what lets you keep progressing rather than grinding into a plateau or injury.` };
         }
         return null;
     }
@@ -12255,7 +13177,9 @@
 
         if (allFlat) {
             return { icon: 'trending-up', color: 'text-indigo-500',
-                text: `Your ${exerciseName} weight has plateaued. Try adding 2.5kg or an extra rep next session.` };
+                title: 'Time to push past a plateau',
+                text: `Your ${exerciseName} weight has plateaued. Try adding 2.5kg or an extra rep next session.`,
+                detail: `Your top set on ${exerciseName} has been the same for your last three sessions. Plateaus are completely normal — they're a sign your body has adapted to the current stimulus and is ready for a nudge. The fix is progressive overload: give it a slightly harder target. Try adding the smallest possible increment (2.5kg, or micro-plates if you have them), or keep the weight and add an extra rep or an extra set. If the weight has felt genuinely stuck for a while, other levers can help too — improving sleep, eating a little more, tightening up your technique, or giving that lift an easier week before pushing again. Small, steady increases add up far more than big jumps.` };
         }
         return null;
     }
@@ -12279,15 +13203,21 @@
 
         if (upperFocus > 0 && lowerFocus === 0) {
             return { icon: 'alert-circle', color: 'text-amber-500',
-                text: 'You haven\'t trained lower body in the last month. Consider adding a leg day for balanced development.' };
+                title: 'Don\'t skip leg day',
+                text: 'You haven\'t trained lower body in the last month. Consider adding a leg day for balanced development.',
+                detail: `Looking at the last month, all your logged sessions have been upper-body focused with no dedicated lower-body work. Training legs matters for more than symmetry: the lower body holds your largest muscles, and working them supports whole-body strength, athleticism, joint health, and even hormonal and metabolic benefits that carry over to your upper-body progress. It also keeps your physique balanced and reduces injury risk from imbalances. Try adding one leg-focused session a week — squats, hinges (deadlift/RDL), lunges, and calf work cover the bases. If you've been avoiding legs because they're tough, start lighter and build up; a little consistent leg training goes a long way.` };
         }
         if (lowerFocus > 0 && upperFocus === 0) {
             return { icon: 'alert-circle', color: 'text-amber-500',
-                text: 'You haven\'t trained upper body recently. Don\'t neglect it for overall balance.' };
+                title: 'Don\'t neglect upper body',
+                text: 'You haven\'t trained upper body recently. Don\'t neglect it for overall balance.',
+                detail: `Over the last month your sessions have been lower-body focused, with no dedicated upper-body work logged. For balanced strength and physique, your upper body needs regular attention too — pushing (chest, shoulders, triceps) and pulling (back, biceps) movements keep your posture, pressing and pulling strength, and overall proportions in check. Aim to add at least one upper-body session a week, ideally covering both a push and a pull pattern. A simple upper/lower split across the week is an easy way to make sure nothing gets left behind.` };
         }
         if (upperFocus > lowerFocus * 3 && totalWorkouts >= 6) {
             return { icon: 'info', color: 'text-indigo-500',
-                text: `${upperFocus} upper vs ${lowerFocus} lower body sessions. Consider adding more leg work.` };
+                title: 'Upper/lower imbalance',
+                text: `${upperFocus} upper vs ${lowerFocus} lower body sessions. Consider adding more leg work.`,
+                detail: `Across the last month you've done ${upperFocus} upper-body sessions against ${lowerFocus} lower-body — more than a 3-to-1 skew toward upper. You're not neglecting legs entirely, but the balance is tilted enough that your lower body is likely developing more slowly than your upper. Over time, large imbalances can affect your physique, your overall strength, and even injury risk. You don't need to overhaul anything — just nudge the ratio by adding one more leg session a week or tagging some lower-body work onto an existing day. Aiming for a rough balance between upper and lower over each week or two will keep your progress even.` };
         }
         return null;
     }
@@ -12305,54 +13235,143 @@
 
         if (Math.abs(diff) < 200) {
             return { icon: 'target', color: 'text-emerald-500',
-                text: `Nutrition on point — averaging ${Math.round(avgCals)} kcal/day vs your ${target} target.` };
+                title: 'Nutrition on target',
+                text: `Nutrition on point — averaging ${Math.round(avgCals)} kcal/day vs your ${target} target.`,
+                detail: `Your average intake over the last 7 days is ${Math.round(avgCals)} kcal/day, right around your ${target} kcal target. Consistency like this is exactly what makes nutrition work — day-to-day calories will always bounce around, but it's the weekly average that drives your results, and yours is dialled in. Keep it up. From here, if your goal is changing (leaning down or building), the lever is to adjust the target itself rather than trying to be stricter day to day. And don't forget protein and food quality alongside the calorie total — hitting your protein target consistently supports both muscle and fullness.` };
         }
         if (diff > 300) {
             return { icon: 'arrow-down', color: 'text-amber-500',
-                text: `Averaging ${Math.round(avgCals)} kcal/day — that's ${Math.round(diff)} above your target.` };
+                title: 'Running above target',
+                text: `Averaging ${Math.round(avgCals)} kcal/day — that's ${Math.round(diff)} above your target.`,
+                detail: `Over the last 7 days you've averaged ${Math.round(avgCals)} kcal/day, about ${Math.round(diff)} over your ${target} target. One high week isn't a problem, but a consistent surplus like this will slow fat loss or add weight faster than you might intend. Rather than crash-cutting, look for the easiest wins: liquid calories (drinks, alcohol), snacking, oversized portions, and cooking oils are the usual culprits. Bumping up protein and fibre-rich vegetables helps too — they're very filling for their calories, so you feel satisfied on less. Small, sustainable trims beat drastic restriction that you can't keep up. If the target itself no longer fits your goal, it may be worth revisiting it.` };
         }
         if (diff < -300) {
             return { icon: 'arrow-up', color: 'text-amber-500',
-                text: `Averaging ${Math.round(avgCals)} kcal/day — that's ${Math.round(Math.abs(diff))} below target. Make sure you're fuelling properly.` };
+                title: 'Under-fuelling',
+                text: `Averaging ${Math.round(avgCals)} kcal/day — that's ${Math.round(Math.abs(diff))} below target. Make sure you're fuelling properly.`,
+                detail: `Your average is ${Math.round(avgCals)} kcal/day, around ${Math.round(Math.abs(diff))} under your ${target} target. If you're deliberately dieting, a moderate deficit is fine — but a large or prolonged one can backfire: energy, training performance, recovery, sleep and mood all suffer when you're chronically under-fuelled, and muscle can be lost along with fat. Make sure you're eating enough to support your training, hitting your protein target, and not dropping too far below maintenance. If fat loss is the goal, a smaller, steadier deficit is far more sustainable and protects your muscle and performance. If you've been under target without meaning to, try adding an easy, protein-rich meal or snack to your day.` };
         }
         return null;
     }
+
+    // Titles inferred from the recommendation icon, so each tip has a heading.
+    function coachMsgTitle(rec) {
+        if (rec.title) return rec.title;
+        const byIcon = {
+            'alert-triangle': 'Something to watch',
+            'plus-circle': 'Room to add',
+            'check-circle': 'On track',
+            'calendar': 'Training schedule',
+            'trending-up': 'Progress update',
+            'battery-low': 'Recovery check',
+            'alert-circle': 'Nutrition note',
+            'info': 'Coach insight',
+            'target': 'Goal progress',
+            'arrow-down': 'Trending down',
+            'arrow-up': 'Trending up',
+            'bell-ring': 'Reminder',
+            'sparkles': 'Coach tip'
+        };
+        return byIcon[rec.icon] || 'Coach insight';
+    }
+
+    // Section definitions: order + labels + icons for grouping the tips.
+    const COACH_SECTIONS = [
+        { key: 'training',  label: 'Training',  icon: 'dumbbell' },
+        { key: 'nutrition', label: 'Nutrition', icon: 'utensils' },
+        { key: 'metrics',   label: 'Metrics',   icon: 'ruler' },
+        { key: 'other',     label: 'Other',     icon: 'sparkles' }
+    ];
+
+    let coachTips = []; // current tips, with a stable index for expand/collapse
 
     function renderAICoach() {
         const bubble = document.getElementById('ai-coach-bubble');
         const messagesEl = document.getElementById('ai-coach-messages');
         const timestampEl = document.getElementById('ai-coach-timestamp');
-
         if (!bubble || !messagesEl) return;
 
-        // Respect the enable toggle
         if (state.aiCoachEnabled === false) {
             bubble.style.display = 'none';
             return;
         }
         bubble.style.display = 'block';
 
-        const recommendations = generateAICoachRecommendations();
+        coachTips = generateAICoachRecommendations();
 
-        if (recommendations.length === 0) {
+        if (coachTips.length === 0) {
             messagesEl.innerHTML = `
                 <p class="flex items-start gap-2">
                     <i data-lucide="sparkles" class="w-4 h-4 flex-shrink-0 mt-0.5 text-indigo-500"></i>
                     <span>Log a few workouts and meals so I can analyse your training and give specific advice.</span>
                 </p>`;
-        } else {
-            messagesEl.innerHTML = recommendations.map(r => `
-                <p class="flex items-start gap-2">
-                    <i data-lucide="${r.icon}" class="w-4 h-4 flex-shrink-0 mt-0.5 ${r.color}"></i>
-                    <span>${r.text}</span>
-                </p>`).join('');
+            if (timestampEl) timestampEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            lucide.createIcons();
+            return;
         }
 
-        if (timestampEl) {
-            timestampEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+        // Give each tip a stable index for the expand toggle
+        coachTips.forEach((t, i) => { t._i = i; });
 
+        // Build each section that has at least one tip
+        let html = '';
+        COACH_SECTIONS.forEach(section => {
+            const inSection = coachTips.filter(t => (t.category || 'other') === section.key);
+            if (inSection.length === 0) return;
+            html += `
+                <div class="mb-4 last:mb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="${section.icon}" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-wide">${section.label}</p>
+                    </div>
+                    <div class="space-y-2">
+                        ${inSection.map(t => coachTipHTML(t)).join('')}
+                    </div>
+                </div>`;
+        });
+
+        messagesEl.innerHTML = html;
+        if (timestampEl) timestampEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         lucide.createIcons();
+    }
+
+    // A single collapsible coaching tip: title row (tap to expand) + hidden detail.
+    function coachTipHTML(t) {
+        const i = t._i;
+        const detailText = t.detail ? t.detail : stripHtml(t.text);
+        return `
+            <div class="bg-white/70 border border-indigo-100 rounded-2xl overflow-hidden">
+                <button onclick="toggleCoachTip(${i})" class="w-full flex items-start gap-2.5 p-3 text-left hover:bg-white/90">
+                    <i data-lucide="${t.icon}" class="w-4 h-4 flex-shrink-0 mt-0.5 ${t.color}"></i>
+                    <span class="flex-1 text-sm font-bold text-slate-700">${coachMsgTitle(t)}</span>
+                    <i data-lucide="chevron-down" id="coach-chevron-${i}" class="w-4 h-4 flex-shrink-0 mt-0.5 text-slate-400 transition-transform"></i>
+                </button>
+                <div id="coach-detail-${i}" class="hidden px-3 pb-3">
+                    <p class="text-sm text-slate-600 leading-relaxed pl-6">${detailText}</p>
+                    <button onclick="toggleCoachTip(${i})" class="mt-2 ml-6 text-xs font-bold text-slate-400 hover:text-slate-600">Close</button>
+                </div>
+            </div>`;
+    }
+
+    // Expand/collapse a single tip independently of the others.
+    function toggleCoachTip(i) {
+        const detail = document.getElementById('coach-detail-' + i);
+        const chevron = document.getElementById('coach-chevron-' + i);
+        if (!detail) return;
+        const isOpen = !detail.classList.contains('hidden');
+        if (isOpen) {
+            detail.classList.add('hidden');
+            if (chevron) chevron.style.transform = '';
+        } else {
+            detail.classList.remove('hidden');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    function stripHtml(s) {
+        const d = document.createElement('div');
+        d.innerHTML = s || '';
+        return d.textContent || d.innerText || '';
     }
 
     function refreshAICoach() {
