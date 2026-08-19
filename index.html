@@ -715,15 +715,25 @@
                                 <i data-lucide="droplet" class="text-cyan-500"></i>
                             </div>
                             <div>
-                                <h4 class="font-bold">Hydration Goal</h4>
+                                <h4 class="font-bold">Hydration</h4>
                                 <p id="water-count" class="text-xs text-slate-500">0 / 2.5L</p>
                             </div>
                         </div>
-                        <button onclick="toggleHydrationGoal()" id="hydration-check" class="w-16 h-16 rounded-2xl border-4 border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
-                            <i data-lucide="check" class="w-8 h-8 text-transparent"></i>
+                        <button onclick="openHydrationLog()" class="w-12 h-12 bg-cyan-500 text-white rounded-2xl flex items-center justify-center hover:bg-cyan-600 active:scale-95 transition-all" aria-label="Log water">
+                            <i data-lucide="plus" class="w-6 h-6"></i>
                         </button>
                     </div>
-                    <div class="text-xs text-slate-400 text-center">Click ✓ when you reach your daily goal</div>
+                    <!-- Progress bar -->
+                    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+                        <div id="water-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all" style="width:0%"></div>
+                    </div>
+                    <!-- Quick-add buttons -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="addWater(250)" class="py-2 bg-cyan-50 text-cyan-700 rounded-xl text-xs font-bold hover:bg-cyan-100 active:scale-95">+250ml</button>
+                        <button onclick="addWater(500)" class="py-2 bg-cyan-50 text-cyan-700 rounded-xl text-xs font-bold hover:bg-cyan-100 active:scale-95">+500ml</button>
+                        <button onclick="addWater(750)" class="py-2 bg-cyan-50 text-cyan-700 rounded-xl text-xs font-bold hover:bg-cyan-100 active:scale-95">+750ml</button>
+                        <button onclick="openHydrationLog()" class="py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 active:scale-95">Custom</button>
+                    </div>
                 </div>
 
                 <!-- Steps Tracker -->
@@ -734,15 +744,19 @@
                                 <i data-lucide="footprints" class="text-amber-500"></i>
                             </div>
                             <div>
-                                <h4 class="font-bold">Steps Goal</h4>
+                                <h4 class="font-bold">Steps</h4>
                                 <p id="steps-count" class="text-xs text-slate-500">0 / 10,000</p>
                             </div>
                         </div>
-                        <button onclick="toggleStepsGoal()" id="steps-check" class="w-16 h-16 rounded-2xl border-4 border-slate-200 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
-                            <i data-lucide="check" class="w-8 h-8 text-transparent"></i>
+                        <button onclick="openStepsLog()" class="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center hover:bg-amber-600 active:scale-95 transition-all" aria-label="Log steps">
+                            <i data-lucide="plus" class="w-6 h-6"></i>
                         </button>
                     </div>
-                    <div class="text-xs text-slate-400 text-center">Click ✓ when you reach your daily goal</div>
+                    <!-- Progress bar -->
+                    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+                        <div id="steps-progress-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all" style="width:0%"></div>
+                    </div>
+                    <div class="text-xs text-slate-400 text-center">Tap + to update today's step count from your phone</div>
                 </div>
 
                 <!-- Habits Tracker (hidden if not enabled) -->
@@ -1043,7 +1057,7 @@
                                     <i data-lucide="x" class="w-4 h-4 text-slate-600"></i>
                                 </button>
                             </div>
-                            <button onclick="openBarcodeScanner()" class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 flex-shrink-0">
+                            <button onclick="barcodeScanMode='food'; openBarcodeScanner()" class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 flex-shrink-0">
                                 <i data-lucide="scan-barcode" class="w-6 h-6"></i>
                             </button>
                         </div>
@@ -2112,6 +2126,46 @@
                     <span id="toggle-text">Show More ▼</span>
                 </button>
                 <p id="popup-nutrition" class="text-xs text-center text-slate-500 mt-3"></p>
+
+                <!-- Edit the scanned/looked-up values if they're wrong -->
+                <button onclick="openEditFoodValues()" class="w-full mt-3 pt-3 border-t border-indigo-200 text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center justify-center gap-1">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Values look wrong? Edit them
+                </button>
+            </div>
+
+            <!-- EDITABLE NUTRITION FORM (per 100g / per serving) -->
+            <div id="edit-food-values" class="hidden bg-amber-50 border-2 border-amber-200 rounded-3xl p-4 mb-6">
+                <p class="text-xs font-black uppercase text-amber-700 mb-3">Edit values <span id="edit-values-basis" class="normal-case text-slate-400 font-bold"></span></p>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Calories (kcal)</label>
+                        <input id="edit-cals" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Protein (g)</label>
+                        <input id="edit-protein" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Carbs (g)</label>
+                        <input id="edit-carbs" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Fat (g)</label>
+                        <input id="edit-fat" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Fibre (g)</label>
+                        <input id="edit-fiber" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 block mb-1">Sugar (g)</label>
+                        <input id="edit-sugar" type="number" inputmode="decimal" class="w-full p-3 bg-white rounded-xl font-bold outline-none border-2 border-transparent focus:border-amber-400 text-sm">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="cancelEditFoodValues()" class="flex-1 p-3 rounded-xl font-bold bg-white text-slate-500 text-sm">Cancel</button>
+                    <button onclick="applyEditFoodValues()" class="flex-1 p-3 rounded-xl font-bold bg-amber-500 text-white text-sm hover:bg-amber-600">Save values</button>
+                </div>
             </div>
             <div class="mb-4">
                 <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Meal Type</label>
@@ -2314,7 +2368,7 @@
             </div>
             <div class="flex gap-2 mb-4">
                 <input id="meal-ingredient-search" type="text" placeholder="Search ingredient..." class="flex-1 bg-slate-100 rounded-xl px-4 py-3 outline-none">
-                <button onclick="showToast('Barcode for meals coming soon!')" class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700">
+                <button onclick="openMealBarcodeScanner()" class="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700">
                     <i data-lucide="scan-barcode" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -2890,6 +2944,70 @@
             </div>
 
             <button onclick="saveShiftSetup()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700">Save My Plan</button>
+        </div>
+    </div>
+
+    <!-- HYDRATION LOG MODAL -->
+    <div id="hydration-log-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-7">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black flex items-center gap-2"><i data-lucide="droplet" class="w-5 h-5 text-cyan-500"></i> Add Water</h3>
+                <button onclick="closeHydrationLog()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <div class="text-center mb-2">
+                <span id="hydration-slider-value" class="text-5xl font-black text-cyan-600">250</span>
+                <span class="text-xl font-bold text-slate-400">ml</span>
+            </div>
+
+            <input id="hydration-slider" type="range" min="50" max="1000" step="50" value="250"
+                oninput="onHydrationSlider(this.value)"
+                class="w-full accent-cyan-500 mb-2">
+            <div class="flex justify-between text-[10px] text-slate-400 font-bold mb-4 px-1">
+                <span>50ml</span><span>1L</span>
+            </div>
+
+            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Or enter exact amount</label>
+            <div class="flex gap-2 mb-5">
+                <input id="hydration-number" type="number" inputmode="numeric" value="250" min="0"
+                    oninput="onHydrationNumber(this.value)"
+                    class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold outline-none border-2 border-transparent focus:border-cyan-400 text-center">
+                <span class="flex items-center px-3 font-bold text-slate-400">ml</span>
+            </div>
+
+            <button onclick="confirmAddWater()" class="w-full bg-cyan-500 text-white p-4 rounded-2xl font-bold hover:bg-cyan-600">Add Water</button>
+            <button onclick="resetTodayWater()" class="w-full mt-2 text-xs text-slate-400 font-bold">Reset today's total</button>
+        </div>
+    </div>
+
+    <!-- STEPS LOG MODAL -->
+    <div id="steps-log-modal" class="modal-overlay" style="z-index:210;">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-7">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black flex items-center gap-2"><i data-lucide="footprints" class="w-5 h-5 text-amber-500"></i> Today's Steps</h3>
+                <button onclick="closeStepsLog()" class="w-10 h-10 bg-slate-100 rounded-full text-2xl leading-none">×</button>
+            </div>
+
+            <p class="text-sm text-slate-500 mb-4">Enter your current step count from your phone's health app (Apple Health, Google Fit, Samsung Health, Fitbit, etc.).</p>
+
+            <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Step count for today</label>
+            <input id="steps-number" type="number" inputmode="numeric" placeholder="e.g. 8500" min="0"
+                class="w-full p-4 bg-slate-50 rounded-2xl font-black text-2xl outline-none border-2 border-transparent focus:border-amber-400 text-center mb-4">
+
+            <button onclick="confirmSetSteps()" class="w-full bg-amber-500 text-white p-4 rounded-2xl font-bold hover:bg-amber-600">Save Steps</button>
+
+            <div id="pedometer-section" class="hidden mt-4 pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <p class="font-bold text-sm">Live step counter</p>
+                        <p class="text-[11px] text-slate-400">Counts while VFIT is open on screen</p>
+                    </div>
+                    <button id="pedometer-toggle" onclick="togglePedometer()" class="px-4 py-2 bg-amber-100 text-amber-700 rounded-xl text-xs font-bold">Start</button>
+                </div>
+                <p id="pedometer-live" class="hidden text-center text-3xl font-black text-amber-600 my-2">0 <span class="text-sm text-slate-400 font-bold">steps counted</span></p>
+                <p class="text-[10px] text-slate-400">⚠️ Experimental. The screen must stay on and the app open — it stops when you lock the phone or switch apps. For all-day tracking, use your phone's health app and type the total above.</p>
+            </div>
+            <button id="show-pedometer-btn" onclick="revealPedometer()" class="w-full mt-3 text-xs text-amber-600 font-bold">Try the live step counter instead ›</button>
         </div>
     </div>
 
@@ -6117,9 +6235,9 @@
                     // LOWER BODY — Hinge pattern
                     'Deadlift', 'Romanian Deadlift', 'Good Morning', 'Stiff Leg Deadlift', 'Sumo Deadlift', 'Single Leg Romanian Deadlift', 'Barbell Hip Thrusts', 'Weight Machine Hip Thrusts',
                     // UPPER BODY — Push
-                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press',
+                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Assisted Tricep Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press',
                     // UPPER BODY — Pull
-                    'Assisted Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
+                    'Assisted Pull Ups', 'Assisted Chin Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
                 ],
                 isolation: [
                     // Biceps
@@ -6144,7 +6262,7 @@
             },
             'Upper': {
                 compound: [
-                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press', 'Assisted Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
+                    'Bench Press', 'Overhead Press', 'Incline Bench Press', 'Upright Dips', 'Lean Forward Dips', 'Assisted Tricep Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Close Grip Bench Press', 'DB Bench Press', 'Incline DB Bench Press', 'Z Press', 'Assisted Pull Ups', 'Assisted Chin Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Weight Machine', 'Seated Row Cable Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'
                 ],
                 isolation: [
                     'Dumbbell Bicep Curl', 'Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl', 'Spider Curls', 'Drag Curls', 'Close Grip Upright Rows', 'Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension', 'Cable Row', 'Face Pulls', 'Straight Arm Pulldown', 'Reverse Flyes', 'Single Arm Lat Pulldown', 'Machine Pullover', 'Cable Flies', 'Pec Deck', 'Dumbbell Flies', 'Incline Dumbbell Flies', 'Upper Chest Flies', 'Low to High Cable Flyes'
@@ -6159,11 +6277,11 @@
                 ]
             },
             'Push': {
-                compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Decline Bench Press', 'Close Grip Bench Press'],
+                compound: ['Bench Press', 'Overhead Press', 'Incline Press', 'Dips', 'Assisted Tricep Dips', 'Chest Press Machine', 'Shoulder Press Machine', 'Decline Bench Press', 'Close Grip Bench Press'],
                 isolation: ['Tricep Pushdown', 'Lateral Raise', 'Cable Flyes', 'Skull Crushers', 'Pec Deck', 'Overhead Tricep Extension', 'Front Raise', 'Dumbbell Flyes']
             },
             'Pull': {
-                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
+                compound: ['Pull Ups', 'Assisted Pull Ups', 'Assisted Chin Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
                 isolation: ['Bicep Curl', 'Face Pulls', 'Hammer Curl', 'Cable Row', 'Preacher Curl', 'Reverse Flyes', 'Straight Arm Pulldown', 'Cable Curl']
             },
             'Legs': {
@@ -6173,11 +6291,11 @@
                 isolation: ['Leg Extension', 'Walking Lunges', 'Leg Curl', 'Nordic Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Cable Pull Through', 'Cable Kickback', 'Hip Abduction', 'Glute Bridge', 'Single Leg Hip Thrust', 'Glute Kickback Machine', 'Banded Side Steps', 'Standing Calf Raise', 'Seated Calf Raise', 'Donkey Calf Raise', 'Single Leg Calf Raise', 'Tibialis Raise']
             },
             'Chest': {
-                compound: ['Bench Press', 'Incline Press', 'Dumbbell Press', 'Chest Press Machine', 'Decline Bench Press', 'Incline Dumbbell Press', 'Dips'],
+                compound: ['Bench Press', 'Incline Press', 'Dumbbell Press', 'Chest Press Machine', 'Decline Bench Press', 'Incline Dumbbell Press', 'Dips', 'Assisted Tricep Dips'],
                 isolation: ['Cable Flies', 'Pec Deck', 'Dumbbell Flies', 'Incline Dumbbell Flies', 'Upper Chest Flies', 'Low to High Cable Flyes']
             },
             'Back': {
-                compound: ['Pull Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
+                compound: ['Pull Ups', 'Assisted Pull Ups', 'Assisted Chin Ups', 'Barbell Row', 'Lat Pulldown', 'T-Bar Row', 'Seated Row Machine', 'Chin Ups', 'Dumbbell Row', 'Pendlay Row'],
                 isolation: ['Cable Row', 'Face Pulls', 'Straight Arm Pulldown', 'Reverse Flyes', 'Single Arm Lat Pulldown', 'Machine Pullover']
             },
             'Shoulders': {
@@ -6185,11 +6303,11 @@
                 isolation: ['Lateral Raise', 'Front Raise', 'Face Pulls', 'Reverse Flyes', 'Cable Lateral Raise', 'Rear Delt Machine', 'Upright Row']
             },
             'Biceps': {
-                compound: ['Chin Ups', 'Close Grip Pull Ups', 'Underhand Barbell Row', 'Machine Bicep Curl'],
+                compound: ['Chin Ups', 'Assisted Chin Ups', 'Close Grip Pull Ups', 'Underhand Barbell Row', 'Machine Bicep Curl'],
                 isolation: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Cable Curl', 'Concentration Curl', 'Incline Dumbbell Curl', 'EZ Bar Curl']
             },
             'Triceps': {
-                compound: ['Close Grip Bench Press', 'Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press'],
+                compound: ['Close Grip Bench Press', 'Dips', 'Assisted Tricep Dips', 'JM Press', 'Diamond Push Ups', 'Machine Tricep Press'],
                 isolation: ['Tricep Pushdown', 'Skull Crushers', 'Overhead Extension', 'Cable Tricep Extension', 'Rope Pushdown', 'Single Arm Tricep Extension']
             },
             'Quads': {
@@ -6733,13 +6851,14 @@
         // Chest pressing variants
         'Incline Bench Press': ['Chest'], 'DB Bench Press': ['Chest'], 'Incline DB Bench Press': ['Chest'],
         'Upright Dips': ['Chest', 'Triceps'], 'Lean Forward Dips': ['Chest', 'Triceps'],
+        'Assisted Tricep Dips': ['Triceps', 'Chest'],
         'Cable Flyes': ['Chest'], 'Dumbbell Flyes': ['Chest'],
         // Shoulders
         'Z Press': ['Shoulders'], 'Cable Front Raise': ['Shoulders'], 'Cable Reverse Flies': ['Shoulders'],
         'Dumbbell Lateral Raise': ['Shoulders'], 'Dumbbell Reverse Flies': ['Shoulders'],
         'Wide Upright Row': ['Shoulders'],
         // Back / pull
-        'Assisted Pull Ups': ['Back'], 'Seated Row Weight Machine': ['Back'],
+        'Assisted Pull Ups': ['Back'], 'Assisted Chin Ups': ['Back', 'Biceps'], 'Seated Row Weight Machine': ['Back'],
         'Seated Row Cable Machine': ['Back'],
         // Biceps
         'Dumbbell Bicep Curl': ['Biceps'], 'Bicep Curl': ['Biceps'], 'Spider Curls': ['Biceps'],
@@ -6806,6 +6925,7 @@
         'Pull Ups': ['Biceps'],
         'Chin Ups': ['Biceps'],
         'Assisted Pull Ups': ['Biceps'],
+        'Assisted Chin Ups': ['Biceps'],
         'Close Grip Pull Ups': ['Biceps'],
         'Lat Pulldown': ['Biceps'],
         'Single Arm Lat Pulldown': ['Biceps'],
@@ -7047,44 +7167,16 @@
         const water = (state.waterLogs && state.waterLogs[state.viewDate]) || 0;
         const waterGoal = (state.goals && state.goals.water) ? state.goals.water : 2500;
         const waterCountEl = document.getElementById('water-count');
-        if (waterCountEl) waterCountEl.innerText = `${(water / 1000).toFixed(1)} / ${(waterGoal / 1000).toFixed(1)}L`;
+        if (waterCountEl) waterCountEl.innerText = `${(water / 1000).toFixed(2)} / ${(waterGoal / 1000).toFixed(1)}L`;
+        const waterBar = document.getElementById('water-progress-bar');
+        if (waterBar) waterBar.style.width = Math.min(100, (water / waterGoal) * 100) + '%';
 
         const steps = (state.stepsLogs && state.stepsLogs[state.viewDate]) || 0;
         const stepsGoal = (state.goals && state.goals.steps) ? state.goals.steps : 10000;
         const stepsCountEl = document.getElementById('steps-count');
         if (stepsCountEl) stepsCountEl.innerText = `${steps.toLocaleString()} / ${stepsGoal.toLocaleString()}`;
-
-        // Hydration check button state
-        const hydrationComplete = (state.hydrationGoalCompletions && state.hydrationGoalCompletions[state.viewDate]) || false;
-        const hydrationCheckBtn = document.getElementById('hydration-check');
-        if (hydrationCheckBtn) {
-            const icon = hydrationCheckBtn.querySelector('i');
-            if (hydrationComplete) {
-                hydrationCheckBtn.classList.add('bg-cyan-500', 'border-cyan-500');
-                hydrationCheckBtn.classList.remove('border-slate-200');
-                if (icon) { icon.classList.remove('text-transparent'); icon.classList.add('text-white'); }
-            } else {
-                hydrationCheckBtn.classList.remove('bg-cyan-500', 'border-cyan-500');
-                hydrationCheckBtn.classList.add('border-slate-200');
-                if (icon) { icon.classList.add('text-transparent'); icon.classList.remove('text-white'); }
-            }
-        }
-
-        // Steps check button state
-        const stepsComplete = (state.stepsGoalCompletions && state.stepsGoalCompletions[state.viewDate]) || false;
-        const stepsCheckBtn = document.getElementById('steps-check');
-        if (stepsCheckBtn) {
-            const icon = stepsCheckBtn.querySelector('i');
-            if (stepsComplete) {
-                stepsCheckBtn.classList.add('bg-amber-500', 'border-amber-500');
-                stepsCheckBtn.classList.remove('border-slate-200');
-                if (icon) { icon.classList.remove('text-transparent'); icon.classList.add('text-white'); }
-            } else {
-                stepsCheckBtn.classList.remove('bg-amber-500', 'border-amber-500');
-                stepsCheckBtn.classList.add('border-slate-200');
-                if (icon) { icon.classList.add('text-transparent'); icon.classList.remove('text-white'); }
-            }
-        }
+        const stepsBar = document.getElementById('steps-progress-bar');
+        if (stepsBar) stepsBar.style.width = Math.min(100, (steps / stepsGoal) * 100) + '%';
 
         // Weekly overview stats
         const weekAgo = new Date();
@@ -7246,24 +7338,168 @@
         }).join('');
     }
 
-    function toggleHydrationGoal() {
+    // ==========================================================================
+    // HYDRATION LOGGING — number entry + slider + quick-add
+    // ==========================================================================
+    function openHydrationLog() {
+        onHydrationSlider(250);
+        document.getElementById('hydration-log-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+    function closeHydrationLog() {
+        document.getElementById('hydration-log-modal').style.display = 'none';
+    }
+    // Keep slider and number field in sync
+    function onHydrationSlider(val) {
+        const v = Math.round(parseFloat(val) || 0);
+        document.getElementById('hydration-slider-value').textContent = v;
+        document.getElementById('hydration-number').value = v;
+        const slider = document.getElementById('hydration-slider');
+        if (slider && parseInt(slider.value) !== v && v >= 50 && v <= 1000) slider.value = v;
+    }
+    function onHydrationNumber(val) {
+        const v = Math.round(parseFloat(val) || 0);
+        document.getElementById('hydration-slider-value').textContent = v;
+        const slider = document.getElementById('hydration-slider');
+        if (slider) slider.value = Math.min(1000, Math.max(50, v));
+    }
+    // Quick-add straight from the dashboard buttons
+    function addWater(ml) {
         const date = state.viewDate;
-        if (!state.hydrationGoalCompletions) state.hydrationGoalCompletions = {};
-        state.hydrationGoalCompletions[date] = !state.hydrationGoalCompletions[date];
+        if (!state.waterLogs) state.waterLogs = {};
+        state.waterLogs[date] = Math.max(0, (state.waterLogs[date] || 0) + ml);
         saveState();
         renderDashboard();
-        showToast(state.hydrationGoalCompletions[date] ? 'Hydration goal reached! 💧' : 'Hydration goal unmarked');
+        const total = state.waterLogs[date];
+        const goal = (state.goals && state.goals.water) ? state.goals.water : 2500;
+        showToast(`+${ml}ml · ${(total/1000).toFixed(2)}L today` + (total >= goal ? ' — goal reached! 💧' : ''));
+    }
+    function confirmAddWater() {
+        const ml = Math.round(parseFloat(document.getElementById('hydration-number').value) || 0);
+        if (ml <= 0) { showToast('Enter an amount'); return; }
+        closeHydrationLog();
+        addWater(ml);
+    }
+    function resetTodayWater() {
+        const date = state.viewDate;
+        if (!state.waterLogs) state.waterLogs = {};
+        state.waterLogs[date] = 0;
+        saveState();
+        renderDashboard();
+        closeHydrationLog();
+        showToast("Today's water reset");
+    }
+
+    // ==========================================================================
+    // STEPS LOGGING — manual entry (+ optional live pedometer while app is open)
+    // ==========================================================================
+    function openStepsLog() {
+        const date = state.viewDate;
+        const current = (state.stepsLogs && state.stepsLogs[date]) || 0;
+        document.getElementById('steps-number').value = current > 0 ? current : '';
+        // Reset the pedometer section each open
+        stopPedometer();
+        document.getElementById('pedometer-section').classList.add('hidden');
+        const showBtn = document.getElementById('show-pedometer-btn');
+        if (showBtn) showBtn.style.display = '';
+        document.getElementById('steps-log-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+    function closeStepsLog() {
+        stopPedometer();
+        document.getElementById('steps-log-modal').style.display = 'none';
+    }
+    function confirmSetSteps() {
+        const steps = Math.round(parseFloat(document.getElementById('steps-number').value) || 0);
+        if (steps < 0) { showToast('Enter a valid number'); return; }
+        const date = state.viewDate;
+        if (!state.stepsLogs) state.stepsLogs = {};
+        state.stepsLogs[date] = steps;
+        saveState();
+        renderDashboard();
+        closeStepsLog();
+        const goal = (state.goals && state.goals.steps) ? state.goals.steps : 10000;
+        showToast(`${steps.toLocaleString()} steps saved` + (steps >= goal ? ' — goal reached! 👟' : ''));
+    }
+
+    // ---- Optional live pedometer (experimental, Android-friendly) ----
+    let pedometerActive = false;
+    let pedometerCount = 0;
+    let pedometerHandler = null;
+    let pedoLastPeak = 0;
+
+    function revealPedometer() {
+        document.getElementById('pedometer-section').classList.remove('hidden');
+        const showBtn = document.getElementById('show-pedometer-btn');
+        if (showBtn) showBtn.style.display = 'none';
         lucide.createIcons();
     }
 
-    function toggleStepsGoal() {
-        const date = state.viewDate;
-        if (!state.stepsGoalCompletions) state.stepsGoalCompletions = {};
-        state.stepsGoalCompletions[date] = !state.stepsGoalCompletions[date];
-        saveState();
-        renderDashboard();
-        showToast(state.stepsGoalCompletions[date] ? 'Steps goal reached! 👟' : 'Steps goal unmarked');
-        lucide.createIcons();
+    function togglePedometer() {
+        if (pedometerActive) { stopPedometer(); return; }
+        // DeviceMotion needs a permission prompt on iOS 13+
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(res => {
+                if (res === 'granted') startPedometer();
+                else showToast('Motion access denied — type your steps instead', 5000);
+            }).catch(() => showToast('Motion sensor unavailable — type your steps instead', 5000));
+        } else if (typeof DeviceMotionEvent !== 'undefined') {
+            startPedometer();
+        } else {
+            showToast('This phone/browser has no accessible motion sensor — type your steps instead', 6000);
+        }
+    }
+
+    function startPedometer() {
+        pedometerActive = true;
+        pedometerCount = 0;
+        pedoLastPeak = 0;
+        document.getElementById('pedometer-live').classList.remove('hidden');
+        document.getElementById('pedometer-live').innerHTML = '0 <span class="text-sm text-slate-400 font-bold">steps counted</span>';
+        const btn = document.getElementById('pedometer-toggle');
+        btn.textContent = 'Stop';
+        btn.classList.add('bg-rose-100', 'text-rose-700');
+        btn.classList.remove('bg-amber-100', 'text-amber-700');
+
+        // Simple peak-detection step counter from total acceleration magnitude
+        let lastMag = 0, lastStepTime = 0;
+        pedometerHandler = (e) => {
+            const a = e.accelerationIncludingGravity;
+            if (!a) return;
+            const mag = Math.sqrt((a.x||0)**2 + (a.y||0)**2 + (a.z||0)**2);
+            const delta = mag - lastMag;
+            const now = Date.now();
+            // A step tends to produce a sharp upward spike; debounce to ~350ms
+            if (delta > 2.2 && (now - lastStepTime) > 350) {
+                pedometerCount++;
+                lastStepTime = now;
+                const live = document.getElementById('pedometer-live');
+                if (live) live.innerHTML = pedometerCount + ' <span class="text-sm text-slate-400 font-bold">steps counted</span>';
+            }
+            lastMag = mag;
+        };
+        window.addEventListener('devicemotion', pedometerHandler);
+        showToast('Counting steps while the app is open…', 4000);
+    }
+
+    function stopPedometer() {
+        if (!pedometerActive) return;
+        pedometerActive = false;
+        if (pedometerHandler) window.removeEventListener('devicemotion', pedometerHandler);
+        pedometerHandler = null;
+        const btn = document.getElementById('pedometer-toggle');
+        if (btn) {
+            btn.textContent = 'Start';
+            btn.classList.remove('bg-rose-100', 'text-rose-700');
+            btn.classList.add('bg-amber-100', 'text-amber-700');
+        }
+        // Offer to add what was counted to today's total
+        if (pedometerCount > 0) {
+            const numEl = document.getElementById('steps-number');
+            const existing = Math.round(parseFloat(numEl.value) || 0);
+            numEl.value = existing + pedometerCount;
+            showToast(`Added ${pedometerCount} counted steps to the box — press Save Steps`, 5000);
+        }
     }
 
     // ==========================================================================
@@ -9532,8 +9768,62 @@
         setAmountType(currentAmountType);
         updatePopupTotals();
 
+        // Always start with the edit form collapsed
+        const editForm = document.getElementById('edit-food-values');
+        if (editForm) editForm.classList.add('hidden');
+
         document.getElementById('food-popup').style.display = 'flex';
         lucide.createIcons();
+    }
+
+    // ---- Edit scanned/looked-up nutrition values ----
+    // Values are stored per 100g for scanned/DB foods, or per serving for custom.
+    function openEditFoodValues() {
+        if (!currentFoodItem) return;
+        const f = currentFoodItem;
+        document.getElementById('edit-cals').value = Math.round(f.calories * 10) / 10;
+        document.getElementById('edit-protein').value = Math.round(f.protein * 10) / 10;
+        document.getElementById('edit-carbs').value = Math.round(f.carbs * 10) / 10;
+        document.getElementById('edit-fat').value = Math.round(f.fat * 10) / 10;
+        document.getElementById('edit-fiber').value = Math.round((f.fiber || 0) * 10) / 10;
+        document.getElementById('edit-sugar').value = Math.round((f.sugar || 0) * 10) / 10;
+        const basis = document.getElementById('edit-values-basis');
+        if (basis) basis.textContent = f.isCustom ? `(per ${f.serving})` : '(per 100g)';
+        document.getElementById('edit-food-values').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function cancelEditFoodValues() {
+        document.getElementById('edit-food-values').classList.add('hidden');
+    }
+
+    function applyEditFoodValues() {
+        if (!currentFoodItem) return;
+        const num = (id) => {
+            const v = parseFloat(document.getElementById(id).value);
+            return isNaN(v) || v < 0 ? 0 : v;
+        };
+        currentFoodItem.calories = num('edit-cals');
+        currentFoodItem.protein = num('edit-protein');
+        currentFoodItem.carbs = num('edit-carbs');
+        currentFoodItem.fat = num('edit-fat');
+        currentFoodItem.fiber = num('edit-fiber');
+        currentFoodItem.sugar = num('edit-sugar');
+        currentFoodItem.edited = true; // mark as user-corrected
+
+        // Re-render the display numbers, keep the current amount, recalc totals
+        const amt = document.getElementById('popup-amount').value;
+        document.getElementById('popup-nutrition-cals').textContent = Math.round(currentFoodItem.calories);
+        document.getElementById('popup-nutrition-protein').textContent = (currentFoodItem.protein).toFixed(1);
+        document.getElementById('popup-nutrition-carbs').textContent = (currentFoodItem.carbs).toFixed(1) + 'g';
+        document.getElementById('popup-nutrition-fat').textContent = (currentFoodItem.fat).toFixed(1) + 'g';
+        document.getElementById('popup-nutrition-fiber').textContent = (currentFoodItem.fiber).toFixed(1) + 'g';
+        document.getElementById('popup-nutrition-sugar').textContent = (currentFoodItem.sugar).toFixed(1) + 'g';
+        if (document.getElementById('popup-amount')) document.getElementById('popup-amount').value = amt;
+        updatePopupTotals();
+
+        document.getElementById('edit-food-values').classList.add('hidden');
+        showToast('Values updated ✓');
     }
 
     function setAmountType(type) {
@@ -9703,6 +9993,13 @@
     // BARCODE SCANNER
     // ==========================================================================
 
+    let barcodeScanMode = 'food'; // 'food' → food popup; 'meal' → add as meal ingredient
+
+    function openMealBarcodeScanner() {
+        barcodeScanMode = 'meal';
+        openBarcodeScanner();
+    }
+
     function openBarcodeScanner() {
         const modal = document.getElementById('barcode-scanner-modal');
         modal.style.display = 'flex';
@@ -9766,7 +10063,18 @@
             const d = await r.json();
             if (d.status === 1 && d.product) {
                 await closeBarcodeScanner();
-                openFoodPopup(d.product);
+                if (barcodeScanMode === 'meal') {
+                    // Add the scanned product straight into the meal being built
+                    const p = d.product;
+                    addIngredient({
+                        name: p.product_name || 'Scanned item',
+                        cal: p.nutriments['energy-kcal_100g'] || 0,
+                        protein: p.nutriments.proteins_100g || 0
+                    });
+                    barcodeScanMode = 'food'; // reset for next time
+                } else {
+                    openFoodPopup(d.product);
+                }
             } else {
                 showToast('Product not found');
             }
