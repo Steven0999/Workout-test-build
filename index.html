@@ -2198,7 +2198,7 @@
                     </div>
                 </div>
             </div>
-            <button onclick="addFoodItem()" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-5 rounded-[24px] font-black text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-3">
+            <button id="popup-add-btn" onclick="addFoodItem()" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-5 rounded-[24px] font-black text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-3">
                 Add to Diary
             </button>
             <button onclick="closeFoodPopup()" class="w-full py-3 text-sm font-bold text-slate-400 uppercase hover:text-slate-600 transition-colors">
@@ -8956,11 +8956,11 @@
                     ${meals.length === 0 ? '<p class="text-xs text-slate-400 italic text-center py-2">No food added</p>' :
                         meals.map(m => `
                             <div class="flex justify-between items-center py-2 border-b last:border-0">
-                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div onclick="editLoggedFood('${m.id}')" class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
                                     ${m.image ? `<img src="${m.image}" class="w-10 h-10 object-contain rounded-lg bg-slate-50 p-1" onerror="this.style.display='none'">` : ''}
                                     <div class="flex-1 min-w-0">
-                                        <div class="font-bold text-sm truncate">${m.name}</div>
-                                        <div class="text-xs text-slate-400">${Math.round(m.calories || 0)} cal • ${(m.protein || 0).toFixed(1)}g protein</div>
+                                        <div class="font-bold text-sm truncate flex items-center gap-1">${m.name} <i data-lucide="pencil" class="w-3 h-3 text-slate-300"></i></div>
+                                        <div class="text-xs text-slate-400">${Math.round(m.calories || 0)} cal • ${(m.protein || 0).toFixed(1)}g protein${m.amount ? ' • ' + m.amount + (m.amountType === 'grams' ? 'g' : ' serving' + (m.amount > 1 ? 's' : '')) : ''}</div>
                                     </div>
                                 </div>
                                 <button onclick="removeMeal('${m.id}')" class="w-8 h-8 bg-red-50 text-red-500 rounded-lg text-sm flex-shrink-0 ml-2">×</button>
@@ -8981,6 +8981,62 @@
         renderDiary();
         renderDashboard();
         showToast('Meal removed');
+    }
+
+    // Reopen a already-logged diary food in the food popup, pre-filled with its
+    // base values and the amount you logged — so you can change the portion/grams
+    // OR correct the calories/macros, then save it back over the same entry.
+    let editingLoggedMealId = null;
+    function editLoggedFood(id) {
+        const m = state.dailyMeals.find(x => String(x.id) === String(id));
+        if (!m) return;
+
+        // Reconstruct the per-100g / per-serving base. Older entries saved before
+        // this feature won't have .base, so derive it from the stored totals.
+        let base = m.base;
+        if (!base) {
+            const mult = m.amountType === 'grams' ? (m.amount || 100) / 100 : (m.amount || 1);
+            const safe = mult || 1;
+            base = {
+                calories: (m.calories || 0) / safe,
+                protein: (m.protein || 0) / safe,
+                carbs: (m.carbs || 0) / safe,
+                fat: (m.fat || 0) / safe,
+                fiber: (m.fiber || 0) / safe,
+                sugar: (m.sugar || 0) / safe,
+                isCustom: m.amountType !== 'grams',
+                serving: null
+            };
+        }
+
+        currentFoodItem = {
+            name: m.name,
+            image: m.image || null,
+            calories: base.calories,
+            protein: base.protein,
+            carbs: base.carbs,
+            fat: base.fat,
+            fiber: base.fiber || 0,
+            sugar: base.sugar || 0,
+            isCustom: !!base.isCustom,
+            serving: base.serving || null
+        };
+
+        editingLoggedMealId = id; // popup is now editing this entry
+        renderFoodPopup();
+
+        // Restore the amount + type + meal type they originally logged
+        const amtInput = document.getElementById('popup-amount');
+        if (amtInput) amtInput.value = m.amount || 1;
+        currentAmountType = m.amountType || 'portion';
+        setAmountType(currentAmountType);
+        const mtSel = document.getElementById('popup-meal-type');
+        if (mtSel) mtSel.value = m.mealType || m.type || 'lunch';
+        updatePopupTotals();
+
+        // Relabel the add button to reflect editing
+        const addBtn = document.getElementById('popup-add-btn');
+        if (addBtn) addBtn.textContent = 'Save Changes';
     }
 
     function changeNutritionDate(days) {
@@ -9700,6 +9756,7 @@
             serving: '100g',
             isCustom: false
         };
+        editingLoggedMealId = null;
         renderFoodPopup();
     }
 
@@ -9720,6 +9777,7 @@
             serving: product.serving_size || '100g',
             isCustom: false
         };
+        editingLoggedMealId = null;
         renderFoodPopup();
     }
 
@@ -9741,11 +9799,16 @@
             store: food.store || '',
             isCustom: true
         };
+        editingLoggedMealId = null;
         renderFoodPopup();
     }
 
     function renderFoodPopup() {
         if (!currentFoodItem) return;
+        // Default the action button to "Add to Diary"; editLoggedFood overrides
+        // this to "Save Changes" after calling renderFoodPopup for an edit.
+        const addBtnLabel = document.getElementById('popup-add-btn');
+        if (addBtnLabel && editingLoggedMealId == null) addBtnLabel.textContent = 'Add to Diary';
         document.getElementById('popup-name').textContent = currentFoodItem.name;
         const img = document.getElementById('popup-image');
         if (img) {
@@ -9873,33 +9936,61 @@
         const mealType = document.getElementById('popup-meal-type').value;
         const mult = currentAmountType === 'grams' ? amount / 100 : amount;
 
-        const meal = {
-            id: Date.now() + Math.random(),
-            date: state.viewDate,
-            type: mealType,
-            name: currentFoodItem.name,
-            image: currentFoodItem.image,
-            calories: (currentFoodItem.calories || 0) * mult,
-            protein: (currentFoodItem.protein || 0) * mult,
-            carbs: (currentFoodItem.carbs || 0) * mult,
-            fat: (currentFoodItem.fat || 0) * mult,
-            fiber: (currentFoodItem.fiber || 0) * mult,
-            amount,
-            amountType: currentAmountType
+        const base = {
+            calories: currentFoodItem.calories || 0,
+            protein: currentFoodItem.protein || 0,
+            carbs: currentFoodItem.carbs || 0,
+            fat: currentFoodItem.fat || 0,
+            fiber: currentFoodItem.fiber || 0,
+            sugar: currentFoodItem.sugar || 0,
+            isCustom: !!currentFoodItem.isCustom,
+            serving: currentFoodItem.serving || null
         };
 
-        state.dailyMeals.push(meal);
+        const computed = {
+            date: state.viewDate,
+            type: mealType,
+            mealType: mealType,
+            name: currentFoodItem.name,
+            image: currentFoodItem.image,
+            calories: base.calories * mult,
+            protein: base.protein * mult,
+            carbs: base.carbs * mult,
+            fat: base.fat * mult,
+            fiber: base.fiber * mult,
+            sugar: base.sugar * mult,
+            amount,
+            amountType: currentAmountType,
+            base
+        };
+
+        const wasEditing = editingLoggedMealId != null;
+        if (wasEditing) {
+            // Editing an existing entry → update it in place
+            const idx = state.dailyMeals.findIndex(x => String(x.id) === String(editingLoggedMealId));
+            if (idx >= 0) {
+                state.dailyMeals[idx] = Object.assign({}, state.dailyMeals[idx], computed);
+            }
+            editingLoggedMealId = null;
+        } else {
+            computed.id = Date.now() + Math.random();
+            state.dailyMeals.push(computed);
+        }
+
         saveState();
         autoSaveNutrition();
         closeFoodPopup();
         renderDiary();
         renderDashboard();
-        showToast('Added to ' + mealType);
+        showToast(wasEditing ? 'Updated' : 'Added to ' + mealType);
     }
 
     function closeFoodPopup() {
         document.getElementById('food-popup').style.display = 'none';
         currentFoodItem = null;
+        editingLoggedMealId = null;
+        const addBtn = document.getElementById('popup-add-btn');
+        if (addBtn) addBtn.textContent = 'Add to Diary';
     }
 
     // Bind amount input listener
